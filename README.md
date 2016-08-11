@@ -27,7 +27,7 @@ $ go get -u github.com/tidwall/gjson
 This will retrieve the library.
 
 ## Get a value
-Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". This function expects that the json is well-formed, and does not validate. Invalid json will not panic, but it may return back unexpected results. When the value is found it's returned immediately.
+Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". This function expects that the json is well-formed and validates. Invalid json will not panic, but it may return back unexpected results. When the value is found it's returned immediately.
 
 ```go
 package main
