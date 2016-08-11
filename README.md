@@ -100,7 +100,10 @@ result.Raw     // holds the raw json
 
 ## Performance
 
-Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/), [ffjson](https://github.com/pquerna/ffjson), and [EasyJSON](https://github.com/mailru/easyjson).
+Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/), 
+[ffjson](https://github.com/pquerna/ffjson), 
+[EasyJSON](https://github.com/mailru/easyjson),
+and [jsonparser](https://github.com/buger/jsonparser)
 
 ```
 BenchmarkGJSONGet-8             3000000    440 ns/op     0 B/op    0 allocs/op
@@ -109,9 +112,10 @@ BenchmarkJSONUnmarshalStruct-8   600000  11635 ns/op  1960 B/op   69 allocs/op
 BenchmarkJSONDecoder-8           300000  17193 ns/op  4864 B/op  184 allocs/op
 BenchmarkFFJSONLexer-8          1500000   3773 ns/op  1024 B/op    8 allocs/op
 BenchmarkEasyJSONLexer-8        3000000   1134 ns/op   741 B/op    6 allocs/op
+BenchmarkJSONParserGet-8        3000000    777 ns/op     0 B/op    0 allocs/op
 ```
 
-The JSON document used was:
+JSON document used:
 
 ```json
 {

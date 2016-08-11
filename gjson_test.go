@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/mailru/easyjson/jlexer"
 	fflib "github.com/pquerna/ffjson/fflib/v1"
 )
@@ -486,6 +487,25 @@ func BenchmarkEasyJSONLexer(t *testing.B) {
 						}
 					}
 				}
+			}
+		}
+	}
+	t.N *= len(benchPaths) // because we are running against 3 paths
+}
+
+func BenchmarkJSONParserGet(t *testing.B) {
+	data := []byte(exampleJSON)
+	keys := make([][]string, len(benchPaths))
+	for i := 0; i < len(benchPaths); i++ {
+		keys = append(keys, strings.Split(benchPaths[i], "."))
+	}
+	t.ResetTimer()
+	t.ReportAllocs()
+	for i := 0; i < t.N; i++ {
+		for j := 0; j < len(benchPaths); j++ {
+			_, _, _, err := jsonparser.Get(data, keys[j]...)
+			if err != nil {
+				t.Fatal("did not find the value")
 			}
 		}
 	}
