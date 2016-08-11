@@ -103,7 +103,7 @@ result.Raw     // holds the raw json
 Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/), [ffjson](https://github.com/pquerna/ffjson), and [EasyJSON](https://github.com/mailru/easyjson).
 
 ```
-BenchmarkGJSONGet-8             3000000    477 ns/op     0 B/op    0 allocs/op
+BenchmarkGJSONGet-8             3000000    440 ns/op     0 B/op    0 allocs/op
 BenchmarkJSONUnmarshalMap-8      600000  10738 ns/op  3176 B/op   69 allocs/op
 BenchmarkJSONUnmarshalStruct-8   600000  11635 ns/op  1960 B/op   69 allocs/op
 BenchmarkJSONDecoder-8           300000  17193 ns/op  4864 B/op  184 allocs/op

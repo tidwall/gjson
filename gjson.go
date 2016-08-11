@@ -76,6 +76,17 @@ func (t Result) Value() interface{} {
 	}
 }
 
+type part struct {
+	wild bool
+	key  string
+}
+
+type frame struct {
+	key   string
+	count int
+	stype byte
+}
+
 // Get searches json for the specified path.
 // A path is in dot syntax, such as "name.last" or "age".
 // This function expects that the json is well-formed, and does not validate.
@@ -99,23 +110,34 @@ func (t Result) Value() interface{} {
 //  "c?ildren.0"         >> "Sara"
 //
 func Get(json string, path string) Result {
-	var i, s, depth int
-	var squashed string
-	var key string
-	var stype byte
-	var count int
+	var s int
 	var wild bool
-	var matched bool
-	var parts = make([]string, 0, 4)
-	var wilds = make([]bool, 0, 4)
-	var keys = make([]string, 0, 4)
-	var stypes = make([]byte, 0, 4)
-	var counts = make([]int, 0, 4)
+	var parts = make([]part, 0, 4)
 
 	// do nothing when no path specified
 	if len(path) == 0 {
 		return Result{} // nothing
 	}
+
+	// parse the path. just split on the dot
+	for i := 0; i < len(path); i++ {
+		if path[i] == '.' {
+			parts = append(parts, part{wild: wild, key: path[s:i]})
+			if wild {
+				wild = false
+			}
+			s = i + 1
+		} else if path[i] == '*' || path[i] == '?' {
+			wild = true
+		}
+	}
+	parts = append(parts, part{wild: wild, key: path[s:]})
+
+	var i, depth int
+	var squashed string
+	var f frame
+	var matched bool
+	var stack = make([]frame, 0, 4)
 
 	depth = 1
 
@@ -123,9 +145,9 @@ func Get(json string, path string) Result {
 	for ; i < len(json); i++ {
 		if json[i] > ' ' {
 			if json[i] == '{' {
-				stype = '{'
+				f.stype = '{'
 			} else if json[i] == '[' {
-				stype = '['
+				f.stype = '['
 			} else {
 				// not a valid type
 				return Result{}
@@ -135,30 +157,13 @@ func Get(json string, path string) Result {
 		}
 	}
 
-	stypes = append(stypes, stype)
-	counts = append(counts, count)
-
-	// parse the path. just split on the dot
-	for i := 0; i < len(path); i++ {
-		if path[i] == '.' {
-			parts = append(parts, path[s:i])
-			wilds = append(wilds, wild)
-			if wild {
-				wild = false
-			}
-			s = i + 1
-		} else if path[i] == '*' || path[i] == '?' {
-			wild = true
-		}
-	}
-	parts = append(parts, path[s:])
-	wilds = append(wilds, wild)
+	stack = append(stack, f)
 
 	// search for key
 read_key:
-	if stype == '[' {
-		key = strconv.FormatInt(int64(count), 10)
-		count++
+	if f.stype == '[' {
+		f.key = strconv.FormatInt(int64(f.count), 10)
+		f.count++
 	} else {
 		for ; i < len(json); i++ {
 			if json[i] == '"' {
@@ -169,7 +174,7 @@ read_key:
 				s = i
 				for ; i < len(json); i++ {
 					if json[i] == '"' {
-						key = json[s:i]
+						f.key = json[s:i]
 						i++
 						break
 					}
@@ -193,7 +198,7 @@ read_key:
 								break
 							}
 						}
-						key = unescape(json[s:i])
+						f.key = unescape(json[s:i])
 						i++
 						break
 					}
@@ -206,11 +211,11 @@ read_key:
 
 	// we have a brand new key.
 	// is it the key that we are looking for?
-	if wilds[depth-1] {
+	if parts[depth-1].wild {
 		// it's a wildcard path element
-		matched = wildcardMatch(key, parts[depth-1])
+		matched = wildcardMatch(f.key, parts[depth-1].key)
 	} else {
-		matched = parts[depth-1] == key
+		matched = parts[depth-1].key == f.key
 	}
 
 	// read to the value token
@@ -377,10 +382,8 @@ proc_val:
 			//  can only deep search objects
 			//	return Result{}
 		} else {
-			stype = vc
-			keys = append(keys, key)
-			stypes = append(stypes, stype)
-			counts = append(counts, count)
+			f.stype = vc
+			stack = append(stack, f)
 			depth++
 			goto read_key
 		}
@@ -416,19 +419,16 @@ proc_val:
 	for ; i < len(json); i++ {
 		switch json[i] {
 		case '}', ']':
-			if parts[depth-1] == "#" {
-				return Result{Type: Number, Num: float64(count)}
+			if parts[depth-1].key == "#" {
+				return Result{Type: Number, Num: float64(f.count)}
 			}
 			// step the stack back
 			depth--
 			if depth == 0 {
 				return Result{}
 			}
-			keys = keys[:len(keys)-1]
-			stypes = stypes[:len(stypes)-1]
-			counts = counts[:len(counts)-1]
-			stype = stypes[len(stypes)-1]
-			count = counts[len(counts)-1]
+			stack = stack[:len(stack)-1]
+			f = stack[len(stack)-1]
 		case ',':
 			i++
 			goto read_key
