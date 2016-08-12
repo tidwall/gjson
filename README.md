@@ -52,7 +52,7 @@ A path is a series of keys separated by a dot.
 A key may contain special wildcard characters '\*' and '?'. 
 To access an array value use the index as the key. 
 To get the number of elements in an array use the '#' character.
-The dot and wildcard character can be escaped with '\'.
+The dot and wildcard characters can be escaped with '\'.
 ```
 {
   "name": {"first": "Tom", "last": "Anderson"},
@@ -69,13 +69,12 @@ The dot and wildcard character can be escaped with '\'.
 "fav\.movie"         >> "Deer Hunter"
 ```
 
-
 ## Result Type
 
 GJSON supports the json types `string`, `number`, `bool`, and `null`. 
 Arrays and Objects are returned as their raw json types. 
 
-The `Result` type holds one of these types:
+The `Result` type holds one of these:
 
 ```
 bool, for JSON booleans
@@ -84,7 +83,7 @@ string, for JSON string literals
 nil, for JSON null
 ```
 
-To get the value call the `Value()` method:
+To get the Go value call the `Value()` method:
 
 
 ```go
@@ -92,15 +91,9 @@ result.Value()  // interface{} which may be nil, string, float64, or bool
 
 // Or just get the value in one step.
 gjson.Get(json, "name.last").Value()
-
-// Check for the existence of a value.
-if gjson.Get(json, "name.last").Exists(){
-	println("value exists")
-}
-
 ```
 
-To directly access the value from its original type:
+To directly access the value:
 
 ```go
 result.Type    // can be String, Number, True, False, Null, or JSON
@@ -108,6 +101,25 @@ result.Str     // holds the string
 result.Num     // holds the float64 number
 result.Raw     // holds the raw json
 ```
+
+## Check for the existence of a value
+
+Sometimes you may want to see if the value actually existed in the json document.
+
+```
+value := gjson.Get(json, "name.last")
+if !value.Exists() {
+	println("no last name")
+} else {
+	println(value.String())
+}
+
+// Or as one step
+if gjson.Get(json, "name.last").Exists(){
+	println("has a last name")
+}
+```
+
 
 ## Performance
 
