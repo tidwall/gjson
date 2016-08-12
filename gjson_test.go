@@ -61,12 +61,42 @@ func TestRandomValidStrings(t *testing.T) {
 		}
 	}
 }
+func testEscapePath(t *testing.T, json, path, expect string) {
+	if Get(json, path).String() != expect {
+		t.Fatalf("expected '%v', got '%v'", expect, Get(json, path).String())
+	}
+}
+
+func TestEscapePath(t *testing.T) {
+	json := `{
+		"test":{
+			"*":"valZ",
+			"*v":"val0",
+			"keyv*":"val1",
+			"key*v":"val2",
+			"keyv?":"val3",
+			"key?v":"val4",
+			"keyv.":"val5",
+			"key.v":"val6",
+			"keyk*":{"key?":"val7"}
+		}
+	}`
+
+	testEscapePath(t, json, "test.\\*", "valZ")
+	testEscapePath(t, json, "test.\\*v", "val0")
+	testEscapePath(t, json, "test.keyv\\*", "val1")
+	testEscapePath(t, json, "test.key\\*v", "val2")
+	testEscapePath(t, json, "test.keyv\\?", "val3")
+	testEscapePath(t, json, "test.key\\?v", "val4")
+	testEscapePath(t, json, "test.keyv\\.", "val5")
+	testEscapePath(t, json, "test.key\\.v", "val6")
+	testEscapePath(t, json, "test.keyk\\*.key\\?", "val7")
+}
 
 // this json block is poorly formed on purpose.
 var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 	"noop":{"what is a wren?":"a bird"},
 	"happy":true,"immortal":false,
-	"escaped\\\"":true,
 	"arr":["1",2,"3",{"hello":"world"},"4",5],
 	"vals":[1,2,3,{"sadf":sdf"asdf"}],"name":{"first":"tom","last":null}}`
 
@@ -121,10 +151,6 @@ func TestBasic(t *testing.T) {
 
 	if Get(basicJSON, "").Value() != nil {
 		t.Fatal("should be nil")
-	}
-
-	if !Get(basicJSON, "escaped\\\"").Value().(bool) {
-		t.Fatal("could not escape")
 	}
 
 	Get(basicJSON, "vals.hello")

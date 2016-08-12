@@ -121,7 +121,38 @@ func Get(json string, path string) Result {
 
 	// parse the path. just split on the dot
 	for i := 0; i < len(path); i++ {
-		if path[i] == '.' {
+	next_part:
+		if path[i] == '\\' {
+			// go into escape mode
+			epart := []byte(path[s:i])
+			i++
+			if i < len(path) {
+				epart = append(epart, path[i])
+				i++
+				for ; i < len(path); i++ {
+					if path[i] == '\\' {
+						i++
+						if i < len(path) {
+							epart = append(epart, path[i])
+						}
+						continue
+					} else if path[i] == '.' {
+						parts = append(parts, part{wild: wild, key: string(epart)})
+						if wild {
+							wild = false
+						}
+						s = i + 1
+						i++
+						goto next_part
+					} else if path[i] == '*' || path[i] == '?' {
+						wild = true
+					}
+					epart = append(epart, path[i])
+				}
+			}
+			parts = append(parts, part{wild: wild, key: string(epart)})
+			goto end_parts
+		} else if path[i] == '.' {
 			parts = append(parts, part{wild: wild, key: path[s:i]})
 			if wild {
 				wild = false
@@ -132,6 +163,7 @@ func Get(json string, path string) Result {
 		}
 	}
 	parts = append(parts, part{wild: wild, key: path[s:]})
+end_parts:
 
 	var i, depth int
 	var squashed string
@@ -223,33 +255,19 @@ read_key:
 	var val string
 	var vc byte
 	for ; i < len(json); i++ {
-		switch json[i] {
-		case 't', 'f', 'n': // true, false, null
-			vc = json[i]
-			s = i
-			i++
-			for ; i < len(json); i++ {
-				// let's pick up any character. it doesn't matter.
-				if json[i] < 'a' || json[i] > 'z' {
-					break
-				}
-			}
-			val = json[s:i]
-			goto proc_val
-		case '{': // open object
-			i++
-			vc = '{'
-			goto proc_delim
-		case '[': // open array
-			i++
-			vc = '['
-			goto proc_delim
-		case '"': // string
+		if json[i] < '"' { // control character
+			continue
+		}
+		if json[i] < '-' { // string
 			i++
 			// we read the val below
 			vc = '"'
 			goto proc_val
-		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9': // number
+		}
+		if json[i] < '[' { // number
+			if json[i] == ':' {
+				continue
+			}
 			vc = '0'
 			s = i
 			i++
@@ -265,6 +283,28 @@ read_key:
 			val = json[s:i]
 			goto proc_val
 		}
+		if json[i] < ']' { // '['
+			i++
+			vc = '['
+			goto proc_delim
+		}
+		if json[i] < 'u' { // true, false, null
+			vc = json[i]
+			s = i
+			i++
+			for ; i < len(json); i++ {
+				// let's pick up any character. it doesn't matter.
+				if json[i] < 'a' || json[i] > 'z' {
+					break
+				}
+			}
+			val = json[s:i]
+			goto proc_val
+		}
+		// must be an open objet
+		i++
+		vc = '{'
+		goto proc_delim
 	}
 
 	// sanity check before we move on
@@ -280,37 +320,39 @@ proc_delim:
 		// the first '[' or '{' has already been read
 		depth := 1
 		for ; i < len(json); i++ {
-			if json[i] == '{' || json[i] == '[' {
-				depth++
-			} else if json[i] == '}' || json[i] == ']' {
-				depth--
-				if depth == 0 {
-					i++
-					break
-				}
-			} else if json[i] == '"' {
-				i++
-				s2 := i
-				for ; i < len(json); i++ {
-					if json[i] == '"' {
-						// look for an escaped slash
-						if json[i-1] == '\\' {
-							n := 0
-							for j := i - 2; j > s2-1; j-- {
-								if json[j] != '\\' {
-									break
-								}
-								n++
-							}
-							if n%2 == 0 {
-								continue
-							}
-						}
+			if json[i] >= '"' && json[i] <= '}' {
+				if json[i] == '{' || json[i] == '[' {
+					depth++
+				} else if json[i] == '}' || json[i] == ']' {
+					depth--
+					if depth == 0 {
+						i++
 						break
 					}
-				}
-				if i == len(json) {
-					break
+				} else if json[i] == '"' {
+					i++
+					s2 := i
+					for ; i < len(json); i++ {
+						if json[i] == '"' {
+							// look for an escaped slash
+							if json[i-1] == '\\' {
+								n := 0
+								for j := i - 2; j > s2-1; j-- {
+									if json[j] != '\\' {
+										break
+									}
+									n++
+								}
+								if n%2 == 0 {
+									continue
+								}
+							}
+							break
+						}
+					}
+					if i == len(json) {
+						break
+					}
 				}
 			}
 		}
