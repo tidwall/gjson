@@ -57,7 +57,7 @@ func (t Result) String() string {
 //		println("value exists")
 //  }
 func (t Result) Exists() bool {
-	return t.Type != Null && len(t.Raw) != 0
+	return t.Type != Null || len(t.Raw) != 0
 }
 
 // Value returns one of these types:
