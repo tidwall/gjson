@@ -495,17 +495,27 @@ func BenchmarkEasyJSONLexer(t *testing.B) {
 
 func BenchmarkJSONParserGet(t *testing.B) {
 	data := []byte(exampleJSON)
-	keys := make([][]string, len(benchPaths))
+	keys := make([][]string, 0, len(benchPaths))
 	for i := 0; i < len(benchPaths); i++ {
 		keys = append(keys, strings.Split(benchPaths[i], "."))
 	}
 	t.ResetTimer()
 	t.ReportAllocs()
 	for i := 0; i < t.N; i++ {
-		for j := 0; j < len(benchPaths); j++ {
-			_, _, _, err := jsonparser.Get(data, keys[j]...)
-			if err != nil {
-				t.Fatal("did not find the value")
+		for j, k := range keys {
+			if j == 1 {
+				// "widget.image.hOffset" is a number
+				v, _ := jsonparser.GetInt(data, k...)
+				if v == 0 {
+					t.Fatal("did not find the value")
+				}
+			} else {
+				// "widget.window.name",
+				// "widget.text.onMouseUp",
+				v, _ := jsonparser.GetString(data, k...)
+				if v == "" {
+					t.Fatal("did not find the value")
+				}
 			}
 		}
 	}
