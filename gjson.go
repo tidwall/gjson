@@ -51,6 +51,15 @@ func (t Result) String() string {
 	}
 }
 
+// Exists returns true if value exists.
+//
+//  if gjson.Get(json, "name.last").Exists(){
+//		println("value exists")
+//  }
+func (t Result) Exists() bool {
+	return t.Type != Null && len(t.Raw) != 0
+}
+
 // Value returns one of these types:
 //
 //	bool, for JSON booleans
@@ -97,6 +106,8 @@ type frame struct {
 // A key may contain special wildcard characters '*' and '?'.
 // To access an array value use the index as the key.
 // To get the number of elements in an array use the '#' character.
+// The dot and wildcard character can be escaped with '\'.
+//
 //  {
 //    "name": {"first": "Tom", "last": "Anderson"},
 //    "age":37,

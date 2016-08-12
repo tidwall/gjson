@@ -103,6 +103,9 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 func TestBasic(t *testing.T) {
 	var token Result
 
+	if !Get(basicJSON, "name.last").Exists() {
+		t.Fatal("expected true, got false")
+	}
 	token = Get(basicJSON, "name.here")
 	if token.String() != "B\\\"R" {
 		t.Fatal("expecting 'B\\\"R'", "got", token.String())
