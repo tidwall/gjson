@@ -436,6 +436,7 @@ proc_val:
 			//	return Result{}
 		} else {
 			f.stype = vc
+			f.count = 0
 			stack = append(stack, f)
 			depth++
 			goto read_key

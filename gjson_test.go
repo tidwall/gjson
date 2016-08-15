@@ -97,12 +97,24 @@ func TestEscapePath(t *testing.T) {
 var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 	"noop":{"what is a wren?":"a bird"},
 	"happy":true,"immortal":false,
+	"items":[1,2,3,{"tags":[1,2,3],"points":[[1,2],[3,4]]},4,5,6,7],
 	"arr":["1",2,"3",{"hello":"world"},"4",5],
 	"vals":[1,2,3,{"sadf":sdf"asdf"}],"name":{"first":"tom","last":null}}`
 
 func TestBasic(t *testing.T) {
 	var token Result
-
+	if Get(basicJSON, "items.3.tags.#").Num != 3 {
+		t.Fatalf("expected 3, got %v", Get(basicJSON, "items.3.tags.#").Num)
+	}
+	if Get(basicJSON, "items.3.points.1.#").Num != 2 {
+		t.Fatalf("expected 2, got %v", Get(basicJSON, "items.3.points.1.#").Num)
+	}
+	if Get(basicJSON, "items.#").Num != 8 {
+		t.Fatalf("expected 6, got %v", Get(basicJSON, "items.#").Num)
+	}
+	if Get(basicJSON, "vals.#").Num != 4 {
+		t.Fatalf("expected 4, got %v", Get(basicJSON, "vals.#").Num)
+	}
 	if !Get(basicJSON, "name.last").Exists() {
 		t.Fatal("expected true, got false")
 	}
