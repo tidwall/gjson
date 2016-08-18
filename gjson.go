@@ -4,7 +4,7 @@ package gjson
 import "strconv"
 
 // Type is Result type
-type Type byte
+type Type int
 
 const (
 	// Null is a null json value
@@ -177,10 +177,11 @@ func Get(json string, path string) Result {
 end_parts:
 
 	var i, depth int
-	var squashed string
 	var f frame
 	var matched bool
-	var stack = make([]frame, 0, 4)
+	var stack = make([]frame, 1, 4)
+	var value Result
+	var vc byte
 
 	depth = 1
 
@@ -200,7 +201,7 @@ end_parts:
 		}
 	}
 
-	stack = append(stack, f)
+	stack[0].stype = f.stype
 
 	// search for key
 read_key:
@@ -263,8 +264,6 @@ read_key:
 
 	// read to the value token
 	// there's likely a colon here, but who cares. just burn past it.
-	var val string
-	var vc byte
 	for ; i < len(json); i++ {
 		if json[i] < '"' { // control character
 			continue
@@ -291,7 +290,7 @@ read_key:
 				}
 				break
 			}
-			val = json[s:i]
+			value.Raw = json[s:i]
 			goto proc_val
 		}
 		if json[i] < ']' { // '['
@@ -309,7 +308,7 @@ read_key:
 					break
 				}
 			}
-			val = json[s:i]
+			value.Raw = json[s:i]
 			goto proc_val
 		}
 		// must be an open objet
@@ -317,6 +316,7 @@ read_key:
 		vc = '{'
 		goto proc_delim
 	}
+	vc = 0
 
 	// sanity check before we move on
 	if i >= len(json) {
@@ -367,7 +367,7 @@ proc_delim:
 				}
 			}
 		}
-		squashed = json[s:i]
+		value.Raw = json[s:i]
 		// -- END SQUASH -- //
 	}
 
@@ -376,11 +376,8 @@ proc_val:
 	if matched {
 		// hit, that's good!
 		if depth == len(parts) {
-			var value Result
-			value.Raw = val
 			switch vc {
 			case '{', '[':
-				value.Raw = squashed
 				value.Type = JSON
 			case 'n':
 				value.Type = Null
@@ -396,7 +393,8 @@ proc_val:
 				s = i
 				for ; i < len(json); i++ {
 					if json[i] == '"' {
-						value.Str = json[s:i]
+						value.Raw = json[s:i]
+						value.Str = value.Raw
 						i++
 						break
 					}
@@ -420,7 +418,8 @@ proc_val:
 								break
 							}
 						}
-						value.Str = unescape(json[s:i])
+						value.Raw = json[s:i]
+						value.Str = unescape(value.Raw)
 						i++
 						break
 					}
@@ -428,12 +427,9 @@ proc_val:
 				// end readstr
 			case '0':
 				value.Type = Number
-				value.Num, _ = strconv.ParseFloat(val, 64)
+				value.Num, _ = strconv.ParseFloat(value.Raw, 64)
 			}
 			return value
-			//} else if vc != '{' {
-			//  can only deep search objects
-			//	return Result{}
 		} else {
 			f.stype = vc
 			f.count = 0
