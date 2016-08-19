@@ -133,44 +133,48 @@ func Get(json string, path string) Result {
 	// parse the path. just split on the dot
 	for i := 0; i < len(path); i++ {
 	next_part:
-		if path[i] == '\\' {
-			// go into escape mode
-			epart := []byte(path[s:i])
-			i++
-			if i < len(path) {
-				epart = append(epart, path[i])
+		// be optimistic that the path mostly contains lowercase and
+		// underscore characters.
+		if path[i] <= '\\' {
+			if path[i] == '\\' {
+				// go into escape mode.
+				epart := []byte(path[s:i])
 				i++
-				for ; i < len(path); i++ {
-					if path[i] == '\\' {
-						i++
-						if i < len(path) {
-							epart = append(epart, path[i])
-						}
-						continue
-					} else if path[i] == '.' {
-						parts = append(parts, part{wild: wild, key: string(epart)})
-						if wild {
-							wild = false
-						}
-						s = i + 1
-						i++
-						goto next_part
-					} else if path[i] == '*' || path[i] == '?' {
-						wild = true
-					}
+				if i < len(path) {
 					epart = append(epart, path[i])
+					i++
+					for ; i < len(path); i++ {
+						if path[i] == '\\' {
+							i++
+							if i < len(path) {
+								epart = append(epart, path[i])
+							}
+							continue
+						} else if path[i] == '.' {
+							parts = append(parts, part{wild: wild, key: string(epart)})
+							if wild {
+								wild = false
+							}
+							s = i + 1
+							i++
+							goto next_part
+						} else if path[i] == '*' || path[i] == '?' {
+							wild = true
+						}
+						epart = append(epart, path[i])
+					}
 				}
+				parts = append(parts, part{wild: wild, key: string(epart)})
+				goto end_parts
+			} else if path[i] == '.' {
+				parts = append(parts, part{wild: wild, key: path[s:i]})
+				if wild {
+					wild = false
+				}
+				s = i + 1
+			} else if path[i] == '*' || path[i] == '?' {
+				wild = true
 			}
-			parts = append(parts, part{wild: wild, key: string(epart)})
-			goto end_parts
-		} else if path[i] == '.' {
-			parts = append(parts, part{wild: wild, key: path[s:i]})
-			if wild {
-				wild = false
-			}
-			s = i + 1
-		} else if path[i] == '*' || path[i] == '?' {
-			wild = true
 		}
 	}
 	parts = append(parts, part{wild: wild, key: path[s:]})
@@ -187,33 +191,37 @@ end_parts:
 
 	// look for first delimiter
 	for ; i < len(json); i++ {
-		if json[i] > ' ' {
-			if json[i] == '{' {
-				f.stype = '{'
-			} else if json[i] == '[' {
-				f.stype = '['
-			} else {
-				// not a valid type
-				return Result{}
-			}
+		if json[i] == '{' {
+			f.stype = '{'
+			i++
+			stack[0].stype = f.stype
+			break
+		} else if json[i] == '[' {
+			f.stype = '['
+			stack[0].stype = f.stype
 			i++
 			break
+		} else if json[i] <= ' ' {
+			continue
+		} else {
+			return Result{}
 		}
 	}
 
-	stack[0].stype = f.stype
-
-	// search for key
+	// read the next key
 read_key:
 	if f.stype == '[' {
+		// for arrays we use the index of the value as the key.
+		// so "0" is the key for the first value, and "10" is the
+		// key for the 10th value.
 		f.key = strconv.FormatInt(int64(f.count), 10)
 		f.count++
 	} else {
+		// for objects we must parse the next string.
 		for ; i < len(json); i++ {
+			// read string
 			if json[i] == '"' {
-				//read to end of key
 				i++
-				// readstr
 				// the first double-quote has already been read
 				s = i
 				for ; i < len(json); i++ {
@@ -249,16 +257,17 @@ read_key:
 				}
 				break
 			}
+			// end read string
 		}
 	}
-	// end readstr
 
-	// we have a brand new key.
+	// we have a brand new (possibly shiny) key.
 	// is it the key that we are looking for?
 	if parts[depth-1].wild {
 		// it's a wildcard path element
 		matched = wildcardMatch(f.key, parts[depth-1].key)
 	} else {
+		// just a straight up equality check
 		matched = parts[depth-1].key == f.key
 	}
 
@@ -325,22 +334,16 @@ read_key:
 
 proc_delim:
 	if (matched && depth == len(parts)) || !matched {
-		// -- BEGIN SQUASH -- //
+		// begin squash
 		// squash the value, ignoring all nested arrays and objects.
 		s = i - 1
 		// the first '[' or '{' has already been read
 		depth := 1
+	squash:
 		for ; i < len(json); i++ {
 			if json[i] >= '"' && json[i] <= '}' {
-				if json[i] == '{' || json[i] == '[' {
-					depth++
-				} else if json[i] == '}' || json[i] == ']' {
-					depth--
-					if depth == 0 {
-						i++
-						break
-					}
-				} else if json[i] == '"' {
+				switch json[i] {
+				case '"':
 					i++
 					s2 := i
 					for ; i < len(json); i++ {
@@ -361,14 +364,19 @@ proc_delim:
 							break
 						}
 					}
-					if i == len(json) {
-						break
+				case '{', '[':
+					depth++
+				case '}', ']':
+					depth--
+					if depth == 0 {
+						i++
+						break squash
 					}
 				}
 			}
 		}
-		value.Raw = json[s:i]
-		// -- END SQUASH -- //
+		// end squash
+		// the 'i' and 's' values should fall-though to the proc_val function
 	}
 
 	// process the value
@@ -379,6 +387,7 @@ proc_val:
 			switch vc {
 			case '{', '[':
 				value.Type = JSON
+				value.Raw = json[s:i]
 			case 'n':
 				value.Type = Null
 			case 't':

@@ -129,13 +129,13 @@ Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/js
 and [jsonparser](https://github.com/buger/jsonparser)
 
 ```
-BenchmarkGJSONGet-8             3000000    440 ns/op     0 B/op    0 allocs/op
-BenchmarkJSONUnmarshalMap-8      600000  10738 ns/op  3176 B/op   69 allocs/op
-BenchmarkJSONUnmarshalStruct-8   600000  11635 ns/op  1960 B/op   69 allocs/op
-BenchmarkJSONDecoder-8           300000  17193 ns/op  4864 B/op  184 allocs/op
-BenchmarkFFJSONLexer-8          1500000   3773 ns/op  1024 B/op    8 allocs/op
-BenchmarkEasyJSONLexer-8        3000000   1134 ns/op   741 B/op    6 allocs/op
-BenchmarkJSONParserGet-8        3000000    596 ns/op    21 B/op    0 allocs/op
+BenchmarkGJSONGet-8              	 3000000	       373 ns/op	       0 B/op	       0 allocs/op
+BenchmarkJSONUnmarshalMap-8      	  600000	      8884 ns/op	    3048 B/op	      69 allocs/op
+BenchmarkJSONUnmarshalStruct-8   	  600000	      9045 ns/op	    1832 B/op	      69 allocs/op
+BenchmarkJSONDecoder-8           	  300000	     14134 ns/op	    4224 B/op	     184 allocs/op
+BenchmarkFFJSONLexer-8           	 1500000	      3182 ns/op	     896 B/op	       8 allocs/op
+BenchmarkEasyJSONLexer-8         	 3000000	       932 ns/op	     613 B/op	       6 allocs/op
+BenchmarkJSONParserGet-8         	 3000000	       444 ns/op	      21 B/op	       0 allocs/op
 ```
 
 JSON document used:
@@ -177,7 +177,7 @@ widget.text.onMouseUp
 ```
 
 
-*These are the results from running the benchmarks on a MacBook Pro 15" 2.8 GHz Intel Core i7:*
+*These benchmarks were run on a MacBook Pro 15" 2.8 GHz Intel Core i7 using Go 1.7.*
 
 ## Contact
 Josh Baker [@tidwall](http://twitter.com/tidwall)

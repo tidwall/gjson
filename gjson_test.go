@@ -222,60 +222,31 @@ func TestLess(t *testing.T) {
 	assert(t, stringLessInsensitive("124abcde", "125abcde"))
 }
 
-/*
-func TestTwitter(t *testing.T) {
-	data, err := ioutil.ReadFile("twitter.json")
-	if err != nil {
-		return
-	}
-	token := Get(string(data), "search_metadata.max_id")
-	if token.Num != 505874924095815700 {
-		t.Fatalf("expecting %d\n", 505874924095815700)
-	}
-
-}
-func BenchmarkTwitter(t *testing.B) {
-	// the twitter.json file must be present
-	data, err := ioutil.ReadFile("twitter.json")
-	if err != nil {
-		return
-	}
-	json := string(data)
-	t.ResetTimer()
-	for i := 0; i < t.N; i++ {
-		token := Get(json, "search_metadata.max_id")
-		if token.Type != Number || token.Raw != "505874924095815700" || token.Num != 505874924095815700 {
-			t.Fatal("invalid response")
+var exampleJSON = `{
+	"widget": {
+		"debug": "on",
+		"window": {
+			"title": "Sample Konfabulator Widget",
+			"name": "main_window",
+			"width": 500,
+			"height": 500
+		},
+		"image": { 
+			"src": "Images/Sun.png",
+			"hOffset": 250,
+			"vOffset": 250,
+			"alignment": "center"
+		},
+		"text": {
+			"data": "Click Here",
+			"size": 36,
+			"style": "bold",
+			"vOffset": 100,
+			"alignment": "center",
+			"onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
 		}
 	}
-}
-*/
-
-var exampleJSON = ` 
-{"widget": {
-    "debug": "on",
-    "window": {
-        "title": "Sample Konfabulator Widget",
-        "name": "main_window",
-        "width": 500,
-        "height": 500
-    },
-    "image": { 
-        "src": "Images/Sun.png",
-        "hOffset": 250,
-        "vOffset": 250,
-        "alignment": "center"
-    },
-    "text": {
-        "data": "Click Here",
-        "size": 36,
-        "style": "bold",
-        "vOffset": 100,
-        "alignment": "center",
-        "onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
-    }
-}}    
-`
+}`
 
 type BenchStruct struct {
 	Widget struct {
