@@ -121,23 +121,24 @@ type frame struct {
 //  "c?ildren.0"         >> "Sara"
 //
 func Get(json string, path string) Result {
-	var s int
-	var wild bool
-	var parts = make([]part, 0, 4)
+	var s int                      // starting index variable
+	var wild bool                  // wildcard indicator
+	var parts = make([]part, 0, 4) // parsed path parts
 
-	// do nothing when no path specified
 	if len(path) == 0 {
-		return Result{} // nothing
+		// do nothing when no path specified and return an empty result.
+		return Result{}
 	}
 
-	// parse the path. just split on the dot
+	// parse the path into multiple parts.
 	for i := 0; i < len(path); i++ {
 	next_part:
 		// be optimistic that the path mostly contains lowercase and
 		// underscore characters.
 		if path[i] <= '\\' {
 			if path[i] == '\\' {
-				// go into escape mode.
+				// go into escape mode. this is a slower path that
+				// strips off the escape character from the part.
 				epart := []byte(path[s:i])
 				i++
 				if i < len(path) {
@@ -164,32 +165,36 @@ func Get(json string, path string) Result {
 						epart = append(epart, path[i])
 					}
 				}
+				// append the last part
 				parts = append(parts, part{wild: wild, key: string(epart)})
 				goto end_parts
 			} else if path[i] == '.' {
+				// append a new part
 				parts = append(parts, part{wild: wild, key: path[s:i]})
 				if wild {
-					wild = false
+					wild = false // reset the wild flag
 				}
+				// set the starting index to one past the dot.
 				s = i + 1
 			} else if path[i] == '*' || path[i] == '?' {
+				// set the wild flag to indicate that the part is a wildcard.
 				wild = true
 			}
 		}
 	}
+	// append the last part
 	parts = append(parts, part{wild: wild, key: path[s:]})
 end_parts:
+	var i int                       // index of current json character
+	var depth int                   // the current stack depth
+	var f frame                     // the current frame
+	var matched bool                // flag used for key/part matching
+	var stack = make([]frame, 1, 4) // the frame stack
+	var value Result                // the final value, also used for temp store
+	var vc byte                     // the current token value chacter type
 
-	var i, depth int
-	var f frame
-	var matched bool
-	var stack = make([]frame, 1, 4)
-	var value Result
-	var vc byte
-
-	depth = 1
-
-	// look for first delimiter
+	// look for first delimiter. only allow arrays and objects, other
+	// json types will fail. it's ok for control characters to passthrough.
 	for ; i < len(json); i++ {
 		if json[i] == '{' {
 			f.stype = '{'
@@ -208,7 +213,10 @@ end_parts:
 		}
 	}
 
-	// read the next key
+	// assume that the depth is at least one
+	depth = 1
+
+	// read the next key from the json string
 read_key:
 	if f.stype == '[' {
 		// for arrays we use the index of the value as the key.
@@ -217,24 +225,40 @@ read_key:
 		f.key = strconv.FormatInt(int64(f.count), 10)
 		f.count++
 	} else {
-		// for objects we must parse the next string.
+		// for objects we must parse the next string. this string will
+		// become the key that is compared against the path parts.
 		for ; i < len(json); i++ {
-			// read string
+			// begin key string reading routine.
 			if json[i] == '"' {
 				i++
-				// the first double-quote has already been read
+				// set the starting index. the first double-quote has already
+				// been read.
 				s = i
+				// loop through each character in the string looking for the
+				// the double-quote termination character. it's possible that
+				// the string contains an escape slash character. if so, we
+				// must do a nested loop that will look for an isolated
+				// double-quote terminator.
 				for ; i < len(json); i++ {
 					if json[i] == '"' {
+						// a simple string that contains no escape characters.
+						// assign this to the current frame key and we are
+						// done parsing the key.
 						f.key = json[s:i]
 						i++
 						break
 					}
 					if json[i] == '\\' {
+						// escape character detected. we now look for the
+						// the double-quote terminator.
 						i++
 						for ; i < len(json); i++ {
 							if json[i] == '"' {
-								// look for an escaped slash
+								// possibly the end of the string, but let's
+								// look to see if the previous character was
+								// an escape slash. if so then we must keep
+								// reading backwards to see if the slash has a
+								// prefixed slashed, and so forth.
 								if json[i-1] == '\\' {
 									n := 0
 									for j := i - 2; j > s-1; j-- {
@@ -244,12 +268,19 @@ read_key:
 										n++
 									}
 									if n%2 == 0 {
+										// the double-quote is not a terminator.
+										// keep reading the string.
 										continue
 									}
 								}
+								// we found the correct double-quote terminator.
+								// stop reading the string.
 								break
 							}
 						}
+						// the string contains escape sequences so we must
+						// unescape and then assign to the current frame key.
+						// done parsing the key
 						f.key = unescape(json[s:i])
 						i++
 						break
@@ -257,82 +288,112 @@ read_key:
 				}
 				break
 			}
-			// end read string
+			// end of string key reading routine
 		}
 	}
 
 	// we have a brand new (possibly shiny) key.
 	// is it the key that we are looking for?
 	if parts[depth-1].wild {
-		// it's a wildcard path element
+		// the path part contains a wildcard character. we must do a wildcard
+		// match to determine if it truly matches.
 		matched = wildcardMatch(f.key, parts[depth-1].key)
 	} else {
 		// just a straight up equality check
 		matched = parts[depth-1].key == f.key
 	}
 
-	// read to the value token
-	// there's likely a colon here, but who cares. just burn past it.
+	// read the value
 	for ; i < len(json); i++ {
-		if json[i] < '"' { // control character
+		// any thing less than  a double-quote is likely whitespace.
+		// just burn past these.
+		if json[i] < '"' {
 			continue
 		}
-		if json[i] < '-' { // string
+		// anything less that a dash is likely a double-quote. let's
+		// assume that it is.
+		if json[i] < '-' {
 			i++
-			// we read the val below
 			vc = '"'
+			// defer reading the string value until we know for sure
+			// that we want it. if we don't want it, then we will
+			// parse it using a quicker method than if we do want it.
 			goto proc_val
 		}
-		if json[i] < '[' { // number
+		// any character less than an open bracket is likely a number.
+		if json[i] < '[' {
+			// with one exception, the colon character. we do not care
+			// about the colon character. just burn past it.
 			if json[i] == ':' {
 				continue
 			}
 			vc = '0'
 			s = i
 			i++
-			// look for characters that cannot be in a number
+			// look for any character that might terminate a number
+			// break on whitespace, comma, ']', and '}'.
 			for ; i < len(json); i++ {
-				switch json[i] {
-				default:
+				// less than dash might have valid characters
+				if json[i] <= '-' {
+					if json[i] <= ' ' || json[i] == ',' {
+						// break on whitespace and comma
+						break
+					}
+					// could be a '+' or '-'. let's assume so.
 					continue
-				case ' ', '\t', '\r', '\n', ',', ']', '}':
 				}
+				if json[i] < ']' {
+					// probably a valid number
+					continue
+				}
+				if json[i] == 'e' || json[i] == 'E' {
+					// allow for exponential numbers
+					continue
+				}
+				// likely a ']' or '}'
 				break
 			}
-			value.Raw = json[s:i]
+			// we have raw number. jump to the process value routine.
 			goto proc_val
 		}
-		if json[i] < ']' { // '['
+		// any character less than ']' is likely '['. let's assume
+		// it's an open-array character.
+		if json[i] < ']' {
 			i++
 			vc = '['
-			goto proc_delim
+			// jump to process delimiter routine.
+			goto proc_nested
 		}
-		if json[i] < 'u' { // true, false, null
-			vc = json[i]
+		// any character less than 'u' likely means tha the value is
+		// 'true', 'false', or 'null'.
+		if json[i] < 'u' {
+			vc = json[i] // assign the vc token character to the actual.
 			s = i
 			i++
 			for ; i < len(json); i++ {
-				// let's pick up any character. it doesn't matter.
+				// let's pick up any non-alpha lowercase character as the
+				// terminator. it doesn't matter.
 				if json[i] < 'a' || json[i] > 'z' {
 					break
 				}
 			}
-			value.Raw = json[s:i]
+			// we have raw literal. jump to the process value routine.
 			goto proc_val
 		}
-		// must be an open objet
+		// if we reached this far, then the value must be a nested object.
 		i++
 		vc = '{'
-		goto proc_delim
+		// jump to process delimiter routine.
+		goto proc_nested
 	}
 	vc = 0
-
-	// sanity check before we move on
+	// ran out of json buffer
 	if i >= len(json) {
 		return Result{}
 	}
 
-proc_delim:
+	// process nested array or object
+proc_nested:
 	if (matched && depth == len(parts)) || !matched {
 		// begin squash
 		// squash the value, ignoring all nested arrays and objects.
@@ -384,10 +445,10 @@ proc_val:
 	if matched {
 		// hit, that's good!
 		if depth == len(parts) {
+			value.Raw = json[s:i]
 			switch vc {
 			case '{', '[':
 				value.Type = JSON
-				value.Raw = json[s:i]
 			case 'n':
 				value.Type = Null
 			case 't':
