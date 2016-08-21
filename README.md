@@ -48,11 +48,14 @@ This will print:
 Prichard
 ```
 
-A path is a series of keys separated by a dot. 
-A key may contain special wildcard characters '\*' and '?'. 
-To access an array value use the index as the key. 
+## Path Syntax
+
+A path is a series of keys separated by a dot.
+A key may contain special wildcard characters '\*' and '?'.
+To access an array value use the index as the key.
 To get the number of elements in an array or to access a child path, use the '#' character.
 The dot and wildcard characters can be escaped with '\'.
+
 ```
 {
   "name": {"first": "Tom", "last": "Anderson"},
@@ -64,6 +67,7 @@ The dot and wildcard characters can be escaped with '\'.
 	{"first": "Roger", "last": "Craig"}
   ]
 }
+
 "name.last"          >> "Anderson"
 "age"                >> 37
 "children.#"         >> 3
@@ -72,10 +76,8 @@ The dot and wildcard characters can be escaped with '\'.
 "c?ildren.0"         >> "Sara"
 "fav\.movie"         >> "Deer Hunter"
 "friends.#.first"    >> [ "James", "Roger" ]
+"friends.1.last"     >> "Craig"
 ```
-
-
-
 
 ## Result Type
 
