@@ -208,6 +208,13 @@ func Get(json string, path string) Result {
 						goto next_part
 					} else if path[i] == '*' || path[i] == '?' {
 						wild = true
+					} else if path[i] == '#' {
+						arrch = true
+						if s == i && i+1 < len(path) && path[i+1] == '.' {
+							alogok = true
+							alogkey = path[i+2:]
+							path = path[:i+1]
+						}
 					}
 					epart = append(epart, path[i])
 				}
@@ -279,6 +286,9 @@ read_key:
 				// must do a nested loop that will look for an isolated
 				// double-quote terminator.
 				for ; i < len(json); i++ {
+					if json[i] > '\\' {
+						continue
+					}
 					if json[i] == '"' {
 						// a simple string that contains no escape characters.
 						// assign this to the current frame key and we are
@@ -447,6 +457,9 @@ proc_nested:
 					i++
 					s2 := i
 					for ; i < len(json); i++ {
+						if json[i] > '\\' {
+							continue
+						}
 						if json[i] == '"' {
 							// look for an escaped slash
 							if json[i-1] == '\\' {
@@ -484,16 +497,19 @@ proc_val:
 	if matched {
 		// hit, that's good!
 		if depth == len(parts) {
-			value.Raw = json[s:i]
 			switch vc {
 			case '{', '[':
 				value.Type = JSON
+				value.Raw = json[s:i]
 			case 'n':
 				value.Type = Null
+				value.Raw = json[s:i]
 			case 't':
 				value.Type = True
+				value.Raw = json[s:i]
 			case 'f':
 				value.Type = False
+				value.Raw = json[s:i]
 			case '"':
 				value.Type = String
 				// readstr
@@ -502,14 +518,16 @@ proc_val:
 				s = i
 				for ; i < len(json); i++ {
 					if json[i] == '"' {
-						value.Raw = json[s:i]
-						value.Str = value.Raw
-						i++
+						value.Raw = json[s-1 : i+1]
+						value.Str = json[s:i]
 						break
 					}
 					if json[i] == '\\' {
 						i++
 						for ; i < len(json); i++ {
+							if json[i] > '\\' {
+								continue
+							}
 							if json[i] == '"' {
 								// look for an escaped slash
 								if json[i-1] == '\\' {
@@ -527,15 +545,15 @@ proc_val:
 								break
 							}
 						}
-						value.Raw = json[s:i]
-						value.Str = unescape(value.Raw)
-						i++
+						value.Raw = json[s-1 : i+1]
+						value.Str = unescape(json[s:i])
 						break
 					}
 				}
 				// end readstr
 			case '0':
 				value.Type = Number
+				value.Raw = json[s:i]
 				value.Num, _ = strconv.ParseFloat(value.Raw, 64)
 			}
 			return value
