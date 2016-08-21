@@ -108,6 +108,37 @@ result.Type    // can be String, Number, True, False, Null, or JSON
 result.Str     // holds the string
 result.Num     // holds the float64 number
 result.Raw     // holds the raw json
+result.Multi   // holds nested array values
+```
+
+## Get nested array values
+
+Suppose you want all the last names from the following json:
+
+```json
+{
+  "programmers": [
+    {
+      "firstName": "Janet", 
+      "lastName": "McLaughlin", 
+    }, {
+      "firstName": "Elliotte", 
+      "lastName": "Hunter", 
+    }, {
+      "firstName": "Jason", 
+      "lastName": "Harold", 
+    }
+  ]
+}`
+```
+
+You would use the path "programmers.#.lastName" like such:
+
+```go
+result := gjson.Get(json, "programmers.#.lastName")
+for _,name := range result.Multi {
+	println(name.String())
+}
 ```
 
 ## Check for the existence of a value
