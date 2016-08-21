@@ -137,51 +137,49 @@ func Get(json string, path string) Result {
 		// underscore characters.
 		if path[i] >= '_' {
 			continue
-		} else if path[i] <= '\\' {
-			if path[i] == '\\' {
-				// go into escape mode. this is a slower path that
-				// strips off the escape character from the part.
-				epart := []byte(path[s:i])
-				i++
-				if i < len(path) {
-					epart = append(epart, path[i])
-					i++
-					for ; i < len(path); i++ {
-						if path[i] == '\\' {
-							i++
-							if i < len(path) {
-								epart = append(epart, path[i])
-							}
-							continue
-						} else if path[i] == '.' {
-							parts = append(parts, part{wild: wild, key: string(epart)})
-							if wild {
-								wild = false
-							}
-							s = i + 1
-							i++
-							goto next_part
-						} else if path[i] == '*' || path[i] == '?' {
-							wild = true
-						}
-						epart = append(epart, path[i])
-					}
-				}
-				// append the last part
-				parts = append(parts, part{wild: wild, key: string(epart)})
-				goto end_parts
-			} else if path[i] == '.' {
-				// append a new part
-				parts = append(parts, part{wild: wild, key: path[s:i]})
-				if wild {
-					wild = false // reset the wild flag
-				}
-				// set the starting index to one past the dot.
-				s = i + 1
-			} else if path[i] == '*' || path[i] == '?' {
-				// set the wild flag to indicate that the part is a wildcard.
-				wild = true
+		} else if path[i] == '.' {
+			// append a new part
+			parts = append(parts, part{wild: wild, key: path[s:i]})
+			if wild {
+				wild = false // reset the wild flag
 			}
+			// set the starting index to one past the dot.
+			s = i + 1
+		} else if path[i] == '*' || path[i] == '?' {
+			// set the wild flag to indicate that the part is a wildcard.
+			wild = true
+		} else if path[i] == '\\' {
+			// go into escape mode. this is a slower path that
+			// strips off the escape character from the part.
+			epart := []byte(path[s:i])
+			i++
+			if i < len(path) {
+				epart = append(epart, path[i])
+				i++
+				for ; i < len(path); i++ {
+					if path[i] == '\\' {
+						i++
+						if i < len(path) {
+							epart = append(epart, path[i])
+						}
+						continue
+					} else if path[i] == '.' {
+						parts = append(parts, part{wild: wild, key: string(epart)})
+						if wild {
+							wild = false
+						}
+						s = i + 1
+						i++
+						goto next_part
+					} else if path[i] == '*' || path[i] == '?' {
+						wild = true
+					}
+					epart = append(epart, path[i])
+				}
+			}
+			// append the last part
+			parts = append(parts, part{wild: wild, key: string(epart)})
+			goto end_parts
 		}
 	}
 	// append the last part
