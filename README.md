@@ -51,14 +51,18 @@ Prichard
 A path is a series of keys separated by a dot. 
 A key may contain special wildcard characters '\*' and '?'. 
 To access an array value use the index as the key. 
-To get the number of elements in an array use the '#' character.
+To get the number of elements in an array or to access a child path, use the '#' character.
 The dot and wildcard characters can be escaped with '\'.
 ```
 {
   "name": {"first": "Tom", "last": "Anderson"},
   "age":37,
   "children": ["Sara","Alex","Jack"],
-  "fav.movie": "Deer Hunter"
+  "fav.movie": "Deer Hunter",
+  "friends": [
+	{"first": "James", "last": "Murphy"},
+	{"first": "Roger", "last": "Craig"}
+  ]
 }
 "name.last"          >> "Anderson"
 "age"                >> 37
@@ -67,7 +71,11 @@ The dot and wildcard characters can be escaped with '\'.
 "child*.2"           >> "Jack"
 "c?ildren.0"         >> "Sara"
 "fav\.movie"         >> "Deer Hunter"
+"friends.#.first"    >> [ "James", "Roger" ]
 ```
+
+
+
 
 ## Result Type
 

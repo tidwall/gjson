@@ -19,6 +19,8 @@ const (
 	True
 	// JSON is a raw block of JSON
 	JSON
+	// Multi is a subset of results
+	Multi
 )
 
 // Result represents a json value that is returned from Get().
@@ -31,6 +33,8 @@ type Result struct {
 	Str string
 	// Num is the json number
 	Num float64
+	// Multi is the subset of results
+	Multi []Result
 }
 
 // String returns a string representation of the value.
@@ -44,6 +48,15 @@ func (t Result) String() string {
 		return strconv.FormatFloat(t.Num, 'f', -1, 64)
 	case String:
 		return t.Str
+	case Multi:
+		var str string
+		for i, res := range t.Multi {
+			if i > 0 {
+				str += ","
+			}
+			str += res.String()
+		}
+		return str
 	case JSON:
 		return t.Raw
 	case True:
@@ -78,6 +91,12 @@ func (t Result) Value() interface{} {
 		return t.Num
 	case String:
 		return t.Str
+	case Multi:
+		var res = make([]interface{}, len(t.Multi))
+		for i, v := range t.Multi {
+			res[i] = v.Value()
+		}
+		return res
 	case JSON:
 		return t.Raw
 	case True:
@@ -105,13 +124,17 @@ type frame struct {
 // A path is a series of keys seperated by a dot.
 // A key may contain special wildcard characters '*' and '?'.
 // To access an array value use the index as the key.
-// To get the number of elements in an array use the '#' character.
+// To get the number of elements in an array or to access a child path, use the '#' character.
 // The dot and wildcard character can be escaped with '\'.
 //
 //  {
 //    "name": {"first": "Tom", "last": "Anderson"},
 //    "age":37,
-//    "children": ["Sara","Alex","Jack"]
+//    "children": ["Sara","Alex","Jack"],
+//    "friends": [
+//      {"first": "James", "last": "Murphy"},
+//      {"first": "Roger", "last": "Craig"}
+//    ]
 //  }
 //  "name.last"          >> "Anderson"
 //  "age"                >> 37
@@ -119,11 +142,16 @@ type frame struct {
 //  "children.1"         >> "Alex"
 //  "child*.2"           >> "Jack"
 //  "c?ildren.0"         >> "Sara"
+//  "friends.#.first"    >> [ "James", "Roger" ]
 //
 func Get(json string, path string) Result {
 	var s int                      // starting index variable
 	var wild bool                  // wildcard indicator
 	var parts = make([]part, 0, 4) // parsed path parts
+	var arrch bool
+	var alogok bool
+	var alogkey string
+	var alog []int
 
 	if len(path) == 0 {
 		// do nothing when no path specified and return an empty result.
@@ -148,6 +176,13 @@ func Get(json string, path string) Result {
 		} else if path[i] == '*' || path[i] == '?' {
 			// set the wild flag to indicate that the part is a wildcard.
 			wild = true
+		} else if path[i] == '#' {
+			arrch = true
+			if s == i && i+1 < len(path) && path[i+1] == '.' {
+				alogok = true
+				alogkey = path[i+2:]
+				path = path[:i+1]
+			}
 		} else if path[i] == '\\' {
 			// go into escape mode. this is a slower path that
 			// strips off the escape character from the part.
@@ -224,6 +259,10 @@ read_key:
 		// key for the 10th value.
 		f.key = strconv.FormatInt(int64(f.count), 10)
 		f.count++
+		if alogok && depth == len(parts) {
+			alog = append(alog, i)
+		}
+		//f.alog = append(f.alog, i)
 	} else {
 		// for objects we must parse the next string. this string will
 		// become the key that is compared against the path parts.
@@ -501,8 +540,7 @@ proc_val:
 			}
 			return value
 		} else {
-			f.stype = vc
-			f.count = 0
+			f = frame{stype: vc}
 			stack = append(stack, f)
 			depth++
 			goto read_key
@@ -539,8 +577,19 @@ proc_val:
 	for ; i < len(json); i++ {
 		switch json[i] {
 		case '}', ']':
-			if parts[depth-1].key == "#" {
-				return Result{Type: Number, Num: float64(f.count)}
+			if arrch && parts[depth-1].key == "#" {
+				if alogok {
+					result := Result{Type: Multi}
+					for j := 0; j < len(alog); j++ {
+						res := Get(json[alog[j]:], alogkey)
+						if res.Exists() {
+							result.Multi = append(result.Multi, res)
+						}
+					}
+					return result
+				} else {
+					return Result{Type: Number, Num: float64(f.count)}
+				}
 			}
 			// step the stack back
 			depth--
@@ -621,7 +670,7 @@ func unescape(json string) string { //, error) {
 // The caseSensitive paramater is used when the tokens are Strings.
 // The order when comparing two different type is:
 //
-//  Null < False < Number < String < True < JSON
+//  Null < False < Number < String < True < JSON < Multi
 //
 func (t Result) Less(token Result, caseSensitive bool) bool {
 	if t.Type < token.Type {
@@ -638,6 +687,16 @@ func (t Result) Less(token Result, caseSensitive bool) bool {
 			return t.Str < token.Str
 		}
 		return stringLessInsensitive(t.Str, token.Str)
+	case Multi:
+		for i := 0; i < len(t.Multi) && i < len(token.Multi); i++ {
+			if t.Multi[i].Less(token.Multi[i], caseSensitive) {
+				return true
+			}
+			if token.Multi[i].Less(t.Multi[i], caseSensitive) {
+				return false
+			}
+		}
+		return len(t.Multi) < len(token.Multi)
 	case Number:
 		return t.Num < token.Num
 	}

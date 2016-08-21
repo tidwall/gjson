@@ -15,7 +15,7 @@ import (
 	fflib "github.com/pquerna/ffjson/fflib/v1"
 )
 
-// TestRandomData is a fuzzing test that throughs random data at the Parse
+// TestRandomData is a fuzzing test that throws random data at the Parse
 // function looking for panics.
 func TestRandomData(t *testing.T) {
 	var lstr string
@@ -99,10 +99,49 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 	"happy":true,"immortal":false,
 	"items":[1,2,3,{"tags":[1,2,3],"points":[[1,2],[3,4]]},4,5,6,7],
 	"arr":["1",2,"3",{"hello":"world"},"4",5],
-	"vals":[1,2,3,{"sadf":sdf"asdf"}],"name":{"first":"tom","last":null}}`
+	"vals":[1,2,3,{"sadf":sdf"asdf"}],"name":{"first":"tom","last":null},
+	"loggy":{
+		"programmers": [
+    	    {
+    	        "firstName": "Brett", 
+    	        "lastName": "McLaughlin", 
+    	        "email": "aaaa"
+    	    }, 
+    	    {
+    	        "firstName": "Jason", 
+    	        "lastName": "Hunter", 
+    	        "email": "bbbb"
+    	    }, 
+    	    {
+    	        "firstName": "Elliotte", 
+    	        "lastName": "Harold", 
+    	        "email": "cccc"
+    	    }
+    	]
+	}
+}`
 
 func TestBasic(t *testing.T) {
 	var token Result
+	mtok := Get(basicJSON, "loggy.programmers.#.firstName")
+	if mtok.Type != Multi {
+		t.Fatal("expected %v, got %v", Multi, mtok.Type)
+	}
+	if len(mtok.Multi) != 3 {
+		t.Fatalf("expected 3, got %v", len(mtok.Multi))
+	}
+	for i, ex := range []string{"Brett", "Jason", "Elliotte"} {
+		if mtok.Multi[i].String() != ex {
+			t.Fatalf("expected '%v', got '%v'", ex, mtok.Multi[i].String())
+		}
+	}
+	mtok = Get(basicJSON, "loggy.programmers.#.asd")
+	if mtok.Type != Multi {
+		t.Fatal("expected %v, got %v", Multi, mtok.Type)
+	}
+	if len(mtok.Multi) != 0 {
+		t.Fatalf("expected 0, got %v", len(mtok.Multi))
+	}
 	if Get(basicJSON, "items.3.tags.#").Num != 3 {
 		t.Fatalf("expected 3, got %v", Get(basicJSON, "items.3.tags.#").Num)
 	}
