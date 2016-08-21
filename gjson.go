@@ -82,6 +82,9 @@ func (t Result) Exists() bool {
 //	nil, for JSON null
 //
 func (t Result) Value() interface{} {
+	if t.Type == String {
+		return t.Str
+	}
 	switch t.Type {
 	default:
 		return nil
@@ -89,8 +92,6 @@ func (t Result) Value() interface{} {
 		return false
 	case Number:
 		return t.Num
-	case String:
-		return t.Str
 	case Multi:
 		var res = make([]interface{}, len(t.Multi))
 		for i, v := range t.Multi {
@@ -697,15 +698,16 @@ func (t Result) Less(token Result, caseSensitive bool) bool {
 	if t.Type > token.Type {
 		return false
 	}
-	switch t.Type {
-	default:
-		return t.Raw < token.Raw
-	case String:
+	if t.Type == String {
 		if caseSensitive {
 			return t.Str < token.Str
 		}
 		return stringLessInsensitive(t.Str, token.Str)
-	case Multi:
+	}
+	if t.Type == Number {
+		return t.Num < token.Num
+	}
+	if t.Type == Multi {
 		for i := 0; i < len(t.Multi) && i < len(token.Multi); i++ {
 			if t.Multi[i].Less(token.Multi[i], caseSensitive) {
 				return true
@@ -715,9 +717,8 @@ func (t Result) Less(token Result, caseSensitive bool) bool {
 			}
 		}
 		return len(t.Multi) < len(token.Multi)
-	case Number:
-		return t.Num < token.Num
 	}
+	return t.Raw < token.Raw
 }
 
 func stringLessInsensitive(a, b string) bool {
