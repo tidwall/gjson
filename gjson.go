@@ -135,7 +135,9 @@ func Get(json string, path string) Result {
 	next_part:
 		// be optimistic that the path mostly contains lowercase and
 		// underscore characters.
-		if path[i] <= '\\' {
+		if path[i] >= '_' {
+			continue
+		} else if path[i] <= '\\' {
 			if path[i] == '\\' {
 				// go into escape mode. this is a slower path that
 				// strips off the escape character from the part.
