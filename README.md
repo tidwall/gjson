@@ -147,7 +147,7 @@ for _,name := range result.Multi {
 
 Sometimes you may want to see if the value actually existed in the json document.
 
-```
+```go
 value := gjson.Get(json, "name.last")
 if !value.Exists() {
 	println("no last name")
