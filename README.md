@@ -56,7 +56,7 @@ To access an array value use the index as the key.
 To get the number of elements in an array or to access a child path, use the '#' character.
 The dot and wildcard characters can be escaped with '\'.
 
-```
+```json
 {
   "name": {"first": "Tom", "last": "Anderson"},
   "age":37,
@@ -93,16 +93,6 @@ string, for JSON string literals
 nil, for JSON null
 ```
 
-To get the Go value call the `Value()` method:
-
-
-```go
-result.Value()  // interface{} which may be nil, string, float64, or bool
-
-// Or just get the value in one step.
-gjson.Get(json, "name.last").Value()
-```
-
 To directly access the value:
 
 ```go
@@ -111,6 +101,30 @@ result.Str     // holds the string
 result.Num     // holds the float64 number
 result.Raw     // holds the raw json
 result.Multi   // holds nested array values
+```
+
+There are a variety of handy functions that work on a result:
+
+```go
+result.Value() interface{}
+result.Int() int64
+result.Float() float64
+result.String() string
+result.Bool() bool
+result.Array() []gjson.Result
+result.Map() map[string]gjson.Result
+result.Get(path string) Result
+```
+
+The `result.Value()` function returns an `interface{}` which requires type assertion and is one of the following Go types:
+
+```go
+boolean >> bool
+number  >> float64
+string  >> string
+null    >> nil
+array   >> []interface{}
+object  >> map[string]interface{}
 ```
 
 ## Get nested array values
@@ -138,9 +152,21 @@ You would use the path "programmers.#.lastName" like such:
 
 ```go
 result := gjson.Get(json, "programmers.#.lastName")
-for _,name := range result.Multi {
+for _,name := range result.Array() {
 	println(name.String())
 }
+```
+
+## Simple Parse and Get
+
+There's a `Parse(json)` function that will do a simple parse, and `result.Get(path)` that will search a result.
+
+For example, all of these will return the same result:
+
+```go
+Parse(json).Get("name").Get("last")
+Get("name").Get("last")
+Get("name.last")
 ```
 
 ## Check for the existence of a value

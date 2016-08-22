@@ -19,8 +19,6 @@ const (
 	True
 	// JSON is a raw block of JSON
 	JSON
-	// Multi is a subset of results
-	Multi
 )
 
 // Result represents a json value that is returned from Get().
@@ -33,8 +31,6 @@ type Result struct {
 	Str string
 	// Num is the json number
 	Num float64
-	// Multi is the subset of results
-	Multi []Result
 }
 
 // String returns a string representation of the value.
@@ -48,20 +44,321 @@ func (t Result) String() string {
 		return strconv.FormatFloat(t.Num, 'f', -1, 64)
 	case String:
 		return t.Str
-	case Multi:
-		var str string
-		for i, res := range t.Multi {
-			if i > 0 {
-				str += ","
-			}
-			str += res.String()
-		}
-		return str
 	case JSON:
 		return t.Raw
 	case True:
 		return "true"
 	}
+}
+
+// Bool returns an boolean representation.
+func (t Result) Bool() bool {
+	switch t.Type {
+	default:
+		return false
+	case True:
+		return true
+	case String:
+		return t.Str != "" && t.Str != "0"
+	case Number:
+		return t.Num != 0
+	}
+}
+
+// Int returns an integer representation.
+func (t Result) Int() int64 {
+	switch t.Type {
+	default:
+		return 0
+	case True:
+		return 1
+	case String:
+		n, _ := strconv.ParseInt(t.Str, 10, 64)
+		return n
+	case Number:
+		return int64(t.Num)
+	}
+}
+
+// Float returns an float64 representation.
+func (t Result) Float() float64 {
+	switch t.Type {
+	default:
+		return 0
+	case True:
+		return 1
+	case String:
+		n, _ := strconv.ParseFloat(t.Str, 64)
+		return n
+	case Number:
+		return t.Num
+	}
+}
+
+// Array returns back an array of children. The result must be a JSON array.
+func (t Result) Array() []Result {
+	if t.Type != JSON {
+		return nil
+	}
+	a, _, _ := t.arrayOrMap('[')
+	return a
+}
+
+//  Map returns back an map of children. The result should be a JSON array.
+func (t Result) Map() map[string]Result {
+	if t.Type != JSON {
+		return map[string]Result{}
+	}
+	_, o, _ := t.arrayOrMap('{')
+	return o
+}
+
+// Get searches result for the specified path.
+// The result should be a JSON array or object.
+func (t Result) Get(path string) Result {
+	return Get(t.Raw, path)
+}
+
+func (t Result) arrayOrMap(vc byte) ([]Result, map[string]Result, byte) {
+	var a = []Result{}
+	var o = map[string]Result{}
+	var json = t.Raw
+	var i int
+	var value Result
+	var count int
+	var key Result
+	if vc == 0 {
+		for ; i < len(json); i++ {
+			if json[i] == '{' || json[i] == '[' {
+				vc = json[i]
+				i++
+				break
+			}
+			if json[i] > ' ' {
+				goto end
+			}
+		}
+	} else {
+		for ; i < len(json); i++ {
+			if json[i] == vc {
+				i++
+				break
+			}
+			if json[i] > ' ' {
+				goto end
+			}
+		}
+	}
+	for ; i < len(json); i++ {
+		if json[i] <= ' ' {
+			continue
+		}
+		// get next value
+		if json[i] == ']' || json[i] == '}' {
+			break
+		}
+		switch json[i] {
+		default:
+			if (json[i] >= '0' && json[i] <= '9') || json[i] == '-' {
+				value.Type = Number
+				value.Raw, value.Num = tonum(json[i:])
+			} else {
+				continue
+			}
+		case '{', '[':
+			value.Type = JSON
+			value.Raw = squash(json[i:])
+		case 'n':
+			value.Type = Null
+			value.Raw = tolit(json[i:])
+		case 't':
+			value.Type = True
+			value.Raw = tolit(json[i:])
+		case 'f':
+			value.Type = False
+			value.Raw = tolit(json[i:])
+		case '"':
+			value.Type = String
+			value.Raw, value.Str = tostr(json[i:])
+		}
+		i += len(value.Raw) - 1
+
+		if vc == '{' {
+			if count%2 == 0 {
+				key = value
+			} else {
+				o[key.Str] = value
+			}
+			count++
+		} else {
+			a = append(a, value)
+		}
+	}
+end:
+	return a, o, vc
+}
+
+// Parse parses the json and returns a result
+func Parse(json string) Result {
+	var value Result
+	for i := 0; i < len(json); i++ {
+		if json[i] <= ' ' {
+			continue
+		}
+		switch json[i] {
+		default:
+			if (json[i] >= '0' && json[i] <= '9') || json[i] == '-' {
+				value.Type = Number
+				value.Raw, value.Num = tonum(json[i:])
+			} else {
+				return Result{}
+			}
+		case '{', '[':
+			value.Type = JSON
+			value.Raw = json[i:]
+			// we just trim the tail end
+			for value.Raw[len(value.Raw)-1] <= ' ' {
+				value.Raw = value.Raw[:len(value.Raw)-1]
+			}
+		case 'n':
+			value.Type = Null
+			value.Raw = tolit(json[i:])
+		case 't':
+			value.Type = True
+			value.Raw = tolit(json[i:])
+		case 'f':
+			value.Type = False
+			value.Raw = tolit(json[i:])
+		case '"':
+			value.Type = String
+			value.Raw, value.Str = tostr(json[i:])
+		}
+		break
+	}
+	return value
+}
+
+func squash(json string) string {
+	// expects that the lead character is a '[' or '{'
+	// squash the value, ignoring all nested arrays and objects.
+	// the first '[' or '{' has already been read
+	depth := 1
+	for i := 1; i < len(json); i++ {
+		if json[i] >= '"' && json[i] <= '}' {
+			switch json[i] {
+			case '"':
+				i++
+				s2 := i
+				for ; i < len(json); i++ {
+					if json[i] > '\\' {
+						continue
+					}
+					if json[i] == '"' {
+						// look for an escaped slash
+						if json[i-1] == '\\' {
+							n := 0
+							for j := i - 2; j > s2-1; j-- {
+								if json[j] != '\\' {
+									break
+								}
+								n++
+							}
+							if n%2 == 0 {
+								continue
+							}
+						}
+						break
+					}
+				}
+			case '{', '[':
+				depth++
+			case '}', ']':
+				depth--
+				if depth == 0 {
+					return json[:i+1]
+				}
+			}
+		}
+	}
+	return json
+}
+
+func tonum(json string) (raw string, num float64) {
+	for i := 1; i < len(json); i++ {
+		// less than dash might have valid characters
+		if json[i] <= '-' {
+			if json[i] <= ' ' || json[i] == ',' {
+				// break on whitespace and comma
+				raw = json[:i]
+				num, _ = strconv.ParseFloat(raw, 64)
+				return
+			}
+			// could be a '+' or '-'. let's assume so.
+			continue
+		}
+		if json[i] < ']' {
+			// probably a valid number
+			continue
+		}
+		if json[i] == 'e' || json[i] == 'E' {
+			// allow for exponential numbers
+			continue
+		}
+		// likely a ']' or '}'
+		raw = json[:i]
+		num, _ = strconv.ParseFloat(raw, 64)
+		return
+	}
+	raw = json
+	num, _ = strconv.ParseFloat(raw, 64)
+	return
+}
+
+func tolit(json string) (raw string) {
+	for i := 1; i < len(json); i++ {
+		if json[i] <= 'a' || json[i] >= 'z' {
+			return json[:i]
+		}
+	}
+	return json
+}
+
+func tostr(json string) (raw string, str string) {
+	// expects that the lead character is a '"'
+	for i := 1; i < len(json); i++ {
+		if json[i] > '\\' {
+			continue
+		}
+		if json[i] == '"' {
+			return json[:i+1], json[1:i]
+		}
+		if json[i] == '\\' {
+			i++
+			for ; i < len(json); i++ {
+				if json[i] > '\\' {
+					continue
+				}
+				if json[i] == '"' {
+					// look for an escaped slash
+					if json[i-1] == '\\' {
+						n := 0
+						for j := i - 2; j > 0; j-- {
+							if json[j] != '\\' {
+								break
+							}
+							n++
+						}
+						if n%2 == 0 {
+							continue
+						}
+					}
+					break
+				}
+			}
+			return json[:i+1], unescape(json[1:i])
+		}
+	}
+	return json, json[1:]
 }
 
 // Exists returns true if value exists.
@@ -92,17 +389,26 @@ func (t Result) Value() interface{} {
 		return false
 	case Number:
 		return t.Num
-	case Multi:
-		var res = make([]interface{}, len(t.Multi))
-		for i, v := range t.Multi {
-			res[i] = v.Value()
-		}
-		return res
 	case JSON:
-		return t.Raw
+		a, o, vc := t.arrayOrMap(0)
+		if vc == '{' {
+			var m = map[string]interface{}{}
+			for k, v := range o {
+				m[k] = v.Value()
+			}
+			return m
+		} else if vc == '[' {
+			var m = make([]interface{}, 0, len(a))
+			for _, v := range a {
+				m = append(m, v.Value())
+			}
+			return m
+		}
+		return nil
 	case True:
 		return true
 	}
+
 }
 
 type part struct {
@@ -518,6 +824,9 @@ proc_val:
 				// the first double-quote has already been read
 				s = i
 				for ; i < len(json); i++ {
+					if json[i] > '\\' {
+						continue
+					}
 					if json[i] == '"' {
 						value.Raw = json[s-1 : i+1]
 						value.Str = json[s:i]
@@ -598,14 +907,19 @@ proc_val:
 		case '}', ']':
 			if arrch && parts[depth-1].key == "#" {
 				if alogok {
-					result := Result{Type: Multi}
+					var jsons = make([]byte, 0, 64)
+					jsons = append(jsons, '[')
 					for j := 0; j < len(alog); j++ {
 						res := Get(json[alog[j]:], alogkey)
 						if res.Exists() {
-							result.Multi = append(result.Multi, res)
+							if j > 0 {
+								jsons = append(jsons, ',')
+							}
+							jsons = append(jsons, []byte(res.Raw)...)
 						}
 					}
-					return result
+					jsons = append(jsons, ']')
+					return Result{Type: JSON, Raw: string(jsons)}
 				} else {
 					return Result{Type: Number, Num: float64(f.count)}
 				}
@@ -689,7 +1003,7 @@ func unescape(json string) string { //, error) {
 // The caseSensitive paramater is used when the tokens are Strings.
 // The order when comparing two different type is:
 //
-//  Null < False < Number < String < True < JSON < Multi
+//  Null < False < Number < String < True < JSON
 //
 func (t Result) Less(token Result, caseSensitive bool) bool {
 	if t.Type < token.Type {
@@ -706,17 +1020,6 @@ func (t Result) Less(token Result, caseSensitive bool) bool {
 	}
 	if t.Type == Number {
 		return t.Num < token.Num
-	}
-	if t.Type == Multi {
-		for i := 0; i < len(t.Multi) && i < len(token.Multi); i++ {
-			if t.Multi[i].Less(token.Multi[i], caseSensitive) {
-				return true
-			}
-			if token.Multi[i].Less(t.Multi[i], caseSensitive) {
-				return false
-			}
-		}
-		return len(t.Multi) < len(token.Multi)
 	}
 	return t.Raw < token.Raw
 }

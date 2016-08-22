@@ -116,32 +116,64 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
     	        "firstName": "Elliotte", 
     	        "lastName": "Harold", 
     	        "email": "cccc"
-    	    }
+    	    },
+			{
+				"firstName": 1002.3
+			}
     	]
 	}
 }`
 
 func TestBasic(t *testing.T) {
+	var mtok Result
+	mtok = Get(basicJSON, "loggy")
+	if mtok.Type != JSON {
+		t.Fatalf("expected %v, got %v", JSON, mtok.Type)
+	}
+	if len(mtok.Map()) != 1 {
+		t.Fatalf("expected %v, got %v", 1, len(mtok.Map()))
+	}
+	programmers := mtok.Map()["programmers"]
+	if programmers.Array()[1].Map()["firstName"].Str != "Jason" {
+		t.Fatalf("expected %v, got %v", "Jason", mtok.Map()["programmers"].Array()[1].Map()["firstName"].Str)
+	}
+
+	if Parse(basicJSON).Get("loggy.programmers").Get("1").Get("firstName").Str != "Jason" {
+		t.Fatalf("expected %v, got %v", "Jason", Parse(basicJSON).Get("loggy.programmers").Get("1").Get("firstName").Str)
+	}
 	var token Result
-	mtok := Get(basicJSON, "loggy.programmers.#.firstName")
-	if mtok.Type != Multi {
-		t.Fatal("expected %v, got %v", Multi, mtok.Type)
+	if token = Parse("-102"); token.Num != -102 {
+		t.Fatal("expected %v, got %v", -102, token.Num)
 	}
-	if len(mtok.Multi) != 3 {
-		t.Fatalf("expected 3, got %v", len(mtok.Multi))
+	if token = Parse("102"); token.Num != 102 {
+		t.Fatal("expected %v, got %v", 102, token.Num)
 	}
-	for i, ex := range []string{"Brett", "Jason", "Elliotte"} {
-		if mtok.Multi[i].String() != ex {
-			t.Fatalf("expected '%v', got '%v'", ex, mtok.Multi[i].String())
+	if token = Parse("102.2"); token.Num != 102.2 {
+		t.Fatal("expected %v, got %v", 102.2, token.Num)
+	}
+	if token = Parse(`"hello"`); token.Str != "hello" {
+		t.Fatal("expected %v, got %v", "hello", token.Str)
+	}
+	if token = Parse(`"\"he\nllo\""`); token.Str != "\"he\nllo\"" {
+		t.Fatal("expected %v, got %v", "\"he\nllo\"", token.Str)
+	}
+	mtok = Get(basicJSON, "loggy.programmers.#.firstName")
+	if len(mtok.Array()) != 4 {
+		t.Fatalf("expected 4, got %v", len(mtok.Array()))
+	}
+	for i, ex := range []string{"Brett", "Jason", "Elliotte", "1002.3"} {
+		if mtok.Array()[i].String() != ex {
+			t.Fatalf("expected '%v', got '%v'", ex, mtok.Array()[i].String())
 		}
 	}
 	mtok = Get(basicJSON, "loggy.programmers.#.asd")
-	if mtok.Type != Multi {
-		t.Fatal("expected %v, got %v", Multi, mtok.Type)
+	if mtok.Type != JSON {
+		t.Fatal("expected %v, got %v", JSON, mtok.Type)
 	}
-	if len(mtok.Multi) != 0 {
-		t.Fatalf("expected 0, got %v", len(mtok.Multi))
+	if len(mtok.Array()) != 0 {
+		t.Fatalf("expected 0, got %v", len(mtok.Array()))
 	}
+
 	if Get(basicJSON, "items.3.tags.#").Num != 3 {
 		t.Fatalf("expected 3, got %v", Get(basicJSON, "items.3.tags.#").Num)
 	}
@@ -201,13 +233,19 @@ func TestBasic(t *testing.T) {
 	if token.String() != `{"what is a wren?":"a bird"}` {
 		t.Fatal("expecting '"+`{"what is a wren?":"a bird"}`+"'", "got", token.String())
 	}
-	_ = token.Value().(string)
+	_ = token.Value().(map[string]interface{})
 
 	if Get(basicJSON, "").Value() != nil {
 		t.Fatal("should be nil")
 	}
 
 	Get(basicJSON, "vals.hello")
+
+	mm := Parse(basicJSON).Value().(map[string]interface{})
+	fn := mm["loggy"].(map[string]interface{})["programmers"].([]interface{})[1].(map[string]interface{})["firstName"].(string)
+	if fn != "Jason" {
+		t.Fatalf("expecting %v, got %v", "Jason", fn)
+	}
 }
 
 func TestUnescape(t *testing.T) {
