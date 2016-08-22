@@ -452,27 +452,28 @@ type frame struct {
 //  "friends.#.first"    >> [ "James", "Roger" ]
 //
 func Get(json string, path string) Result {
-	var s int                      // starting index variable
-	var wild bool                  // wildcard indicator
-	var parts = make([]part, 0, 4) // parsed path parts
+	var s int                       // starting index variable
+	var wild bool                   // wildcard indicator
+	var parts = make([]part, 0, 4)  // parsed path parts
+	var i int                       // index of current json character
+	var depth int                   // the current stack depth
+	var f frame                     // the current frame
+	var matched bool                // flag used for key/part matching
+	var stack = make([]frame, 1, 4) // the frame stack
+	var value Result                // the final value, also used for temp store
+	var vc byte                     // the current token value chacter type
 	var arrch bool
 	var alogok bool
 	var alogkey string
 	var alog []int
 
-	if len(path) == 0 {
-		// do nothing when no path specified and return an empty result.
-		return Result{}
-	}
-
 	// parse the path into multiple parts.
 	for i := 0; i < len(path); i++ {
-	next_part:
-		// be optimistic that the path mostly contains lowercase and
-		// underscore characters.
-		if path[i] >= '_' {
+		if path[i]&0x60 == 0x60 {
+			// alpha lowercase
 			continue
-		} else if path[i] == '.' {
+		}
+		if path[i] == '.' {
 			// append a new part
 			parts = append(parts, part{wild: wild, key: path[s:i]})
 			if wild {
@@ -480,17 +481,25 @@ func Get(json string, path string) Result {
 			}
 			// set the starting index to one past the dot.
 			s = i + 1
-		} else if path[i] == '*' || path[i] == '?' {
-			// set the wild flag to indicate that the part is a wildcard.
+			continue
+		}
+		if (path[i] >= 'A' && path[i] <= 'Z') || (path[i] >= '0' && path[i] <= '9') {
+			continue
+		}
+		if path[i] == '*' || path[i] == '?' {
 			wild = true
-		} else if path[i] == '#' {
+			continue
+		}
+		if path[i] == '#' {
 			arrch = true
 			if s == i && i+1 < len(path) && path[i+1] == '.' {
 				alogok = true
 				alogkey = path[i+2:]
 				path = path[:i+1]
 			}
-		} else if path[i] == '\\' {
+			continue
+		}
+		if path[i] == '\\' {
 			// go into escape mode. this is a slower path that
 			// strips off the escape character from the part.
 			epart := []byte(path[s:i])
@@ -529,18 +538,15 @@ func Get(json string, path string) Result {
 			// append the last part
 			parts = append(parts, part{wild: wild, key: string(epart)})
 			goto end_parts
+		next_part:
+			continue
 		}
 	}
 	// append the last part
 	parts = append(parts, part{wild: wild, key: path[s:]})
 end_parts:
-	var i int                       // index of current json character
-	var depth int                   // the current stack depth
-	var f frame                     // the current frame
-	var matched bool                // flag used for key/part matching
-	var stack = make([]frame, 1, 4) // the frame stack
-	var value Result                // the final value, also used for temp store
-	var vc byte                     // the current token value chacter type
+
+	i = 0
 
 	// look for first delimiter. only allow arrays and objects, other
 	// json types will fail. it's ok for control characters to passthrough.
@@ -576,7 +582,6 @@ read_key:
 		if alogok && depth == len(parts) {
 			alog = append(alog, i)
 		}
-		//f.alog = append(f.alog, i)
 	} else {
 		// for objects we must parse the next string. this string will
 		// become the key that is compared against the path parts.
