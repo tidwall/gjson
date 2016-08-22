@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math/rand"
 	"strings"
@@ -297,6 +298,41 @@ func TestLess(t *testing.T) {
 	assert(t, stringLessInsensitive("124Abcde", "125Abcde"))
 	assert(t, stringLessInsensitive("124Abcde", "125abcde"))
 	assert(t, stringLessInsensitive("124abcde", "125abcde"))
+}
+
+func TestIssue6(t *testing.T) {
+	data := `{
+      "code": 0,
+      "msg": "",
+      "data": {
+        "sz002024": {
+          "qfqday": [
+            [
+              "2014-01-02",
+              "8.93",
+              "9.03",
+              "9.17",
+              "8.88",
+              "621143.00"
+            ],
+            [
+              "2014-01-03",
+              "9.03",
+              "9.30",
+              "9.47",
+              "8.98",
+              "1624438.00"
+            ]
+          ]
+        }
+      }
+    }`
+
+	var num []string
+	for _, v := range Get(data, "data.sz002024.qfqday.0").Array() {
+		num = append(num, v.String())
+	}
+	fmt.Printf("%v\n", num)
 }
 
 var exampleJSON = `{

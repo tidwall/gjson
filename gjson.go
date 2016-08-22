@@ -473,6 +473,9 @@ func Get(json string, path string) Result {
 			// alpha lowercase
 			continue
 		}
+		if path[i] >= 'A' && path[i] <= 'Z' {
+			continue
+		}
 		if path[i] == '.' {
 			// append a new part
 			parts = append(parts, part{wild: wild, key: path[s:i]})
@@ -483,7 +486,7 @@ func Get(json string, path string) Result {
 			s = i + 1
 			continue
 		}
-		if (path[i] >= 'A' && path[i] <= 'Z') || (path[i] >= '0' && path[i] <= '9') {
+		if (path[i] >= '0' && path[i] <= '9') || path[i] == '_' {
 			continue
 		}
 		if path[i] == '*' || path[i] == '?' {
@@ -515,7 +518,9 @@ func Get(json string, path string) Result {
 						}
 						continue
 					} else if path[i] == '.' {
-						parts = append(parts, part{wild: wild, key: string(epart)})
+						parts = append(parts, part{
+							wild: wild, key: string(epart),
+						})
 						if wild {
 							wild = false
 						}
