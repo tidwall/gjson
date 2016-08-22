@@ -48,11 +48,14 @@ This will print:
 Prichard
 ```
 
-A path is a series of keys separated by a dot. 
-A key may contain special wildcard characters '\*' and '?'. 
-To access an array value use the index as the key. 
+## Path Syntax
+
+A path is a series of keys separated by a dot.
+A key may contain special wildcard characters '\*' and '?'.
+To access an array value use the index as the key.
 To get the number of elements in an array or to access a child path, use the '#' character.
 The dot and wildcard characters can be escaped with '\'.
+
 ```
 {
   "name": {"first": "Tom", "last": "Anderson"},
@@ -64,6 +67,7 @@ The dot and wildcard characters can be escaped with '\'.
 	{"first": "Roger", "last": "Craig"}
   ]
 }
+
 "name.last"          >> "Anderson"
 "age"                >> 37
 "children.#"         >> 3
@@ -72,10 +76,8 @@ The dot and wildcard characters can be escaped with '\'.
 "c?ildren.0"         >> "Sara"
 "fav\.movie"         >> "Deer Hunter"
 "friends.#.first"    >> [ "James", "Roger" ]
+"friends.1.last"     >> "Craig"
 ```
-
-
-
 
 ## Result Type
 
@@ -108,13 +110,44 @@ result.Type    // can be String, Number, True, False, Null, or JSON
 result.Str     // holds the string
 result.Num     // holds the float64 number
 result.Raw     // holds the raw json
+result.Multi   // holds nested array values
+```
+
+## Get nested array values
+
+Suppose you want all the last names from the following json:
+
+```json
+{
+  "programmers": [
+    {
+      "firstName": "Janet", 
+      "lastName": "McLaughlin", 
+    }, {
+      "firstName": "Elliotte", 
+      "lastName": "Hunter", 
+    }, {
+      "firstName": "Jason", 
+      "lastName": "Harold", 
+    }
+  ]
+}`
+```
+
+You would use the path "programmers.#.lastName" like such:
+
+```go
+result := gjson.Get(json, "programmers.#.lastName")
+for _,name := range result.Multi {
+	println(name.String())
+}
 ```
 
 ## Check for the existence of a value
 
 Sometimes you may want to see if the value actually existed in the json document.
 
-```
+```go
 value := gjson.Get(json, "name.last")
 if !value.Exists() {
 	println("no last name")
