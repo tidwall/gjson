@@ -165,9 +165,9 @@ There's a `Parse(json)` function that will do a simple parse, and `result.Get(pa
 For example, all of these will return the same result:
 
 ```go
-Parse(json).Get("name").Get("last")
-Get("name").Get("last")
-Get("name.last")
+gjson.Parse(json).Get("name").Get("last")
+gjson.Get("name").Get("last")
+gjson.Get("name.last")
 ```
 
 ## Check for the existence of a value
