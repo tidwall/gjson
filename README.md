@@ -67,7 +67,8 @@ The dot and wildcard characters can be escaped with '\'.
 	{"first": "Roger", "last": "Craig"}
   ]
 }
-
+```
+```
 "name.last"          >> "Anderson"
 "age"                >> 37
 "children.#"         >> 3
