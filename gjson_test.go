@@ -332,7 +332,9 @@ func TestIssue6(t *testing.T) {
 	for _, v := range Get(data, "data.sz002024.qfqday.0").Array() {
 		num = append(num, v.String())
 	}
-	fmt.Printf("%v\n", num)
+	if fmt.Sprintf("%v", num) != "[2014-01-02 8.93 9.03 9.17 8.88 621143.00]" {
+		t.Fatalf("invalid result")
+	}
 }
 
 var exampleJSON = `{
