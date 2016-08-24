@@ -166,8 +166,8 @@ For example, all of these will return the same result:
 
 ```go
 gjson.Parse(json).Get("name").Get("last")
-gjson.Get("name").Get("last")
-gjson.Get("name.last")
+gjson.Get(json, "name").Get("last")
+gjson.Get(json, "name.last")
 ```
 
 ## Check for the existence of a value
