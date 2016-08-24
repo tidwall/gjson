@@ -485,6 +485,7 @@ func Get(json string, path string) Result {
 	var alogok bool
 	var alogkey string
 	var alog []int
+	var uc bool
 
 	// parse the path into multiple parts.
 	for i := 0; i < len(path); i++ {
@@ -521,6 +522,10 @@ func Get(json string, path string) Result {
 			}
 			continue
 		}
+		if path[i] > 0x7f {
+			uc = true
+			continue
+		}
 		if path[i] == '\\' {
 			// go into escape mode. this is a slower path that
 			// strips off the escape character from the part.
@@ -530,6 +535,10 @@ func Get(json string, path string) Result {
 				epart = append(epart, path[i])
 				i++
 				for ; i < len(path); i++ {
+					if path[i] > 0x7f {
+						uc = true
+						continue
+					}
 					if path[i] == '\\' {
 						i++
 						if i < len(path) {
@@ -682,7 +691,7 @@ read_key:
 	if parts[depth-1].wild {
 		// the path part contains a wildcard character. we must do a wildcard
 		// match to determine if it truly matches.
-		matched = wildcardMatch(parts[depth-1].key, f.key)
+		matched = wildcardMatch(f.key, parts[depth-1].key, uc)
 	} else {
 		// just a straight up equality check
 		matched = parts[depth-1].key == f.key
@@ -1088,4 +1097,65 @@ func stringLessInsensitive(a, b string) bool {
 		}
 	}
 	return len(a) < len(b)
+}
+
+// wilcardMatch returns true if str matches pattern. This is a very
+// simple wildcard match where '*' matches on any number characters
+// and '?' matches on any one character.
+func wildcardMatch(str, pattern string, uc bool) bool {
+	if pattern == "*" {
+		return true
+	}
+	if !uc {
+		return deepMatch(str, pattern)
+	}
+	rstr := make([]rune, 0, len(str))
+	rpattern := make([]rune, 0, len(pattern))
+	for _, r := range str {
+		rstr = append(rstr, r)
+	}
+	for _, r := range pattern {
+		rpattern = append(rpattern, r)
+	}
+	return deepMatchRune(rstr, rpattern)
+}
+func deepMatch(str, pattern string) bool {
+	for len(pattern) > 0 {
+		switch pattern[0] {
+		default:
+			if len(str) == 0 || str[0] != pattern[0] {
+				return false
+			}
+		case '?':
+			if len(str) == 0 {
+				return false
+			}
+		case '*':
+			return deepMatch(str, pattern[1:]) ||
+				(len(str) > 0 && deepMatch(str[1:], pattern))
+		}
+		str = str[1:]
+		pattern = pattern[1:]
+	}
+	return len(str) == 0 && len(pattern) == 0
+}
+func deepMatchRune(str, pattern []rune) bool {
+	for len(pattern) > 0 {
+		switch pattern[0] {
+		default:
+			if len(str) == 0 || str[0] != pattern[0] {
+				return false
+			}
+		case '?':
+			if len(str) == 0 {
+				return false
+			}
+		case '*':
+			return deepMatchRune(str, pattern[1:]) ||
+				(len(str) > 0 && deepMatchRune(str[1:], pattern))
+		}
+		str = str[1:]
+		pattern = pattern[1:]
+	}
+	return len(str) == 0 && len(pattern) == 0
 }
