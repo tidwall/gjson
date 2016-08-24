@@ -395,6 +395,33 @@ func BenchmarkGJSONGet(t *testing.B) {
 	t.N *= len(benchPaths) // because we are running against 3 paths
 }
 
+func BenchmarkGJSONUnmarshalMap(t *testing.B) {
+	t.ReportAllocs()
+	for i := 0; i < t.N; i++ {
+		for j := 0; j < len(benchPaths); j++ {
+			parts := strings.Split(benchPaths[j], ".")
+			m := Parse(exampleJSON).Value().(map[string]interface{})
+			var v interface{}
+			for len(parts) > 0 {
+				part := parts[0]
+				if len(parts) > 1 {
+					m = m[part].(map[string]interface{})
+					if m == nil {
+						t.Fatal("did not find the value")
+					}
+				} else {
+					v = m[part]
+					if v == nil {
+						t.Fatal("did not find the value")
+					}
+				}
+				parts = parts[1:]
+			}
+		}
+	}
+	t.N *= len(benchPaths) // because we are running against 3 paths
+}
+
 func BenchmarkJSONUnmarshalMap(t *testing.B) {
 	t.ReportAllocs()
 	for i := 0; i < t.N; i++ {
