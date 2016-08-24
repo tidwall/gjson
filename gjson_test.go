@@ -733,6 +733,25 @@ var exampleJSON = `{
 	}
 }`
 
+func TestUnmarshalMap(t *testing.T) {
+	var m1 = Parse(exampleJSON).Value().(map[string]interface{})
+	var m2 map[string]interface{}
+	if err := json.Unmarshal([]byte(exampleJSON), &m2); err != nil {
+		t.Fatal(err)
+	}
+	b1, err := json.Marshal(m1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b2, err := json.Marshal(m2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Compare(b1, b2) != 0 {
+		t.Fatal("b1 != b2")
+	}
+}
+
 type BenchStruct struct {
 	Widget struct {
 		Window struct {
