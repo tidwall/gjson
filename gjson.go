@@ -682,7 +682,7 @@ read_key:
 	if parts[depth-1].wild {
 		// the path part contains a wildcard character. we must do a wildcard
 		// match to determine if it truly matches.
-		matched = wildcardMatch(f.key, parts[depth-1].key)
+		matched = wildcardMatch(parts[depth-1].key, f.key)
 	} else {
 		// just a straight up equality check
 		matched = parts[depth-1].key == f.key
@@ -1088,34 +1088,4 @@ func stringLessInsensitive(a, b string) bool {
 		}
 	}
 	return len(a) < len(b)
-}
-
-// wilcardMatch returns true if str matches pattern. This is a very
-// simple wildcard match where '*' matches on any number characters
-// and '?' matches on any one character.
-func wildcardMatch(str, pattern string) bool {
-	if pattern == "*" {
-		return true
-	}
-	return deepMatch(str, pattern)
-}
-func deepMatch(str, pattern string) bool {
-	for len(pattern) > 0 {
-		switch pattern[0] {
-		default:
-			if len(str) == 0 || str[0] != pattern[0] {
-				return false
-			}
-		case '?':
-			if len(str) == 0 {
-				return false
-			}
-		case '*':
-			return wildcardMatch(str, pattern[1:]) ||
-				(len(str) > 0 && wildcardMatch(str[1:], pattern))
-		}
-		str = str[1:]
-		pattern = pattern[1:]
-	}
-	return len(str) == 0 && len(pattern) == 0
 }
