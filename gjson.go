@@ -1119,7 +1119,6 @@ func wildcardMatch(str, pattern string, uc bool) bool {
 	}
 	return deepMatchRune(rstr, rpattern)
 }
-
 func deepMatch(str, pattern string) bool {
 	for len(pattern) > 0 {
 		switch pattern[0] {
@@ -1160,40 +1159,3 @@ func deepMatchRune(str, pattern []rune) bool {
 	}
 	return len(str) == 0 && len(pattern) == 0
 }
-
-/*
-func wildcardMatch(str, pattern string) bool {
-	if pattern == "*" {
-		return true
-	}
-	rstr := make([]rune, 0, len(str))
-	rpattern := make([]rune, 0, len(pattern))
-	for _, r := range str {
-		rstr = append(rstr, r)
-	}
-	for _, r := range pattern {
-		rpattern = append(rpattern, r)
-	}
-	return deepMatch(rstr, rpattern)
-}
-func deepMatch(str, pattern []rune) bool {
-	for len(pattern) > 0 {
-		switch pattern[0] {
-		default:
-			if len(str) == 0 || str[0] != pattern[0] {
-				return false
-			}
-		case '?':
-			if len(str) == 0 {
-				return false
-			}
-		case '*':
-			return deepMatch(str, pattern[1:]) ||
-				(len(str) > 0 && deepMatch(str[1:], pattern))
-		}
-		str = str[1:]
-		pattern = pattern[1:]
-	}
-	return len(str) == 0 && len(pattern) == 0
-}
-*/
