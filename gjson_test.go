@@ -248,7 +248,71 @@ func TestBasic(t *testing.T) {
 		t.Fatalf("expecting %v, got %v", "Jason", fn)
 	}
 }
-
+func TestMatch(t *testing.T) {
+	if !wildcardMatch("hello world", "hello world", false) {
+		t.Fatal("fail")
+	}
+	if wildcardMatch("hello world", "jello world", false) {
+		t.Fatal("fail")
+	}
+	if !wildcardMatch("hello world", "hello*", false) {
+		t.Fatal("fail")
+	}
+	if wildcardMatch("hello world", "jello*", false) {
+		t.Fatal("fail")
+	}
+	if !wildcardMatch("hello world", "hello?world", false) {
+		t.Fatal("fail")
+	}
+	if wildcardMatch("hello world", "jello?world", false) {
+		t.Fatal("fail")
+	}
+	if !wildcardMatch("hello world", "he*o?world", false) {
+		t.Fatal("fail")
+	}
+	if !wildcardMatch("hello world", "he*o?wor*", false) {
+		t.Fatal("fail")
+	}
+	if !wildcardMatch("hello world", "he*o?*r*", false) {
+		t.Fatal("fail")
+	}
+	if !wildcardMatch("的情况下解析一个", "*", true) {
+		t.Fatal("fail")
+	}
+	if !wildcardMatch("的情况下解析一个", "*况下*", true) {
+		t.Fatal("fail")
+	}
+	if !wildcardMatch("的情况下解析一个", "*况?*", true) {
+		t.Fatal("fail")
+	}
+	if !wildcardMatch("的情况下解析一个", "的情况?解析一个", true) {
+		t.Fatal("fail")
+	}
+}
+func TestUnicode(t *testing.T) {
+	var json = `{"key":0,"的情况下解":{"key":1,"的情况":2}}`
+	if Get(json, "的情况下解.key").Num != 1 {
+		t.Fatal("fail")
+	}
+	if Get(json, "的情况下解.的情况").Num != 2 {
+		t.Fatal("fail")
+	}
+	if Get(json, "的情况下解.的?况").Num != 2 {
+		t.Fatal("fail")
+	}
+	if Get(json, "的情况下解.的?*").Num != 2 {
+		t.Fatal("fail")
+	}
+	if Get(json, "的情况下解.*?况").Num != 2 {
+		t.Fatal("fail")
+	}
+	if Get(json, "的情?下解.*?况").Num != 2 {
+		t.Fatal("fail")
+	}
+	if Get(json, "的情下解.*?况").Num != 0 {
+		t.Fatal("fail")
+	}
+}
 func TestUnescape(t *testing.T) {
 	unescape(string([]byte{'\\', '\\', 0}))
 	unescape(string([]byte{'\\', '/', '\\', 'b', '\\', 'f'}))
