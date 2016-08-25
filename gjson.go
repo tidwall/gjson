@@ -430,15 +430,455 @@ func (t Result) Value() interface{} {
 
 }
 
-type part struct {
-	wild bool
-	key  string
+func parseString(json string, i int, raw bool) (int, string, bool, bool) {
+	var s = i
+	for ; i < len(json); i++ {
+		if json[i] > '\\' {
+			continue
+		}
+		if json[i] == '"' {
+			if raw {
+				return i + 1, json[s-1 : i+1], false, true
+			} else {
+				return i + 1, json[s:i], false, true
+			}
+		}
+		if json[i] == '\\' {
+			i++
+			for ; i < len(json); i++ {
+				if json[i] > '\\' {
+					continue
+				}
+				if json[i] == '"' {
+					// look for an escaped slash
+					if json[i-1] == '\\' {
+						n := 0
+						for j := i - 2; j > 0; j-- {
+							if json[j] != '\\' {
+								break
+							}
+							n++
+						}
+						if n%2 == 0 {
+							continue
+						}
+					}
+					if raw {
+						return i + 1, json[s-1 : i+1], true, true
+					} else {
+						return i + 1, json[s:i], true, true
+					}
+				}
+			}
+			break
+		}
+	}
+	if raw {
+		return i, json[s-1:], false, false
+	} else {
+		return i, json[s:], false, false
+	}
 }
 
-type frame struct {
-	key   string
-	count int
-	stype byte
+func parseNumber(json string, i int) (int, string) {
+	var s = i
+	i++
+	for ; i < len(json); i++ {
+		if json[i] <= ' ' || json[i] == ',' || json[i] == ']' || json[i] == '}' {
+			return i, json[s:i]
+		}
+	}
+	return i, json[s:]
+}
+
+func parseLiteral(json string, i int) (int, string) {
+	var s = i
+	i++
+	for ; i < len(json); i++ {
+		if json[i] < 'a' || json[i] > 'z' {
+			return i, json[s:i]
+		}
+	}
+	return i, json[s:]
+}
+
+func parseArrayPath(path string) (
+	part string, npath string, more bool, alogok bool, arrch bool, alogkey string,
+) {
+	for i := 0; i < len(path); i++ {
+		if path[i] == '.' {
+			return path[:i], path[i+1:], true, alogok, arrch, alogkey
+		}
+		if path[i] == '#' {
+			arrch = true
+			if i == 0 && len(path) > 1 && path[1] == '.' {
+				alogok = true
+				alogkey = path[2:]
+				path = path[:1]
+			}
+			continue
+		}
+	}
+	return path, "", false, alogok, arrch, alogkey
+}
+
+func parseObjectPath(path string) (
+	part string, npath string, wild bool, uc bool, more bool,
+) {
+	for i := 0; i < len(path); i++ {
+		if path[i]&0x60 == 0x60 {
+			// alpha lowercase
+			continue
+		}
+		if path[i] == '.' {
+			return path[:i], path[i+1:], wild, uc, true
+		}
+		if path[i] == '*' || path[i] == '?' {
+			wild = true
+			continue
+		}
+		if path[i] > 0x7f {
+			uc = true
+			continue
+		}
+		if path[i] == '\\' {
+			// go into escape mode. this is a slower path that
+			// strips off the escape character from the part.
+			epart := []byte(path[:i])
+			i++
+			if i < len(path) {
+				epart = append(epart, path[i])
+				i++
+				for ; i < len(path); i++ {
+					if path[i] > 0x7f {
+						uc = true
+						continue
+					}
+					if path[i] == '\\' {
+						i++
+						if i < len(path) {
+							epart = append(epart, path[i])
+						}
+						continue
+					} else if path[i] == '.' {
+						return string(epart), path[i+1:], wild, uc, true
+					} else if path[i] == '*' || path[i] == '?' {
+						wild = true
+					}
+					epart = append(epart, path[i])
+				}
+			}
+			// append the last part
+			return string(epart), "", wild, uc, false
+		}
+	}
+	return path, "", wild, uc, false
+}
+
+func squashObjectOrArray(json string, i int) (int, string) {
+	// expects that the lead character is a '[' or '{'
+	// squash the value, ignoring all nested arrays and objects.
+	// the first '[' or '{' has already been read
+	s := i
+	i++
+	depth := 1
+	for ; i < len(json); i++ {
+		if json[i] >= '"' && json[i] <= '}' {
+			switch json[i] {
+			case '"':
+				i++
+				s2 := i
+				for ; i < len(json); i++ {
+					if json[i] > '\\' {
+						continue
+					}
+					if json[i] == '"' {
+						// look for an escaped slash
+						if json[i-1] == '\\' {
+							n := 0
+							for j := i - 2; j > s2-1; j-- {
+								if json[j] != '\\' {
+									break
+								}
+								n++
+							}
+							if n%2 == 0 {
+								continue
+							}
+						}
+						break
+					}
+				}
+			case '{', '[':
+				depth++
+			case '}', ']':
+				depth--
+				if depth == 0 {
+					i++
+					return i, json[s:i]
+				}
+			}
+		}
+	}
+	return i, json[s:]
+}
+
+func parseObject(json string, i int, path string, value *Result) (int, bool) {
+	var match, kesc, vesc, ok, hit bool
+	var key, val string
+	part, npath, wild, uc, more := parseObjectPath(path)
+	for i < len(json) {
+		for ; i < len(json); i++ {
+			if json[i] == '"' {
+				i, key, kesc, ok = parseString(json, i+1, false)
+				break
+			}
+			if json[i] == '}' {
+				return i + 1, false
+			}
+		}
+		if !ok {
+			return i, false
+		}
+		if wild {
+			if kesc {
+				match = wildcardMatch(unescape(key), part, uc)
+			} else {
+				match = wildcardMatch(key, part, uc)
+			}
+		} else {
+			if kesc {
+				match = part == unescape(key)
+			} else {
+				match = part == key
+			}
+		}
+		hit = match && !more
+		for ; i < len(json); i++ {
+			switch json[i] {
+			default:
+				continue
+			case '"':
+				i++
+				i, val, vesc, ok = parseString(json, i, true)
+				if !ok {
+					return i, false
+				}
+				if hit {
+					if vesc {
+						value.Str = unescape(val[1 : len(val)-1])
+					} else {
+						value.Str = val[1 : len(val)-1]
+					}
+					value.Raw = val
+					value.Type = String
+					return i, true
+				}
+			case '{':
+				if match && !hit {
+					i, hit = parseObject(json, i+1, npath, value)
+					if hit {
+						return i, true
+					}
+				} else {
+					i, val = squashObjectOrArray(json, i)
+					if hit {
+						value.Raw = val
+						value.Type = JSON
+						return i, true
+					}
+				}
+			case '[':
+				if match && !hit {
+					i, hit = parseArray(json, i+1, npath, value)
+					if hit {
+						return i, true
+					}
+				} else {
+					i, val = squashObjectOrArray(json, i)
+					if hit {
+						value.Raw = val
+						value.Type = JSON
+						return i, true
+					}
+				}
+			case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				i, val = parseNumber(json, i)
+				if hit {
+					value.Raw = val
+					value.Type = Number
+					value.Num, _ = strconv.ParseFloat(val, 64)
+					return i, true
+				}
+			case 't', 'f', 'n':
+				vc := json[i]
+				i, val = parseLiteral(json, i)
+				if hit {
+					value.Raw = val
+					switch vc {
+					case 't':
+						value.Type = True
+					case 'f':
+						value.Type = False
+					}
+					return i, true
+				}
+			}
+			break
+		}
+	}
+	return i, false
+}
+
+func parseArray(json string, i int, path string, value *Result) (int, bool) {
+	var match, vesc, ok, hit bool
+	var val string
+	var h int
+	var alog []int
+	var partidx int
+	part, npath, more, alogok, arrch, alogkey := parseArrayPath(path)
+	if !arrch {
+		n, err := strconv.ParseUint(part, 10, 64)
+		if err != nil {
+			partidx = -1
+		} else {
+			partidx = int(n)
+		}
+	}
+	for i < len(json) {
+		if !arrch {
+			match = partidx == h
+			hit = match && !more
+		}
+		h++
+		if alogok {
+			alog = append(alog, i)
+		}
+		for ; i < len(json); i++ {
+			switch json[i] {
+			default:
+				continue
+			case '"':
+				i++
+				i, val, vesc, ok = parseString(json, i, true)
+				if !ok {
+					return i, false
+				}
+				if hit {
+					if alogok {
+						break
+					}
+					if vesc {
+						value.Str = unescape(val[1 : len(val)-1])
+					} else {
+						value.Str = val[1 : len(val)-1]
+					}
+					value.Raw = val
+					value.Type = String
+					return i, true
+				}
+			case '{':
+				if match && !hit {
+					i, hit = parseObject(json, i+1, npath, value)
+					if hit {
+						if alogok {
+							break
+						}
+						return i, true
+					}
+				} else {
+					i, val = squashObjectOrArray(json, i)
+					if hit {
+						if alogok {
+							break
+						}
+						value.Raw = val
+						value.Type = JSON
+						return i, true
+					}
+				}
+			case '[':
+				if match && !hit {
+					i, hit = parseArray(json, i+1, npath, value)
+					if hit {
+						if alogok {
+							break
+						}
+						return i, true
+					}
+				} else {
+					i, val = squashObjectOrArray(json, i)
+					if hit {
+						if alogok {
+							break
+						}
+						value.Raw = val
+						value.Type = JSON
+						return i, true
+					}
+				}
+			case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				i, val = parseNumber(json, i)
+				if hit {
+					if alogok {
+						break
+					}
+					value.Raw = val
+					value.Type = Number
+					value.Num, _ = strconv.ParseFloat(val, 64)
+					return i, true
+				}
+			case 't', 'f', 'n':
+				vc := json[i]
+				i, val = parseLiteral(json, i)
+				if hit {
+					if alogok {
+						break
+					}
+					value.Raw = val
+					switch vc {
+					case 't':
+						value.Type = True
+					case 'f':
+						value.Type = False
+					}
+					return i, true
+				}
+			case ']':
+				// TODO... '#' counter?
+				if arrch && part == "#" {
+					if alogok {
+						var jsons = make([]byte, 0, 64)
+						jsons = append(jsons, '[')
+						for j := 0; j < len(alog); j++ {
+							res := Get(json[alog[j]:], alogkey)
+							if res.Exists() {
+								if j > 0 {
+									jsons = append(jsons, ',')
+								}
+								jsons = append(jsons, []byte(res.Raw)...)
+							}
+						}
+						jsons = append(jsons, ']')
+						value.Type = JSON
+						value.Raw = string(jsons)
+						return i + 1, true
+					} else {
+						if alogok {
+							break
+						}
+						value.Raw = val
+						value.Type = Number
+						value.Num = float64(h - 1)
+						return i + 1, true
+					}
+				}
+				return i + 1, false
+			}
+			break
+		}
+	}
+	return i, false
 }
 
 // Get searches json for the specified path.
@@ -470,511 +910,22 @@ type frame struct {
 //  "c?ildren.0"         >> "Sara"
 //  "friends.#.first"    >> [ "James", "Roger" ]
 //
-func Get(json string, path string) Result {
-	var s int                       // starting index variable
-	var wild bool                   // wildcard indicator
-	var parts = make([]part, 0, 4)  // parsed path parts
-	var i int                       // index of current json character
-	var depth int                   // the current stack depth
-	var f frame                     // the current frame
-	var matched bool                // flag used for key/part matching
-	var stack = make([]frame, 1, 4) // the frame stack
-	var value Result                // the final value, also used for temp store
-	var vc byte                     // the current token value chacter type
-	var arrch bool
-	var alogok bool
-	var alogkey string
-	var alog []int
-	var uc bool
-
-	// parse the path into multiple parts.
-	for i := 0; i < len(path); i++ {
-		if path[i]&0x60 == 0x60 {
-			// alpha lowercase
-			continue
-		}
-		if path[i] >= 'A' && path[i] <= 'Z' {
-			continue
-		}
-		if path[i] == '.' {
-			// append a new part
-			parts = append(parts, part{wild: wild, key: path[s:i]})
-			if wild {
-				wild = false // reset the wild flag
-			}
-			// set the starting index to one past the dot.
-			s = i + 1
-			continue
-		}
-		if (path[i] >= '0' && path[i] <= '9') || path[i] == '_' {
-			continue
-		}
-		if path[i] == '*' || path[i] == '?' {
-			wild = true
-			continue
-		}
-		if path[i] == '#' {
-			arrch = true
-			if s == i && i+1 < len(path) && path[i+1] == '.' {
-				alogok = true
-				alogkey = path[i+2:]
-				path = path[:i+1]
-			}
-			continue
-		}
-		if path[i] > 0x7f {
-			uc = true
-			continue
-		}
-		if path[i] == '\\' {
-			// go into escape mode. this is a slower path that
-			// strips off the escape character from the part.
-			epart := []byte(path[s:i])
-			i++
-			if i < len(path) {
-				epart = append(epart, path[i])
-				i++
-				for ; i < len(path); i++ {
-					if path[i] > 0x7f {
-						uc = true
-						continue
-					}
-					if path[i] == '\\' {
-						i++
-						if i < len(path) {
-							epart = append(epart, path[i])
-						}
-						continue
-					} else if path[i] == '.' {
-						parts = append(parts, part{
-							wild: wild, key: string(epart),
-						})
-						if wild {
-							wild = false
-						}
-						s = i + 1
-						i++
-						goto next_part
-					} else if path[i] == '*' || path[i] == '?' {
-						wild = true
-					} else if path[i] == '#' {
-						arrch = true
-						if s == i && i+1 < len(path) && path[i+1] == '.' {
-							alogok = true
-							alogkey = path[i+2:]
-							path = path[:i+1]
-						}
-					}
-					epart = append(epart, path[i])
-				}
-			}
-			// append the last part
-			parts = append(parts, part{wild: wild, key: string(epart)})
-			goto end_parts
-		next_part:
-			continue
-		}
-	}
-	// append the last part
-	parts = append(parts, part{wild: wild, key: path[s:]})
-end_parts:
-
-	i = 0
-
-	// look for first delimiter. only allow arrays and objects, other
-	// json types will fail. it's ok for control characters to passthrough.
+func Get(json, path string) Result {
+	var i int
+	var value Result
 	for ; i < len(json); i++ {
 		if json[i] == '{' {
-			f.stype = '{'
 			i++
-			stack[0].stype = f.stype
+			parseObject(json, i, path, &value)
 			break
-		} else if json[i] == '[' {
-			f.stype = '['
-			stack[0].stype = f.stype
+		}
+		if json[i] == '[' {
 			i++
+			parseArray(json, i, path, &value)
 			break
-		} else if json[i] <= ' ' {
-			continue
-		} else {
-			return Result{}
 		}
 	}
-
-	// assume that the depth is at least one
-	depth = 1
-
-	// read the next key from the json string
-read_key:
-	if f.stype == '[' {
-		// for arrays we use the index of the value as the key.
-		// so "0" is the key for the first value, and "10" is the
-		// key for the 10th value.
-		f.key = strconv.FormatInt(int64(f.count), 10)
-		f.count++
-		if alogok && depth == len(parts) {
-			alog = append(alog, i)
-		}
-	} else {
-		// for objects we must parse the next string. this string will
-		// become the key that is compared against the path parts.
-		for ; i < len(json); i++ {
-			// begin key string reading routine.
-			if json[i] == '"' {
-				i++
-				// set the starting index. the first double-quote has already
-				// been read.
-				s = i
-				// loop through each character in the string looking for the
-				// the double-quote termination character. it's possible that
-				// the string contains an escape slash character. if so, we
-				// must do a nested loop that will look for an isolated
-				// double-quote terminator.
-				for ; i < len(json); i++ {
-					if json[i] > '\\' {
-						continue
-					}
-					if json[i] == '"' {
-						// a simple string that contains no escape characters.
-						// assign this to the current frame key and we are
-						// done parsing the key.
-						f.key = json[s:i]
-						i++
-						break
-					}
-					if json[i] == '\\' {
-						// escape character detected. we now look for the
-						// the double-quote terminator.
-						i++
-						for ; i < len(json); i++ {
-							if json[i] == '"' {
-								// possibly the end of the string, but let's
-								// look to see if the previous character was
-								// an escape slash. if so then we must keep
-								// reading backwards to see if the slash has a
-								// prefixed slashed, and so forth.
-								if json[i-1] == '\\' {
-									n := 0
-									for j := i - 2; j > s-1; j-- {
-										if json[j] != '\\' {
-											break
-										}
-										n++
-									}
-									if n%2 == 0 {
-										// the double-quote is not a terminator.
-										// keep reading the string.
-										continue
-									}
-								}
-								// we found the correct double-quote terminator.
-								// stop reading the string.
-								break
-							}
-						}
-						// the string contains escape sequences so we must
-						// unescape and then assign to the current frame key.
-						// done parsing the key
-						f.key = unescape(json[s:i])
-						i++
-						break
-					}
-				}
-				break
-			}
-			// end of string key reading routine
-		}
-	}
-
-	// we have a brand new (possibly shiny) key.
-	// is it the key that we are looking for?
-	if parts[depth-1].wild {
-		// the path part contains a wildcard character. we must do a wildcard
-		// match to determine if it truly matches.
-		matched = wildcardMatch(f.key, parts[depth-1].key, uc)
-	} else {
-		// just a straight up equality check
-		matched = parts[depth-1].key == f.key
-	}
-
-	// read the value
-	for ; i < len(json); i++ {
-		// any thing less than  a double-quote is likely whitespace.
-		// just burn past these.
-		if json[i] < '"' {
-			continue
-		}
-		// anything less that a dash is likely a double-quote. let's
-		// assume that it is.
-		if json[i] < '-' {
-			i++
-			vc = '"'
-			// defer reading the string value until we know for sure
-			// that we want it. if we don't want it, then we will
-			// parse it using a quicker method than if we do want it.
-			goto proc_val
-		}
-		// any character less than an open bracket is likely a number.
-		if json[i] < '[' {
-			// with one exception, the colon character. we do not care
-			// about the colon character. just burn past it.
-			if json[i] == ':' {
-				continue
-			}
-			vc = '0'
-			s = i
-			i++
-			// look for any character that might terminate a number
-			// break on whitespace, comma, ']', and '}'.
-			for ; i < len(json); i++ {
-				// less than dash might have valid characters
-				if json[i] <= '-' {
-					if json[i] <= ' ' || json[i] == ',' {
-						// break on whitespace and comma
-						break
-					}
-					// could be a '+' or '-'. let's assume so.
-					continue
-				}
-				if json[i] < ']' {
-					// probably a valid number
-					continue
-				}
-				if json[i] == 'e' || json[i] == 'E' {
-					// allow for exponential numbers
-					continue
-				}
-				// likely a ']' or '}'
-				break
-			}
-			// we have raw number. jump to the process value routine.
-			goto proc_val
-		}
-		// any character less than ']' is likely '['. let's assume
-		// it's an open-array character.
-		if json[i] < ']' {
-			i++
-			vc = '['
-			// jump to process delimiter routine.
-			goto proc_nested
-		}
-		// any character less than 'u' likely means tha the value is
-		// 'true', 'false', or 'null'.
-		if json[i] < 'u' {
-			vc = json[i] // assign the vc token character to the actual.
-			s = i
-			i++
-			for ; i < len(json); i++ {
-				// let's pick up any non-alpha lowercase character as the
-				// terminator. it doesn't matter.
-				if json[i] < 'a' || json[i] > 'z' {
-					break
-				}
-			}
-			// we have raw literal. jump to the process value routine.
-			goto proc_val
-		}
-		// if we reached this far, then the value must be a nested object.
-		i++
-		vc = '{'
-		// jump to process delimiter routine.
-		goto proc_nested
-	}
-	vc = 0
-	// ran out of json buffer
-	if i >= len(json) {
-		return Result{}
-	}
-
-	// process nested array or object
-proc_nested:
-	if (matched && depth == len(parts)) || !matched {
-		// begin squash
-		// squash the value, ignoring all nested arrays and objects.
-		s = i - 1
-		// the first '[' or '{' has already been read
-		depth := 1
-	squash:
-		for ; i < len(json); i++ {
-			if json[i] >= '"' && json[i] <= '}' {
-				switch json[i] {
-				case '"':
-					i++
-					s2 := i
-					for ; i < len(json); i++ {
-						if json[i] > '\\' {
-							continue
-						}
-						if json[i] == '"' {
-							// look for an escaped slash
-							if json[i-1] == '\\' {
-								n := 0
-								for j := i - 2; j > s2-1; j-- {
-									if json[j] != '\\' {
-										break
-									}
-									n++
-								}
-								if n%2 == 0 {
-									continue
-								}
-							}
-							break
-						}
-					}
-				case '{', '[':
-					depth++
-				case '}', ']':
-					depth--
-					if depth == 0 {
-						i++
-						break squash
-					}
-				}
-			}
-		}
-		// end squash
-		// the 'i' and 's' values should fall-though to the proc_val function
-	}
-
-	// process the value
-proc_val:
-	if matched {
-		// hit, that's good!
-		if depth == len(parts) {
-			switch vc {
-			case '{', '[':
-				value.Type = JSON
-				value.Raw = json[s:i]
-			case 'n':
-				value.Type = Null
-				value.Raw = json[s:i]
-			case 't':
-				value.Type = True
-				value.Raw = json[s:i]
-			case 'f':
-				value.Type = False
-				value.Raw = json[s:i]
-			case '"':
-				value.Type = String
-				// readstr
-				// the val has not been read yet
-				// the first double-quote has already been read
-				s = i
-				for ; i < len(json); i++ {
-					if json[i] > '\\' {
-						continue
-					}
-					if json[i] == '"' {
-						value.Raw = json[s-1 : i+1]
-						value.Str = json[s:i]
-						break
-					}
-					if json[i] == '\\' {
-						i++
-						for ; i < len(json); i++ {
-							if json[i] > '\\' {
-								continue
-							}
-							if json[i] == '"' {
-								// look for an escaped slash
-								if json[i-1] == '\\' {
-									n := 0
-									for j := i - 2; j > s-1; j-- {
-										if json[j] != '\\' {
-											break
-										}
-										n++
-									}
-									if n%2 == 0 {
-										continue
-									}
-								}
-								break
-							}
-						}
-						value.Raw = json[s-1 : i+1]
-						value.Str = unescape(json[s:i])
-						break
-					}
-				}
-				// end readstr
-			case '0':
-				value.Type = Number
-				value.Raw = json[s:i]
-				value.Num, _ = strconv.ParseFloat(value.Raw, 64)
-			}
-			return value
-		} else {
-			f = frame{stype: vc}
-			stack = append(stack, f)
-			depth++
-			goto read_key
-		}
-	}
-	if vc == '"' {
-		// readstr
-		// the val has not been read yet. we can read and throw away.
-		// the first double-quote has already been read
-		s = i
-		for ; i < len(json); i++ {
-			if json[i] == '"' {
-				// look for an escaped slash
-				if json[i-1] == '\\' {
-					n := 0
-					for j := i - 2; j > s-1; j-- {
-						if json[j] != '\\' {
-							break
-						}
-						n++
-					}
-					if n%2 == 0 {
-						continue
-					}
-				}
-				break
-			}
-		}
-		i++
-		// end readstr
-	}
-
-	// read to the comma or end of object
-	for ; i < len(json); i++ {
-		switch json[i] {
-		case '}', ']':
-			if arrch && parts[depth-1].key == "#" {
-				if alogok {
-					var jsons = make([]byte, 0, 64)
-					jsons = append(jsons, '[')
-					for j := 0; j < len(alog); j++ {
-						res := Get(json[alog[j]:], alogkey)
-						if res.Exists() {
-							if j > 0 {
-								jsons = append(jsons, ',')
-							}
-							jsons = append(jsons, []byte(res.Raw)...)
-						}
-					}
-					jsons = append(jsons, ']')
-					return Result{Type: JSON, Raw: string(jsons)}
-				} else {
-					return Result{Type: Number, Num: float64(f.count)}
-				}
-			}
-			// step the stack back
-			depth--
-			if depth == 0 {
-				return Result{}
-			}
-			stack = stack[:len(stack)-1]
-			f = stack[len(stack)-1]
-		case ',':
-			i++
-			goto read_key
-		}
-	}
-	return Result{}
+	return value
 }
 
 // unescape unescapes a string

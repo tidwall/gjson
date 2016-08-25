@@ -126,6 +126,9 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 }`
 
 func TestBasic(t *testing.T) {
+	//fmt.Printf("%v\n", Parse(basicJSON).Get("items.3.tags.#").String())
+	//return
+
 	var mtok Result
 	mtok = Get(basicJSON, "loggy")
 	if mtok.Type != JSON {
@@ -716,7 +719,7 @@ var exampleJSON = `{
 			"width": 500,
 			"height": 500
 		},
-		"image": { 
+		"image": {
 			"src": "Images/Sun.png",
 			"hOffset": 250,
 			"vOffset": 250,
@@ -732,6 +735,10 @@ var exampleJSON = `{
 		}
 	}
 }`
+
+func TestNewParse(t *testing.T) {
+	//fmt.Printf("%v\n", parse2(exampleJSON, "widget").String())
+}
 
 func TestUnmarshalMap(t *testing.T) {
 	var m1 = Parse(exampleJSON).Value().(map[string]interface{})

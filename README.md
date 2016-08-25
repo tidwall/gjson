@@ -172,7 +172,7 @@ gjson.Get(json, "name.last")
 
 ## Check for the existence of a value
 
-Sometimes you may want to see if the value actually existed in the json document.
+Sometimes you just want to know you if a value exists.
 
 ```go
 value := gjson.Get(json, "name.last")
@@ -197,13 +197,13 @@ Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/js
 and [jsonparser](https://github.com/buger/jsonparser)
 
 ```
-BenchmarkGJSONGet-8              	 3000000	       373 ns/op	       0 B/op	       0 allocs/op
-BenchmarkJSONUnmarshalMap-8      	  600000	      8884 ns/op	    3048 B/op	      69 allocs/op
-BenchmarkJSONUnmarshalStruct-8   	  600000	      9045 ns/op	    1832 B/op	      69 allocs/op
-BenchmarkJSONDecoder-8           	  300000	     14134 ns/op	    4224 B/op	     184 allocs/op
-BenchmarkFFJSONLexer-8           	 1500000	      3182 ns/op	     896 B/op	       8 allocs/op
-BenchmarkEasyJSONLexer-8         	 3000000	       932 ns/op	     613 B/op	       6 allocs/op
-BenchmarkJSONParserGet-8         	 3000000	       444 ns/op	      21 B/op	       0 allocs/op
+BenchmarkGJSONGet-8              	 3000000	       368 ns/op	       0 B/op	       0 allocs/op
+BenchmarkJSONUnmarshalMap-8      	  600000	      9181 ns/op	    3048 B/op	      69 allocs/op
+BenchmarkJSONUnmarshalStruct-8   	  600000	      9256 ns/op	    1832 B/op	      69 allocs/op
+BenchmarkJSONDecoder-8           	  300000	     14365 ns/op	    4224 B/op	     184 allocs/op
+BenchmarkFFJSONLexer-8           	 1500000	      3569 ns/op	     896 B/op	       8 allocs/op
+BenchmarkEasyJSONLexer-8         	 3000000	       973 ns/op	     613 B/op	       6 allocs/op
+BenchmarkJSONParserGet-8         	 3000000	       531 ns/op	      21 B/op	       0 allocs/op
 ```
 
 JSON document used:
