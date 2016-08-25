@@ -490,43 +490,64 @@ func parseLiteral(json string, i int) (int, string) {
 	return i, json[s:]
 }
 
-func parseArrayPath(path string) (
-	part string, npath string, more bool, alogok bool, arrch bool, alogkey string,
-) {
+type arrayPathResult struct {
+	part    string
+	path    string
+	more    bool
+	alogok  bool
+	arrch   bool
+	alogkey string
+}
+
+func parseArrayPath(path string) (r arrayPathResult) {
 	for i := 0; i < len(path); i++ {
 		if path[i] == '.' {
-			return path[:i], path[i+1:], true, alogok, arrch, alogkey
+			r.part = path[:i]
+			r.path = path[i+1:]
+			r.more = true
+			return
 		}
 		if path[i] == '#' {
-			arrch = true
+			r.arrch = true
 			if i == 0 && len(path) > 1 && path[1] == '.' {
-				alogok = true
-				alogkey = path[2:]
-				path = path[:1]
+				r.alogok = true
+				r.alogkey = path[2:]
+				r.path = path[:1]
 			}
 			continue
 		}
 	}
-	return path, "", false, alogok, arrch, alogkey
+	r.part = path
+	r.path = ""
+	return
 }
 
-func parseObjectPath(path string) (
-	part string, npath string, wild bool, uc bool, more bool,
-) {
+type objectPathResult struct {
+	part string
+	path string
+	wild bool
+	uc   bool
+	more bool
+}
+
+func parseObjectPath(path string) (r objectPathResult) {
 	for i := 0; i < len(path); i++ {
 		if path[i]&0x60 == 0x60 {
 			// alpha lowercase
 			continue
 		}
 		if path[i] == '.' {
-			return path[:i], path[i+1:], wild, uc, true
+			r.part = path[:i]
+			r.path = path[i+1:]
+			r.more = true
+			return
 		}
 		if path[i] == '*' || path[i] == '?' {
-			wild = true
+			r.wild = true
 			continue
 		}
 		if path[i] > 0x7f {
-			uc = true
+			r.uc = true
 			continue
 		}
 		if path[i] == '\\' {
@@ -539,7 +560,7 @@ func parseObjectPath(path string) (
 				i++
 				for ; i < len(path); i++ {
 					if path[i] > 0x7f {
-						uc = true
+						r.uc = true
 						continue
 					}
 					if path[i] == '\\' {
@@ -549,18 +570,23 @@ func parseObjectPath(path string) (
 						}
 						continue
 					} else if path[i] == '.' {
-						return string(epart), path[i+1:], wild, uc, true
+						r.part = string(epart)
+						r.path = path[i+1:]
+						r.more = true
+						return
 					} else if path[i] == '*' || path[i] == '?' {
-						wild = true
+						r.wild = true
 					}
 					epart = append(epart, path[i])
 				}
 			}
 			// append the last part
-			return string(epart), "", wild, uc, false
+			r.part = string(epart)
+			return
 		}
 	}
-	return path, "", wild, uc, false
+	r.part = path
+	return
 }
 
 func parseSquash(json string, i int) (int, string) {
@@ -614,7 +640,7 @@ func parseSquash(json string, i int) (int, string) {
 func parseObject(c *parseContext, i int, path string) (int, bool) {
 	var match, kesc, vesc, ok, hit bool
 	var key, val string
-	part, npath, wild, uc, more := parseObjectPath(path)
+	rp := parseObjectPath(path)
 	for i < len(c.json) {
 		for ; i < len(c.json); i++ {
 			if c.json[i] == '"' {
@@ -669,20 +695,20 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 		if !ok {
 			return i, false
 		}
-		if wild {
+		if rp.wild {
 			if kesc {
-				match = wildcardMatch(unescape(key), part, uc)
+				match = wildcardMatch(unescape(key), rp.part, rp.uc)
 			} else {
-				match = wildcardMatch(key, part, uc)
+				match = wildcardMatch(key, rp.part, rp.uc)
 			}
 		} else {
 			if kesc {
-				match = part == unescape(key)
+				match = rp.part == unescape(key)
 			} else {
-				match = part == key
+				match = rp.part == key
 			}
 		}
-		hit = match && !more
+		hit = match && !rp.more
 		for ; i < len(c.json); i++ {
 			switch c.json[i] {
 			default:
@@ -705,7 +731,7 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 				}
 			case '{':
 				if match && !hit {
-					i, hit = parseObject(c, i+1, npath)
+					i, hit = parseObject(c, i+1, rp.path)
 					if hit {
 						return i, true
 					}
@@ -719,7 +745,7 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 				}
 			case '[':
 				if match && !hit {
-					i, hit = parseArray(c, i+1, npath)
+					i, hit = parseArray(c, i+1, rp.path)
 					if hit {
 						return i, true
 					}
@@ -765,9 +791,9 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 	var h int
 	var alog []int
 	var partidx int
-	part, npath, more, alogok, arrch, alogkey := parseArrayPath(path)
-	if !arrch {
-		n, err := strconv.ParseUint(part, 10, 64)
+	rp := parseArrayPath(path)
+	if !rp.arrch {
+		n, err := strconv.ParseUint(rp.part, 10, 64)
 		if err != nil {
 			partidx = -1
 		} else {
@@ -775,12 +801,12 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 		}
 	}
 	for i < len(c.json) {
-		if !arrch {
+		if !rp.arrch {
 			match = partidx == h
-			hit = match && !more
+			hit = match && !rp.more
 		}
 		h++
-		if alogok {
+		if rp.alogok {
 			alog = append(alog, i)
 		}
 		for ; i < len(c.json); i++ {
@@ -794,7 +820,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 					return i, false
 				}
 				if hit {
-					if alogok {
+					if rp.alogok {
 						break
 					}
 					if vesc {
@@ -808,9 +834,9 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				}
 			case '{':
 				if match && !hit {
-					i, hit = parseObject(c, i+1, npath)
+					i, hit = parseObject(c, i+1, rp.path)
 					if hit {
-						if alogok {
+						if rp.alogok {
 							break
 						}
 						return i, true
@@ -818,7 +844,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				} else {
 					i, val = parseSquash(c.json, i)
 					if hit {
-						if alogok {
+						if rp.alogok {
 							break
 						}
 						c.value.Raw = val
@@ -828,9 +854,9 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				}
 			case '[':
 				if match && !hit {
-					i, hit = parseArray(c, i+1, npath)
+					i, hit = parseArray(c, i+1, rp.path)
 					if hit {
-						if alogok {
+						if rp.alogok {
 							break
 						}
 						return i, true
@@ -838,7 +864,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				} else {
 					i, val = parseSquash(c.json, i)
 					if hit {
-						if alogok {
+						if rp.alogok {
 							break
 						}
 						c.value.Raw = val
@@ -849,7 +875,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 			case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				i, val = parseNumber(c.json, i)
 				if hit {
-					if alogok {
+					if rp.alogok {
 						break
 					}
 					c.value.Raw = val
@@ -861,7 +887,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				vc := c.json[i]
 				i, val = parseLiteral(c.json, i)
 				if hit {
-					if alogok {
+					if rp.alogok {
 						break
 					}
 					c.value.Raw = val
@@ -874,12 +900,12 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 					return i, true
 				}
 			case ']':
-				if arrch && part == "#" {
-					if alogok {
+				if rp.arrch && rp.part == "#" {
+					if rp.alogok {
 						var jsons = make([]byte, 0, 64)
 						jsons = append(jsons, '[')
 						for j := 0; j < len(alog); j++ {
-							res := Get(c.json[alog[j]:], alogkey)
+							res := Get(c.json[alog[j]:], rp.alogkey)
 							if res.Exists() {
 								if j > 0 {
 									jsons = append(jsons, ',')
@@ -892,7 +918,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						c.value.Raw = string(jsons)
 						return i + 1, true
 					} else {
-						if alogok {
+						if rp.alogok {
 							break
 						}
 						c.value.Raw = val
