@@ -430,18 +430,14 @@ func (t Result) Value() interface{} {
 
 }
 
-func parseString(json string, i int, raw bool) (int, string, bool, bool) {
+func parseString(json string, i int) (int, string, bool, bool) {
 	var s = i
 	for ; i < len(json); i++ {
 		if json[i] > '\\' {
 			continue
 		}
 		if json[i] == '"' {
-			if raw {
-				return i + 1, json[s-1 : i+1], false, true
-			} else {
-				return i + 1, json[s:i], false, true
-			}
+			return i + 1, json[s-1 : i+1], false, true
 		}
 		if json[i] == '\\' {
 			i++
@@ -463,21 +459,13 @@ func parseString(json string, i int, raw bool) (int, string, bool, bool) {
 							continue
 						}
 					}
-					if raw {
-						return i + 1, json[s-1 : i+1], true, true
-					} else {
-						return i + 1, json[s:i], true, true
-					}
+					return i + 1, json[s-1 : i+1], true, true
 				}
 			}
 			break
 		}
 	}
-	if raw {
-		return i, json[s-1:], false, false
-	} else {
-		return i, json[s:], false, false
-	}
+	return i, json[s-1:], false, false
 }
 
 func parseNumber(json string, i int) (int, string) {
@@ -575,7 +563,7 @@ func parseObjectPath(path string) (
 	return path, "", wild, uc, false
 }
 
-func squashObjectOrArray(json string, i int) (int, string) {
+func parseSquash(json string, i int) (int, string) {
 	// expects that the lead character is a '[' or '{'
 	// squash the value, ignoring all nested arrays and objects.
 	// the first '[' or '{' has already been read
@@ -623,17 +611,58 @@ func squashObjectOrArray(json string, i int) (int, string) {
 	return i, json[s:]
 }
 
-func parseObject(json string, i int, path string, value *Result) (int, bool) {
+func parseObject(c *parseContext, i int, path string) (int, bool) {
 	var match, kesc, vesc, ok, hit bool
 	var key, val string
 	part, npath, wild, uc, more := parseObjectPath(path)
-	for i < len(json) {
-		for ; i < len(json); i++ {
-			if json[i] == '"' {
-				i, key, kesc, ok = parseString(json, i+1, false)
+	for i < len(c.json) {
+		for ; i < len(c.json); i++ {
+			if c.json[i] == '"' {
+				// parse_key_string
+				// this is slightly different from getting s string value
+				// because we don't need the outer quotes.
+				i++
+				var s = i
+				for ; i < len(c.json); i++ {
+					if c.json[i] > '\\' {
+						continue
+					}
+					if c.json[i] == '"' {
+						i, key, kesc, ok = i+1, c.json[s:i], false, true
+						goto parse_key_string_done
+					}
+					if c.json[i] == '\\' {
+						i++
+						for ; i < len(c.json); i++ {
+							if c.json[i] > '\\' {
+								continue
+							}
+							if c.json[i] == '"' {
+								// look for an escaped slash
+								if c.json[i-1] == '\\' {
+									n := 0
+									for j := i - 2; j > 0; j-- {
+										if c.json[j] != '\\' {
+											break
+										}
+										n++
+									}
+									if n%2 == 0 {
+										continue
+									}
+								}
+								i, key, kesc, ok = i+1, c.json[s:i], true, true
+								goto parse_key_string_done
+							}
+						}
+						break
+					}
+				}
+				i, key, kesc, ok = i, c.json[s:], false, false
+			parse_key_string_done:
 				break
 			}
-			if json[i] == '}' {
+			if c.json[i] == '}' {
 				return i + 1, false
 			}
 		}
@@ -654,72 +683,72 @@ func parseObject(json string, i int, path string, value *Result) (int, bool) {
 			}
 		}
 		hit = match && !more
-		for ; i < len(json); i++ {
-			switch json[i] {
+		for ; i < len(c.json); i++ {
+			switch c.json[i] {
 			default:
 				continue
 			case '"':
 				i++
-				i, val, vesc, ok = parseString(json, i, true)
+				i, val, vesc, ok = parseString(c.json, i)
 				if !ok {
 					return i, false
 				}
 				if hit {
 					if vesc {
-						value.Str = unescape(val[1 : len(val)-1])
+						c.value.Str = unescape(val[1 : len(val)-1])
 					} else {
-						value.Str = val[1 : len(val)-1]
+						c.value.Str = val[1 : len(val)-1]
 					}
-					value.Raw = val
-					value.Type = String
+					c.value.Raw = val
+					c.value.Type = String
 					return i, true
 				}
 			case '{':
 				if match && !hit {
-					i, hit = parseObject(json, i+1, npath, value)
+					i, hit = parseObject(c, i+1, npath)
 					if hit {
 						return i, true
 					}
 				} else {
-					i, val = squashObjectOrArray(json, i)
+					i, val = parseSquash(c.json, i)
 					if hit {
-						value.Raw = val
-						value.Type = JSON
+						c.value.Raw = val
+						c.value.Type = JSON
 						return i, true
 					}
 				}
 			case '[':
 				if match && !hit {
-					i, hit = parseArray(json, i+1, npath, value)
+					i, hit = parseArray(c, i+1, npath)
 					if hit {
 						return i, true
 					}
 				} else {
-					i, val = squashObjectOrArray(json, i)
+					i, val = parseSquash(c.json, i)
 					if hit {
-						value.Raw = val
-						value.Type = JSON
+						c.value.Raw = val
+						c.value.Type = JSON
 						return i, true
 					}
 				}
 			case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				i, val = parseNumber(json, i)
+				i, val = parseNumber(c.json, i)
 				if hit {
-					value.Raw = val
-					value.Type = Number
-					value.Num, _ = strconv.ParseFloat(val, 64)
+					c.value.Raw = val
+					c.value.Type = Number
+					c.value.Num, _ = strconv.ParseFloat(val, 64)
 					return i, true
 				}
 			case 't', 'f', 'n':
-				vc := json[i]
-				i, val = parseLiteral(json, i)
+				vc := c.json[i]
+				i, val = parseLiteral(c.json, i)
 				if hit {
-					value.Raw = val
+					c.value.Raw = val
 					switch vc {
 					case 't':
-						value.Type = True
+						c.value.Type = True
 					case 'f':
-						value.Type = False
+						c.value.Type = False
 					}
 					return i, true
 				}
@@ -730,7 +759,7 @@ func parseObject(json string, i int, path string, value *Result) (int, bool) {
 	return i, false
 }
 
-func parseArray(json string, i int, path string, value *Result) (int, bool) {
+func parseArray(c *parseContext, i int, path string) (int, bool) {
 	var match, vesc, ok, hit bool
 	var val string
 	var h int
@@ -745,7 +774,7 @@ func parseArray(json string, i int, path string, value *Result) (int, bool) {
 			partidx = int(n)
 		}
 	}
-	for i < len(json) {
+	for i < len(c.json) {
 		if !arrch {
 			match = partidx == h
 			hit = match && !more
@@ -754,13 +783,13 @@ func parseArray(json string, i int, path string, value *Result) (int, bool) {
 		if alogok {
 			alog = append(alog, i)
 		}
-		for ; i < len(json); i++ {
-			switch json[i] {
+		for ; i < len(c.json); i++ {
+			switch c.json[i] {
 			default:
 				continue
 			case '"':
 				i++
-				i, val, vesc, ok = parseString(json, i, true)
+				i, val, vesc, ok = parseString(c.json, i)
 				if !ok {
 					return i, false
 				}
@@ -769,17 +798,17 @@ func parseArray(json string, i int, path string, value *Result) (int, bool) {
 						break
 					}
 					if vesc {
-						value.Str = unescape(val[1 : len(val)-1])
+						c.value.Str = unescape(val[1 : len(val)-1])
 					} else {
-						value.Str = val[1 : len(val)-1]
+						c.value.Str = val[1 : len(val)-1]
 					}
-					value.Raw = val
-					value.Type = String
+					c.value.Raw = val
+					c.value.Type = String
 					return i, true
 				}
 			case '{':
 				if match && !hit {
-					i, hit = parseObject(json, i+1, npath, value)
+					i, hit = parseObject(c, i+1, npath)
 					if hit {
 						if alogok {
 							break
@@ -787,19 +816,19 @@ func parseArray(json string, i int, path string, value *Result) (int, bool) {
 						return i, true
 					}
 				} else {
-					i, val = squashObjectOrArray(json, i)
+					i, val = parseSquash(c.json, i)
 					if hit {
 						if alogok {
 							break
 						}
-						value.Raw = val
-						value.Type = JSON
+						c.value.Raw = val
+						c.value.Type = JSON
 						return i, true
 					}
 				}
 			case '[':
 				if match && !hit {
-					i, hit = parseArray(json, i+1, npath, value)
+					i, hit = parseArray(c, i+1, npath)
 					if hit {
 						if alogok {
 							break
@@ -807,51 +836,50 @@ func parseArray(json string, i int, path string, value *Result) (int, bool) {
 						return i, true
 					}
 				} else {
-					i, val = squashObjectOrArray(json, i)
+					i, val = parseSquash(c.json, i)
 					if hit {
 						if alogok {
 							break
 						}
-						value.Raw = val
-						value.Type = JSON
+						c.value.Raw = val
+						c.value.Type = JSON
 						return i, true
 					}
 				}
 			case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				i, val = parseNumber(json, i)
+				i, val = parseNumber(c.json, i)
 				if hit {
 					if alogok {
 						break
 					}
-					value.Raw = val
-					value.Type = Number
-					value.Num, _ = strconv.ParseFloat(val, 64)
+					c.value.Raw = val
+					c.value.Type = Number
+					c.value.Num, _ = strconv.ParseFloat(val, 64)
 					return i, true
 				}
 			case 't', 'f', 'n':
-				vc := json[i]
-				i, val = parseLiteral(json, i)
+				vc := c.json[i]
+				i, val = parseLiteral(c.json, i)
 				if hit {
 					if alogok {
 						break
 					}
-					value.Raw = val
+					c.value.Raw = val
 					switch vc {
 					case 't':
-						value.Type = True
+						c.value.Type = True
 					case 'f':
-						value.Type = False
+						c.value.Type = False
 					}
 					return i, true
 				}
 			case ']':
-				// TODO... '#' counter?
 				if arrch && part == "#" {
 					if alogok {
 						var jsons = make([]byte, 0, 64)
 						jsons = append(jsons, '[')
 						for j := 0; j < len(alog); j++ {
-							res := Get(json[alog[j]:], alogkey)
+							res := Get(c.json[alog[j]:], alogkey)
 							if res.Exists() {
 								if j > 0 {
 									jsons = append(jsons, ',')
@@ -860,16 +888,16 @@ func parseArray(json string, i int, path string, value *Result) (int, bool) {
 							}
 						}
 						jsons = append(jsons, ']')
-						value.Type = JSON
-						value.Raw = string(jsons)
+						c.value.Type = JSON
+						c.value.Raw = string(jsons)
 						return i + 1, true
 					} else {
 						if alogok {
 							break
 						}
-						value.Raw = val
-						value.Type = Number
-						value.Num = float64(h - 1)
+						c.value.Raw = val
+						c.value.Type = Number
+						c.value.Num = float64(h - 1)
 						return i + 1, true
 					}
 				}
@@ -912,20 +940,25 @@ func parseArray(json string, i int, path string, value *Result) (int, bool) {
 //
 func Get(json, path string) Result {
 	var i int
-	var value Result
-	for ; i < len(json); i++ {
-		if json[i] == '{' {
+	var c = &parseContext{json: json}
+	for ; i < len(c.json); i++ {
+		if c.json[i] == '{' {
 			i++
-			parseObject(json, i, path, &value)
+			parseObject(c, i, path)
 			break
 		}
-		if json[i] == '[' {
+		if c.json[i] == '[' {
 			i++
-			parseArray(json, i, path, &value)
+			parseArray(c, i, path)
 			break
 		}
 	}
-	return value
+	return c.value
+}
+
+type parseContext struct {
+	json  string
+	value Result
 }
 
 // unescape unescapes a string
