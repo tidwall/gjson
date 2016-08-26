@@ -100,8 +100,8 @@ func (t Result) Array() []Result {
 	if t.Type != JSON {
 		return nil
 	}
-	a, _, _, _, _ := t.arrayOrMap('[', false)
-	return a
+	r := t.arrayOrMap('[', false)
+	return r.a
 }
 
 //  Map returns back an map of children. The result should be a JSON array.
@@ -109,8 +109,8 @@ func (t Result) Map() map[string]Result {
 	if t.Type != JSON {
 		return map[string]Result{}
 	}
-	_, _, o, _, _ := t.arrayOrMap('{', false)
-	return o
+	r := t.arrayOrMap('{', false)
+	return r.o
 }
 
 // Get searches result for the specified path.
@@ -119,17 +119,15 @@ func (t Result) Get(path string) Result {
 	return Get(t.Raw, path)
 }
 
-func (t Result) arrayOrMap(vc byte, valueize bool) (
-	[]Result,
-	[]interface{},
-	map[string]Result,
-	map[string]interface{},
-	byte,
-) {
-	var a []Result
-	var ai []interface{}
-	var o map[string]Result
-	var oi map[string]interface{}
+type arrayOrMapResult struct {
+	a  []Result
+	ai []interface{}
+	o  map[string]Result
+	oi map[string]interface{}
+	vc byte
+}
+
+func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
 	var json = t.Raw
 	var i int
 	var value Result
@@ -138,7 +136,7 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (
 	if vc == 0 {
 		for ; i < len(json); i++ {
 			if json[i] == '{' || json[i] == '[' {
-				vc = json[i]
+				r.vc = json[i]
 				i++
 				break
 			}
@@ -156,18 +154,19 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (
 				goto end
 			}
 		}
+		r.vc = vc
 	}
-	if vc == '{' {
+	if r.vc == '{' {
 		if valueize {
-			oi = make(map[string]interface{})
+			r.oi = make(map[string]interface{})
 		} else {
-			o = make(map[string]Result)
+			r.o = make(map[string]Result)
 		}
 	} else {
 		if valueize {
-			ai = make([]interface{}, 0)
+			r.ai = make([]interface{}, 0)
 		} else {
-			a = make([]Result, 0)
+			r.a = make([]Result, 0)
 		}
 	}
 	for ; i < len(json); i++ {
@@ -204,27 +203,27 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (
 		}
 		i += len(value.Raw) - 1
 
-		if vc == '{' {
+		if r.vc == '{' {
 			if count%2 == 0 {
 				key = value
 			} else {
 				if valueize {
-					oi[key.Str] = value.Value()
+					r.oi[key.Str] = value.Value()
 				} else {
-					o[key.Str] = value
+					r.o[key.Str] = value
 				}
 			}
 			count++
 		} else {
 			if valueize {
-				ai = append(ai, value.Value())
+				r.ai = append(r.ai, value.Value())
 			} else {
-				a = append(a, value)
+				r.a = append(r.a, value)
 			}
 		}
 	}
 end:
-	return a, ai, o, oi, vc
+	return
 }
 
 // Parse parses the json and returns a result
@@ -417,17 +416,16 @@ func (t Result) Value() interface{} {
 	case Number:
 		return t.Num
 	case JSON:
-		_, ai, _, oi, vc := t.arrayOrMap(0, true)
-		if vc == '{' {
-			return oi
-		} else if vc == '[' {
-			return ai
+		r := t.arrayOrMap(0, true)
+		if r.vc == '{' {
+			return r.oi
+		} else if r.vc == '[' {
+			return r.ai
 		}
 		return nil
 	case True:
 		return true
 	}
-
 }
 
 func parseString(json string, i int) (int, string, bool, bool) {
