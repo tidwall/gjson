@@ -781,6 +781,7 @@ var benchPaths = []string{
 
 func BenchmarkGJSONGet(t *testing.B) {
 	t.ReportAllocs()
+	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
 		for j := 0; j < len(benchPaths); j++ {
 			if Get(exampleJSON, benchPaths[j]).Type == Null {
@@ -793,10 +794,11 @@ func BenchmarkGJSONGet(t *testing.B) {
 
 func BenchmarkGJSONUnmarshalMap(t *testing.B) {
 	t.ReportAllocs()
+	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
 		for j := 0; j < len(benchPaths); j++ {
 			parts := strings.Split(benchPaths[j], ".")
-			m := Parse(exampleJSON).Value().(map[string]interface{})
+			m, _ := Parse(exampleJSON).Value().(map[string]interface{})
 			var v interface{}
 			for len(parts) > 0 {
 				part := parts[0]
@@ -820,6 +822,7 @@ func BenchmarkGJSONUnmarshalMap(t *testing.B) {
 
 func BenchmarkJSONUnmarshalMap(t *testing.B) {
 	t.ReportAllocs()
+	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
 		for j := 0; j < len(benchPaths); j++ {
 			parts := strings.Split(benchPaths[j], ".")
@@ -850,6 +853,7 @@ func BenchmarkJSONUnmarshalMap(t *testing.B) {
 
 func BenchmarkJSONUnmarshalStruct(t *testing.B) {
 	t.ReportAllocs()
+	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
 		for j := 0; j < len(benchPaths); j++ {
 			var s BenchStruct
@@ -877,6 +881,7 @@ func BenchmarkJSONUnmarshalStruct(t *testing.B) {
 
 func BenchmarkJSONDecoder(t *testing.B) {
 	t.ReportAllocs()
+	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
 		for j := 0; j < len(benchPaths); j++ {
 			dec := json.NewDecoder(bytes.NewBuffer([]byte(exampleJSON)))
@@ -922,6 +927,7 @@ func BenchmarkJSONDecoder(t *testing.B) {
 
 func BenchmarkFFJSONLexer(t *testing.B) {
 	t.ReportAllocs()
+	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
 		for j := 0; j < len(benchPaths); j++ {
 			l := fflib.NewFFLexer([]byte(exampleJSON))
@@ -964,7 +970,6 @@ func BenchmarkFFJSONLexer(t *testing.B) {
 }
 
 func BenchmarkEasyJSONLexer(t *testing.B) {
-	t.ReportAllocs()
 	skipCC := func(l *jlexer.Lexer, n int) {
 		for i := 0; i < n; i++ {
 			l.Skip()
@@ -980,6 +985,8 @@ func BenchmarkEasyJSONLexer(t *testing.B) {
 		l.Delim('}')
 		l.WantComma()
 	}
+	t.ReportAllocs()
+	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
 		for j := 0; j < len(benchPaths); j++ {
 			l := &jlexer.Lexer{Data: []byte(exampleJSON)}
@@ -1049,8 +1056,8 @@ func BenchmarkJSONParserGet(t *testing.B) {
 	for i := 0; i < len(benchPaths); i++ {
 		keys = append(keys, strings.Split(benchPaths[i], "."))
 	}
-	t.ResetTimer()
 	t.ReportAllocs()
+	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
 		for j, k := range keys {
 			if j == 1 {

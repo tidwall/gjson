@@ -188,6 +188,16 @@ if gjson.Get(json, "name.last").Exists(){
 }
 ```
 
+## Unmarshal to a map
+
+To unmarshal to a `map[string]interface{}`:
+
+```go
+m, ok := gjson.Parse(json).Value().(map[string]interface{})
+if !ok{
+	// not a map
+}
+```
 
 ## Performance
 
@@ -197,13 +207,14 @@ Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/js
 and [jsonparser](https://github.com/buger/jsonparser)
 
 ```
-BenchmarkGJSONGet-8              	 3000000	       368 ns/op	       0 B/op	       0 allocs/op
-BenchmarkJSONUnmarshalMap-8      	  600000	      9181 ns/op	    3048 B/op	      69 allocs/op
-BenchmarkJSONUnmarshalStruct-8   	  600000	      9256 ns/op	    1832 B/op	      69 allocs/op
-BenchmarkJSONDecoder-8           	  300000	     14365 ns/op	    4224 B/op	     184 allocs/op
-BenchmarkFFJSONLexer-8           	 1500000	      3569 ns/op	     896 B/op	       8 allocs/op
-BenchmarkEasyJSONLexer-8         	 3000000	       973 ns/op	     613 B/op	       6 allocs/op
-BenchmarkJSONParserGet-8         	 3000000	       531 ns/op	      21 B/op	       0 allocs/op
+BenchmarkGJSONGet-8              	15000000	       333 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGJSONUnmarshalMap-8     	  900000	      4188 ns/op	    1920 B/op	      26 allocs/op
+BenchmarkJSONUnmarshalMap-8      	  600000	      8908 ns/op	    3048 B/op	      69 allocs/op
+BenchmarkJSONUnmarshalStruct-8   	  600000	      9026 ns/op	    1832 B/op	      69 allocs/op
+BenchmarkJSONDecoder-8           	  300000	     14339 ns/op	    4224 B/op	     184 allocs/op
+BenchmarkFFJSONLexer-8           	 1500000	      3156 ns/op	     896 B/op	       8 allocs/op
+BenchmarkEasyJSONLexer-8         	 3000000	       938 ns/op	     613 B/op	       6 allocs/op
+BenchmarkJSONParserGet-8         	 3000000	       442 ns/op	      21 B/op	       0 allocs/op
 ```
 
 JSON document used:
