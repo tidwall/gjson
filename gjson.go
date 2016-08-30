@@ -1,7 +1,11 @@
 // Package gjson provides searching for json strings.
 package gjson
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/tidwall/match"
+)
 
 // Type is Result type
 type Type int
@@ -524,16 +528,11 @@ type objectPathResult struct {
 	part string
 	path string
 	wild bool
-	uc   bool
 	more bool
 }
 
 func parseObjectPath(path string) (r objectPathResult) {
 	for i := 0; i < len(path); i++ {
-		if path[i]&0x60 == 0x60 {
-			// alpha lowercase
-			continue
-		}
 		if path[i] == '.' {
 			r.part = path[:i]
 			r.path = path[i+1:]
@@ -542,10 +541,6 @@ func parseObjectPath(path string) (r objectPathResult) {
 		}
 		if path[i] == '*' || path[i] == '?' {
 			r.wild = true
-			continue
-		}
-		if path[i] > 0x7f {
-			r.uc = true
 			continue
 		}
 		if path[i] == '\\' {
@@ -557,10 +552,6 @@ func parseObjectPath(path string) (r objectPathResult) {
 				epart = append(epart, path[i])
 				i++
 				for ; i < len(path); i++ {
-					if path[i] > 0x7f {
-						r.uc = true
-						continue
-					}
 					if path[i] == '\\' {
 						i++
 						if i < len(path) {
@@ -636,7 +627,7 @@ func parseSquash(json string, i int) (int, string) {
 }
 
 func parseObject(c *parseContext, i int, path string) (int, bool) {
-	var match, kesc, vesc, ok, hit bool
+	var pmatch, kesc, vesc, ok, hit bool
 	var key, val string
 	rp := parseObjectPath(path)
 	for i < len(c.json) {
@@ -695,18 +686,18 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 		}
 		if rp.wild {
 			if kesc {
-				match = wildcardMatch(unescape(key), rp.part, rp.uc)
+				pmatch = match.Match(unescape(key), rp.part)
 			} else {
-				match = wildcardMatch(key, rp.part, rp.uc)
+				pmatch = match.Match(key, rp.part)
 			}
 		} else {
 			if kesc {
-				match = rp.part == unescape(key)
+				pmatch = rp.part == unescape(key)
 			} else {
-				match = rp.part == key
+				pmatch = rp.part == key
 			}
 		}
-		hit = match && !rp.more
+		hit = pmatch && !rp.more
 		for ; i < len(c.json); i++ {
 			switch c.json[i] {
 			default:
@@ -728,7 +719,7 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 					return i, true
 				}
 			case '{':
-				if match && !hit {
+				if pmatch && !hit {
 					i, hit = parseObject(c, i+1, rp.path)
 					if hit {
 						return i, true
@@ -742,7 +733,7 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 					}
 				}
 			case '[':
-				if match && !hit {
+				if pmatch && !hit {
 					i, hit = parseArray(c, i+1, rp.path)
 					if hit {
 						return i, true
@@ -784,7 +775,7 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 }
 
 func parseArray(c *parseContext, i int, path string) (int, bool) {
-	var match, vesc, ok, hit bool
+	var pmatch, vesc, ok, hit bool
 	var val string
 	var h int
 	var alog []int
@@ -800,8 +791,8 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 	}
 	for i < len(c.json) {
 		if !rp.arrch {
-			match = partidx == h
-			hit = match && !rp.more
+			pmatch = partidx == h
+			hit = pmatch && !rp.more
 		}
 		h++
 		if rp.alogok {
@@ -831,7 +822,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 					return i, true
 				}
 			case '{':
-				if match && !hit {
+				if pmatch && !hit {
 					i, hit = parseObject(c, i+1, rp.path)
 					if hit {
 						if rp.alogok {
@@ -851,7 +842,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 					}
 				}
 			case '[':
-				if match && !hit {
+				if pmatch && !hit {
 					i, hit = parseArray(c, i+1, rp.path)
 					if hit {
 						if rp.alogok {
@@ -1105,65 +1096,4 @@ func stringLessInsensitive(a, b string) bool {
 		}
 	}
 	return len(a) < len(b)
-}
-
-// wilcardMatch returns true if str matches pattern. This is a very
-// simple wildcard match where '*' matches on any number characters
-// and '?' matches on any one character.
-func wildcardMatch(str, pattern string, uc bool) bool {
-	if pattern == "*" {
-		return true
-	}
-	if !uc {
-		return deepMatch(str, pattern)
-	}
-	rstr := make([]rune, 0, len(str))
-	rpattern := make([]rune, 0, len(pattern))
-	for _, r := range str {
-		rstr = append(rstr, r)
-	}
-	for _, r := range pattern {
-		rpattern = append(rpattern, r)
-	}
-	return deepMatchRune(rstr, rpattern)
-}
-func deepMatch(str, pattern string) bool {
-	for len(pattern) > 0 {
-		switch pattern[0] {
-		default:
-			if len(str) == 0 || str[0] != pattern[0] {
-				return false
-			}
-		case '?':
-			if len(str) == 0 {
-				return false
-			}
-		case '*':
-			return deepMatch(str, pattern[1:]) ||
-				(len(str) > 0 && deepMatch(str[1:], pattern))
-		}
-		str = str[1:]
-		pattern = pattern[1:]
-	}
-	return len(str) == 0 && len(pattern) == 0
-}
-func deepMatchRune(str, pattern []rune) bool {
-	for len(pattern) > 0 {
-		switch pattern[0] {
-		default:
-			if len(str) == 0 || str[0] != pattern[0] {
-				return false
-			}
-		case '?':
-			if len(str) == 0 {
-				return false
-			}
-		case '*':
-			return deepMatchRune(str, pattern[1:]) ||
-				(len(str) > 0 && deepMatchRune(str[1:], pattern))
-		}
-		str = str[1:]
-		pattern = pattern[1:]
-	}
-	return len(str) == 0 && len(pattern) == 0
 }
