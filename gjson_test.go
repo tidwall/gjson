@@ -119,7 +119,8 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
     	        "email": "cccc"
     	    },
 			{
-				"firstName": 1002.3
+				"firstName": 1002.3,
+				"age": 101
 			}
     	]
 	}
@@ -127,6 +128,11 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 
 func TestBasic(t *testing.T) {
 	var mtok Result
+
+	mtok = Get(basicJSON, `loggy.programmers.#[age=101].firstName`)
+	if mtok.String() != "1002.3" {
+		t.Fatalf("expected %v, got %v", "1002,3", mtok.String())
+	}
 
 	mtok = Get(basicJSON, `loggy.programmers.#[firstName == "Brett"].email`)
 	if mtok.String() != "aaaa" {
