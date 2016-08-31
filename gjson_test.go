@@ -126,10 +126,12 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 }`
 
 func TestBasic(t *testing.T) {
-	//fmt.Printf("%v\n", Parse(basicJSON).Get("items.3.tags.#").String())
-	//return
-
 	var mtok Result
+
+	mtok = Get(basicJSON, `loggy.programmers.#[firstName == "Brett"].email`)
+	if mtok.String() != "aaaa" {
+		t.Fatalf("expected %v, got %v", "aaaa", mtok.String())
+	}
 	mtok = Get(basicJSON, "loggy")
 	if mtok.Type != JSON {
 		t.Fatalf("expected %v, got %v", JSON, mtok.Type)

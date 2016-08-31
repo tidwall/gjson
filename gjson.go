@@ -499,6 +499,12 @@ type arrayPathResult struct {
 	alogok  bool
 	arrch   bool
 	alogkey string
+	query   struct {
+		on    bool
+		path  string
+		op    string
+		value string
+	}
 }
 
 func parseArrayPath(path string) (r arrayPathResult) {
@@ -511,10 +517,96 @@ func parseArrayPath(path string) (r arrayPathResult) {
 		}
 		if path[i] == '#' {
 			r.arrch = true
-			if i == 0 && len(path) > 1 && path[1] == '.' {
-				r.alogok = true
-				r.alogkey = path[2:]
-				r.path = path[:1]
+			if i == 0 && len(path) > 1 {
+				if path[1] == '.' {
+					r.alogok = true
+					r.alogkey = path[2:]
+					r.path = path[:1]
+				} else if path[1] == '[' {
+					r.query.on = true
+					// query
+					i += 2
+					// whitespace
+					for ; i < len(path); i++ {
+						if path[i] > ' ' {
+							break
+						}
+					}
+					s := i
+					for ; i < len(path); i++ {
+						if path[i] <= ' ' || path[i] == '=' ||
+							path[i] == '<' || path[i] == '>' ||
+							path[i] == ']' {
+							break
+						}
+					}
+					r.query.path = path[s:i]
+					// whitespace
+					for ; i < len(path); i++ {
+						if path[i] > ' ' {
+							break
+						}
+					}
+					if i < len(path) {
+						s = i
+						if path[i] == '<' || path[i] == '>' {
+							if i < len(path)-1 && path[i+1] == '=' {
+								i++
+							}
+						} else if path[i] == '=' {
+							if i < len(path)-1 && path[i+1] == '=' {
+								s++
+								i++
+							}
+						}
+						i++
+						r.query.op = path[s:i]
+						// whitespace
+						for ; i < len(path); i++ {
+							if path[i] > ' ' {
+								break
+							}
+						}
+						s = i
+						for ; i < len(path); i++ {
+							if path[i] == '"' {
+								i++
+								s2 := i
+								for ; i < len(path); i++ {
+									if path[i] > '\\' {
+										continue
+									}
+									if path[i] == '"' {
+										// look for an escaped slash
+										if path[i-1] == '\\' {
+											n := 0
+											for j := i - 2; j > s2-1; j-- {
+												if path[j] != '\\' {
+													break
+												}
+												n++
+											}
+											if n%2 == 0 {
+												continue
+											}
+										}
+										break
+									}
+								}
+							} else if path[i] == ']' {
+								break
+							}
+						}
+						if i > len(path) {
+							i = len(path)
+						}
+						v := path[s:i]
+						for len(v) > 0 && v[len(v)-1] <= ' ' {
+							v = v[:len(v)-1]
+						}
+						r.query.value = v
+					}
+				}
 			}
 			continue
 		}
@@ -773,7 +865,60 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 	}
 	return i, false
 }
-
+func queryMatches(rp *arrayPathResult, value Result) bool {
+	rpv := rp.query.value
+	if len(rpv) > 2 && rpv[0] == '"' && rpv[len(rpv)-1] == '"' {
+		rpv = rpv[1 : len(rpv)-1]
+	}
+	switch value.Type {
+	case String:
+		switch rp.query.op {
+		case "=":
+			return value.Str == rpv
+		case "<":
+			return value.Str < rpv
+		case "<=":
+			return value.Str <= rpv
+		case ">":
+			return value.Str > rpv
+		case ">=":
+			return value.Str >= rpv
+		}
+	case Number:
+		rpvn, _ := strconv.ParseFloat(rpv, 64)
+		switch rp.query.op {
+		case "=":
+			return value.Num == rpvn
+		case "<":
+			return value.Num < rpvn
+		case "<=":
+			return value.Num <= rpvn
+		case ">":
+			return value.Num > rpvn
+		case ">=":
+			return value.Num >= rpvn
+		}
+	case True:
+		switch rp.query.op {
+		case "=":
+			return rpv == "true"
+		case ">":
+			return rpv == "false"
+		case ">=":
+			return true
+		}
+	case False:
+		switch rp.query.op {
+		case "=":
+			return rpv == "false"
+		case "<":
+			return rpv == "true"
+		case "<=":
+			return true
+		}
+	}
+	return false
+}
 func parseArray(c *parseContext, i int, path string) (int, bool) {
 	var pmatch, vesc, ok, hit bool
 	var val string
@@ -832,7 +977,18 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 					}
 				} else {
 					i, val = parseSquash(c.json, i)
-					if hit {
+					if rp.query.on {
+						res := Get(val, rp.query.path)
+						if queryMatches(&rp, res) {
+							if rp.more {
+								c.value = Get(val, rp.path)
+							} else {
+								c.value.Raw = val
+								c.value.Type = JSON
+							}
+							return i, true
+						}
+					} else if hit {
 						if rp.alogok {
 							break
 						}

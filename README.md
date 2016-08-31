@@ -79,6 +79,10 @@ The dot and wildcard characters can be escaped with '\'.
 "friends.#.first"    >> [ "James", "Roger" ]
 "friends.1.last"     >> "Craig"
 ```
+To query an array:
+```
+"friends.#[last="Murphy"].first" >> "James"
+```
 
 ## Result Type
 
@@ -157,6 +161,14 @@ for _,name := range result.Array() {
 	println(name.String())
 }
 ```
+
+You can also query an object inside an array:
+
+```go
+name := gjson.Get(json, "programmers.#[lastName="Hunter"].firstName")
+println(name.String())  // prints "Elliotte"
+```
+
 
 ## Simple Parse and Get
 
