@@ -81,7 +81,7 @@ The dot and wildcard characters can be escaped with '\'.
 ```
 To query an array:
 ```
-"friends.#[last="Murphy"].first" >> "James"
+`friends.#[last="Murphy"].first` >> "James"
 ```
 
 ## Result Type
@@ -165,7 +165,7 @@ for _,name := range result.Array() {
 You can also query an object inside an array:
 
 ```go
-name := gjson.Get(json, "programmers.#[lastName="Hunter"].firstName")
+name := gjson.Get(json, `programmers.#[lastName="Hunter"].firstName`)
 println(name.String())  // prints "Elliotte"
 ```
 
