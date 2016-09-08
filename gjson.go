@@ -2,6 +2,7 @@
 package gjson
 
 import (
+	"reflect"
 	"strconv"
 	"unsafe"
 
@@ -1140,9 +1141,28 @@ func GetBytes(json []byte, path string) Result {
 	if json != nil {
 		// unsafe cast to string
 		result = Get(*(*string)(unsafe.Pointer(&json)), path)
-		// copy of string data for safety
-		result.Raw = string(*(*[]byte)(unsafe.Pointer(&result.Raw)))
-		result.Str = string(*(*[]byte)(unsafe.Pointer(&result.Str)))
+		// copy of string data for safety.
+		rawh := *(*reflect.SliceHeader)(unsafe.Pointer(&result.Raw))
+		strh := *(*reflect.SliceHeader)(unsafe.Pointer(&result.Str))
+		if strh.Data == 0 {
+			if rawh.Data == 0 {
+				result.Raw = ""
+			} else {
+				result.Raw = string(*(*[]byte)(unsafe.Pointer(&result.Raw)))
+			}
+			result.Str = ""
+		} else if rawh.Data == 0 {
+			result.Raw = ""
+			result.Str = string(*(*[]byte)(unsafe.Pointer(&result.Str)))
+		} else if strh.Data >= rawh.Data && strh.Len <= rawh.Len {
+			// Str is a substring of Raw.
+			result.Raw = string(*(*[]byte)(unsafe.Pointer(&result.Raw)))
+			start := int(strh.Data - rawh.Data)
+			result.Str = result.Raw[start : start+strh.Len]
+		} else {
+			result.Raw = string(*(*[]byte)(unsafe.Pointer(&result.Raw)))
+			result.Str = string(*(*[]byte)(unsafe.Pointer(&result.Str)))
+		}
 	}
 	return result
 }

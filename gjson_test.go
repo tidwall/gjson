@@ -128,10 +128,14 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 var basicJSONB = []byte(basicJSON)
 
 func TestByteSafety(t *testing.T) {
-	jsonb := []byte(`{"name":"Janet"}`)
+	jsonb := []byte(`{"name":"Janet","age":38}`)
 	mtok := GetBytes(jsonb, "name")
 	if mtok.String() != "Janet" {
 		t.Fatalf("expected %v, got %v", "Jason", mtok.String())
+	}
+	mtok2 := GetBytes(jsonb, "age")
+	if mtok2.Raw != "38" {
+		t.Fatalf("expected %v, got %v", "Jason", mtok2.Raw)
 	}
 	jsonb[9] = 'T'
 	jsonb[12] = 'd'
