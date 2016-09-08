@@ -3,6 +3,7 @@ package gjson
 
 import (
 	"strconv"
+	"unsafe"
 
 	"github.com/tidwall/match"
 )
@@ -1080,6 +1081,11 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 	return i, false
 }
 
+type parseContext struct {
+	json  string
+	value Result
+}
+
 // Get searches json for the specified path.
 // A path is in dot syntax, such as "name.last" or "age".
 // This function expects that the json is well-formed, and does not validate.
@@ -1127,9 +1133,18 @@ func Get(json, path string) Result {
 	return c.value
 }
 
-type parseContext struct {
-	json  string
-	value Result
+// GetBytes searches json for the specified path.
+// If working with bytes, this method preferred over Get(string(data), path)
+func GetBytes(json []byte, path string) Result {
+	var result Result
+	if json != nil {
+		// unsafe cast to string
+		result = Get(*(*string)(unsafe.Pointer(&json)), path)
+		// copy of string data for safety
+		result.Raw = string(*(*[]byte)(unsafe.Pointer(&result.Raw)))
+		result.Str = string(*(*[]byte)(unsafe.Pointer(&result.Str)))
+	}
+	return result
 }
 
 // unescape unescapes a string

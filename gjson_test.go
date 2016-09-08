@@ -35,7 +35,7 @@ func TestRandomData(t *testing.T) {
 			t.Fatal(err)
 		}
 		lstr = string(b[:n])
-		Get(lstr, "zzzz")
+		GetBytes([]byte(lstr), "zzzz")
 	}
 }
 
@@ -125,11 +125,31 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
     	]
 	}
 }`
+var basicJSONB = []byte(basicJSON)
+
+func TestByteSafety(t *testing.T) {
+	jsonb := []byte(`{"name":"Janet"}`)
+	mtok := GetBytes(jsonb, "name")
+	if mtok.String() != "Janet" {
+		t.Fatalf("expected %v, got %v", "Jason", mtok.String())
+	}
+	jsonb[9] = 'T'
+	jsonb[12] = 'd'
+	jsonb[13] = 'y'
+	if mtok.String() != "Janet" {
+		t.Fatalf("expected %v, got %v", "Jason", mtok.String())
+	}
+}
 
 func TestBasic(t *testing.T) {
 	var mtok Result
 
 	mtok = Get(basicJSON, `loggy.programmers.#[age=101].firstName`)
+	if mtok.String() != "1002.3" {
+		t.Fatalf("expected %v, got %v", "1002,3", mtok.String())
+	}
+
+	mtok = GetBytes(basicJSONB, `loggy.programmers.#[age=101].firstName`)
 	if mtok.String() != "1002.3" {
 		t.Fatalf("expected %v, got %v", "1002,3", mtok.String())
 	}
@@ -739,4 +759,42 @@ func BenchmarkJSONParserGet(t *testing.B) {
 		}
 	}
 	t.N *= len(benchPaths) // because we are running against 3 paths
+}
+
+var massiveJSON = func() string {
+	var buf bytes.Buffer
+	buf.WriteString("[")
+	for i := 0; i < 100; i++ {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteString(exampleJSON)
+	}
+	buf.WriteString("]")
+	return buf.String()
+}()
+
+func BenchmarkConvertNone(t *testing.B) {
+	json := massiveJSON
+	t.ReportAllocs()
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		Get(json, "50.widget.text.onMouseUp")
+	}
+}
+func BenchmarkConvertGet(t *testing.B) {
+	data := []byte(massiveJSON)
+	t.ReportAllocs()
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		Get(string(data), "50.widget.text.onMouseUp")
+	}
+}
+func BenchmarkConvertGetBytes(t *testing.B) {
+	data := []byte(massiveJSON)
+	t.ReportAllocs()
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		GetBytes(data, "50.widget.text.onMouseUp")
+	}
 }
