@@ -145,24 +145,23 @@ func TestByteSafety(t *testing.T) {
 	}
 }
 
+func get(json, path string) Result {
+	return GetBytes([]byte(basicJSONB), path)
+}
+
 func TestBasic(t *testing.T) {
 	var mtok Result
 
-	mtok = Get(basicJSON, `loggy.programmers.#[age=101].firstName`)
+	mtok = get(basicJSON, `loggy.programmers.#[age=101].firstName`)
 	if mtok.String() != "1002.3" {
 		t.Fatalf("expected %v, got %v", "1002,3", mtok.String())
 	}
 
-	mtok = GetBytes(basicJSONB, `loggy.programmers.#[age=101].firstName`)
-	if mtok.String() != "1002.3" {
-		t.Fatalf("expected %v, got %v", "1002,3", mtok.String())
-	}
-
-	mtok = Get(basicJSON, `loggy.programmers.#[firstName == "Brett"].email`)
+	mtok = get(basicJSON, `loggy.programmers.#[firstName == "Brett"].email`)
 	if mtok.String() != "aaaa" {
 		t.Fatalf("expected %v, got %v", "aaaa", mtok.String())
 	}
-	mtok = Get(basicJSON, "loggy")
+	mtok = get(basicJSON, "loggy")
 	if mtok.Type != JSON {
 		t.Fatalf("expected %v, got %v", JSON, mtok.Type)
 	}
@@ -193,7 +192,7 @@ func TestBasic(t *testing.T) {
 	if token = Parse(`"\"he\nllo\""`); token.Str != "\"he\nllo\"" {
 		t.Fatal("expected %v, got %v", "\"he\nllo\"", token.Str)
 	}
-	mtok = Get(basicJSON, "loggy.programmers.#.firstName")
+	mtok = get(basicJSON, "loggy.programmers.#.firstName")
 	if len(mtok.Array()) != 4 {
 		t.Fatalf("expected 4, got %v", len(mtok.Array()))
 	}
@@ -202,7 +201,7 @@ func TestBasic(t *testing.T) {
 			t.Fatalf("expected '%v', got '%v'", ex, mtok.Array()[i].String())
 		}
 	}
-	mtok = Get(basicJSON, "loggy.programmers.#.asd")
+	mtok = get(basicJSON, "loggy.programmers.#.asd")
 	if mtok.Type != JSON {
 		t.Fatal("expected %v, got %v", JSON, mtok.Type)
 	}
@@ -210,72 +209,72 @@ func TestBasic(t *testing.T) {
 		t.Fatalf("expected 0, got %v", len(mtok.Array()))
 	}
 
-	if Get(basicJSON, "items.3.tags.#").Num != 3 {
-		t.Fatalf("expected 3, got %v", Get(basicJSON, "items.3.tags.#").Num)
+	if get(basicJSON, "items.3.tags.#").Num != 3 {
+		t.Fatalf("expected 3, got %v", get(basicJSON, "items.3.tags.#").Num)
 	}
-	if Get(basicJSON, "items.3.points.1.#").Num != 2 {
-		t.Fatalf("expected 2, got %v", Get(basicJSON, "items.3.points.1.#").Num)
+	if get(basicJSON, "items.3.points.1.#").Num != 2 {
+		t.Fatalf("expected 2, got %v", get(basicJSON, "items.3.points.1.#").Num)
 	}
-	if Get(basicJSON, "items.#").Num != 8 {
-		t.Fatalf("expected 6, got %v", Get(basicJSON, "items.#").Num)
+	if get(basicJSON, "items.#").Num != 8 {
+		t.Fatalf("expected 6, got %v", get(basicJSON, "items.#").Num)
 	}
-	if Get(basicJSON, "vals.#").Num != 4 {
-		t.Fatalf("expected 4, got %v", Get(basicJSON, "vals.#").Num)
+	if get(basicJSON, "vals.#").Num != 4 {
+		t.Fatalf("expected 4, got %v", get(basicJSON, "vals.#").Num)
 	}
-	if !Get(basicJSON, "name.last").Exists() {
+	if !get(basicJSON, "name.last").Exists() {
 		t.Fatal("expected true, got false")
 	}
-	token = Get(basicJSON, "name.here")
+	token = get(basicJSON, "name.here")
 	if token.String() != "B\\\"R" {
 		t.Fatal("expecting 'B\\\"R'", "got", token.String())
 	}
-	token = Get(basicJSON, "arr.#")
+	token = get(basicJSON, "arr.#")
 	if token.String() != "6" {
 		t.Fatal("expecting '6'", "got", token.String())
 	}
-	token = Get(basicJSON, "arr.3.hello")
+	token = get(basicJSON, "arr.3.hello")
 	if token.String() != "world" {
 		t.Fatal("expecting 'world'", "got", token.String())
 	}
 	_ = token.Value().(string)
-	token = Get(basicJSON, "name.first")
+	token = get(basicJSON, "name.first")
 	if token.String() != "tom" {
 		t.Fatal("expecting 'tom'", "got", token.String())
 	}
 	_ = token.Value().(string)
-	token = Get(basicJSON, "name.last")
+	token = get(basicJSON, "name.last")
 	if token.String() != "null" {
 		t.Fatal("expecting 'null'", "got", token.String())
 	}
 	if token.Value() != nil {
 		t.Fatal("should be nil")
 	}
-	token = Get(basicJSON, "age")
+	token = get(basicJSON, "age")
 	if token.String() != "100" {
 		t.Fatal("expecting '100'", "got", token.String())
 	}
 	_ = token.Value().(float64)
-	token = Get(basicJSON, "happy")
+	token = get(basicJSON, "happy")
 	if token.String() != "true" {
 		t.Fatal("expecting 'true'", "got", token.String())
 	}
 	_ = token.Value().(bool)
-	token = Get(basicJSON, "immortal")
+	token = get(basicJSON, "immortal")
 	if token.String() != "false" {
 		t.Fatal("expecting 'false'", "got", token.String())
 	}
 	_ = token.Value().(bool)
-	token = Get(basicJSON, "noop")
+	token = get(basicJSON, "noop")
 	if token.String() != `{"what is a wren?":"a bird"}` {
 		t.Fatal("expecting '"+`{"what is a wren?":"a bird"}`+"'", "got", token.String())
 	}
 	_ = token.Value().(map[string]interface{})
 
-	if Get(basicJSON, "").Value() != nil {
+	if get(basicJSON, "").Value() != nil {
 		t.Fatal("should be nil")
 	}
 
-	Get(basicJSON, "vals.hello")
+	get(basicJSON, "vals.hello")
 
 	mm := Parse(basicJSON).Value().(map[string]interface{})
 	fn := mm["loggy"].(map[string]interface{})["programmers"].([]interface{})[1].(map[string]interface{})["firstName"].(string)

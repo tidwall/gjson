@@ -1154,10 +1154,11 @@ func GetBytes(json []byte, path string) Result {
 		} else if rawh.Data == 0 {
 			result.Raw = ""
 			result.Str = string(*(*[]byte)(unsafe.Pointer(&result.Str)))
-		} else if strh.Data >= rawh.Data && strh.Len <= rawh.Len {
+		} else if strh.Data >= rawh.Data &&
+			int(strh.Data)+strh.Len <= int(rawh.Data)+rawh.Len {
 			// Str is a substring of Raw.
-			result.Raw = string(*(*[]byte)(unsafe.Pointer(&result.Raw)))
 			start := int(strh.Data - rawh.Data)
+			result.Raw = string(*(*[]byte)(unsafe.Pointer(&result.Raw)))
 			result.Str = result.Raw[start : start+strh.Len]
 		} else {
 			result.Raw = string(*(*[]byte)(unsafe.Pointer(&result.Raw)))
