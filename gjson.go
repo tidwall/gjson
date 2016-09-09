@@ -1141,28 +1141,39 @@ func GetBytes(json []byte, path string) Result {
 	if json != nil {
 		// unsafe cast to string
 		result = Get(*(*string)(unsafe.Pointer(&json)), path)
-		// copy of string data for safety.
-		rawh := *(*reflect.SliceHeader)(unsafe.Pointer(&result.Raw))
-		strh := *(*reflect.SliceHeader)(unsafe.Pointer(&result.Str))
+		// safely get the string headers
+		rawhi := *(*reflect.StringHeader)(unsafe.Pointer(&result.Raw))
+		strhi := *(*reflect.StringHeader)(unsafe.Pointer(&result.Str))
+		// create byte slice headers
+		rawh := reflect.SliceHeader{Data: rawhi.Data, Len: rawhi.Len}
+		strh := reflect.SliceHeader{Data: strhi.Data, Len: strhi.Len}
 		if strh.Data == 0 {
+			// str is nil
 			if rawh.Data == 0 {
+				// raw is nil
 				result.Raw = ""
 			} else {
-				result.Raw = string(*(*[]byte)(unsafe.Pointer(&result.Raw)))
+				// raw has data, safely copy the slice header to a string
+				result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
 			}
 			result.Str = ""
 		} else if rawh.Data == 0 {
+			// raw is nil
 			result.Raw = ""
-			result.Str = string(*(*[]byte)(unsafe.Pointer(&result.Str)))
+			// str has data, safely copy the slice header to a string
+			result.Str = string(*(*[]byte)(unsafe.Pointer(&strh)))
 		} else if strh.Data >= rawh.Data &&
 			int(strh.Data)+strh.Len <= int(rawh.Data)+rawh.Len {
 			// Str is a substring of Raw.
 			start := int(strh.Data - rawh.Data)
-			result.Raw = string(*(*[]byte)(unsafe.Pointer(&result.Raw)))
+			// safely copy the raw slice header
+			result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
+			// substring the raw
 			result.Str = result.Raw[start : start+strh.Len]
 		} else {
-			result.Raw = string(*(*[]byte)(unsafe.Pointer(&result.Raw)))
-			result.Str = string(*(*[]byte)(unsafe.Pointer(&result.Str)))
+			// safely copy both the raw and str slice headers to strings
+			result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
+			result.Str = string(*(*[]byte)(unsafe.Pointer(&strh)))
 		}
 	}
 	return result
