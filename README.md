@@ -106,6 +106,7 @@ result.Str     // holds the string
 result.Num     // holds the float64 number
 result.Raw     // holds the raw json
 result.Multi   // holds nested array values
+result.Index   // index of raw value in original json, zero means index unknown
 ```
 
 There are a variety of handy functions that work on a result:

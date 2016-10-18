@@ -37,6 +37,8 @@ type Result struct {
 	Str string
 	// Num is the json number
 	Num float64
+	// Index of raw value in original json, zero means index unknown
+	Index int
 }
 
 // String returns a string representation of the value.
@@ -1129,6 +1131,14 @@ func Get(json, path string) Result {
 			i++
 			parseArray(c, i, path)
 			break
+		}
+	}
+	if len(c.value.Raw) > 0 {
+		jhdr := *(*reflect.StringHeader)(unsafe.Pointer(&json))
+		rhdr := *(*reflect.StringHeader)(unsafe.Pointer(&(c.value.Raw)))
+		c.value.Index = int(rhdr.Data - jhdr.Data)
+		if c.value.Index < 0 || c.value.Index >= len(json) {
+			c.value.Index = 0
 		}
 	}
 	return c.value
