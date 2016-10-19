@@ -27,6 +27,26 @@ const (
 	JSON
 )
 
+// String returns a string representation of the type.
+func (t Type) String() string {
+	switch t {
+	default:
+		return ""
+	case Null:
+		return "Null"
+	case False:
+		return "False"
+	case Number:
+		return "Number"
+	case String:
+		return "String"
+	case True:
+		return "True"
+	case JSON:
+		return "JSON"
+	}
+}
+
 // Result represents a json value that is returned from Get().
 type Result struct {
 	// Type is the json type
@@ -389,7 +409,13 @@ func tostr(json string) (raw string, str string) {
 					break
 				}
 			}
-			return json[:i+1], unescape(json[1:i])
+			var ret string
+			if i+1 < len(json) {
+				ret = json[:i+1]
+			} else {
+				ret = json[:i]
+			}
+			return ret, unescape(json[1:i])
 		}
 	}
 	return json, json[1:]

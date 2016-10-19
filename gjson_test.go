@@ -36,6 +36,7 @@ func TestRandomData(t *testing.T) {
 		}
 		lstr = string(b[:n])
 		GetBytes([]byte(lstr), "zzzz")
+		Parse(lstr)
 	}
 }
 
