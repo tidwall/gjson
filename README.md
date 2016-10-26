@@ -13,6 +13,8 @@
 
 GJSON is a Go package the provides a [very fast](#performance) and simple way to get a value from a json document. The reason for this library it to give efficient json indexing for the [BuntDB](https://github.com/tidwall/buntdb) project. 
 
+For a command line interface check out [JSONed](https://github.com/tidwall/jsoned).
+
 Getting Started
 ===============
 
