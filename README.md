@@ -29,7 +29,7 @@ $ go get -u github.com/tidwall/gjson
 This will retrieve the library.
 
 ## Get a value
-Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". This function expects that the json is well-formed and validates. Invalid json will not panic, but it may return back unexpected results. When the value is found it's returned immediately.
+Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". This function expects that the json is well-formed and validates. Invalid json will not panic, but it may return back unexpected results. When the value is found it's returned immediately. 
 
 ```go
 package main
@@ -49,6 +49,9 @@ This will print:
 ```
 Prichard
 ```
+
+*There also the [GetBytes](#working-with-bytes) function when working with JSON byte slices.*
+
 
 ## Path Syntax
 
@@ -213,6 +216,16 @@ if !ok{
 	// not a map
 }
 ```
+
+## Working with Bytes
+
+If your JSON is contained a `[]byte` slice, there's the [GetBytes](https://godoc.org/github.com/tidwall/gjson#GetBytes) function. This is preferred over `Get(string(data), path)`.
+
+```go
+var data []byte = ...
+res := gjson.GetBytes(data, path)
+```
+
 
 ## Performance
 
