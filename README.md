@@ -50,7 +50,7 @@ This will print:
 Prichard
 ```
 
-*There also the [GetBytes](#working-with-bytes) function when working with JSON byte slices.*
+*There's also the [GetBytes](#working-with-bytes) function for working with JSON byte slices.*
 
 
 ## Path Syntax
@@ -219,7 +219,7 @@ if !ok{
 
 ## Working with Bytes
 
-If your JSON is contained a `[]byte` slice, there's the [GetBytes](https://godoc.org/github.com/tidwall/gjson#GetBytes) function. This is preferred over `Get(string(data), path)`.
+If your JSON is contained in a `[]byte` slice, there's the [GetBytes](https://godoc.org/github.com/tidwall/gjson#GetBytes) function. This is preferred over `Get(string(data), path)`.
 
 ```go
 var data []byte = ...
