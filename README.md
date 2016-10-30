@@ -190,7 +190,7 @@ gjson.Get(json, "name.last")
 
 ## Check for the existence of a value
 
-Sometimes you just want to know you if a value exists.
+Sometimes you just want to know if a value exists. 
 
 ```go
 value := gjson.Get(json, "name.last")
