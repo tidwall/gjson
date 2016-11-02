@@ -119,6 +119,7 @@ There are a variety of handy functions that work on a result:
 ```go
 result.Value() interface{}
 result.Int() int64
+result.Uint() uint64
 result.Float() float64
 result.String() string
 result.Bool() bool

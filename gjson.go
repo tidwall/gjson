@@ -108,6 +108,21 @@ func (t Result) Int() int64 {
 	}
 }
 
+// Uint returns an unsigned integer representation.
+func (t Result) Uint() uint64 {
+	switch t.Type {
+	default:
+		return 0
+	case True:
+		return 1
+	case String:
+		n, _ := strconv.ParseUint(t.Str, 10, 64)
+		return n
+	case Number:
+		return uint64(t.Num)
+	}
+}
+
 // Float returns an float64 representation.
 func (t Result) Float() float64 {
 	switch t.Type {
