@@ -446,7 +446,7 @@ func TestUnmarshalMap(t *testing.T) {
 }
 
 func TestSingleArrayValue(t *testing.T) {
-	var json = `{"key": "value"}`
+	var json = `{"key": "value","key2":[1,2,3,4,"A"]}`
 	var result = Get(json, "key")
 	var array = result.Array()
 	if len(array) != 1 {
@@ -455,6 +455,17 @@ func TestSingleArrayValue(t *testing.T) {
 	if array[0].String() != "value" {
 		t.Fatal("got %s, should be %s", array[0].String(), "value")
 	}
+
+	array = Get(json, "key2.#").Array()
+	if len(array) != 1 {
+		t.Fatal("got '%v', expected '%v'", len(array), 1)
+	}
+
+	array = Get(json, "key3").Array()
+	if len(array) != 0 {
+		t.Fatal("got '%v', expected '%v'", len(array), 0)
+	}
+
 }
 
 type BenchStruct struct {

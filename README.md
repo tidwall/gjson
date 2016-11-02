@@ -76,12 +76,13 @@ The dot and wildcard characters can be escaped with '\'.
 ```
 "name.last"          >> "Anderson"
 "age"                >> 37
+"children"           >> ["Sara","Alex","Jack"]
 "children.#"         >> 3
 "children.1"         >> "Alex"
 "child*.2"           >> "Jack"
 "c?ildren.0"         >> "Sara"
 "fav\.movie"         >> "Deer Hunter"
-"friends.#.first"    >> [ "James", "Roger" ]
+"friends.#.first"    >> ["James","Roger"]
 "friends.1.last"     >> "Craig"
 ```
 To query an array:
@@ -128,6 +129,12 @@ result.Get(path string) Result
 ```
 
 The `result.Value()` function returns an `interface{}` which requires type assertion and is one of the following Go types:
+
+
+
+The `result.Array()` funtion returns back an array of values.
+If the result represents a non-existent value, then an empty array will be returned.
+If the result is not a JSON array, the return value will be an array containing one result.
 
 ```go
 boolean >> bool
