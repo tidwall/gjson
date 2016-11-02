@@ -110,7 +110,6 @@ result.Type    // can be String, Number, True, False, Null, or JSON
 result.Str     // holds the string
 result.Num     // holds the float64 number
 result.Raw     // holds the raw json
-result.Multi   // holds nested array values
 result.Index   // index of raw value in original json, zero means index unknown
 ```
 
