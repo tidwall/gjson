@@ -138,16 +138,17 @@ func (t Result) Float() float64 {
 	}
 }
 
-// Array returns back an array of children. The result must be a JSON array.
+// Array returns back an array of children. If the result is not
+// a JSON array, the return will be an array containing one result.
 func (t Result) Array() []Result {
 	if t.Type != JSON {
-		return nil
+		return []Result{t}
 	}
 	r := t.arrayOrMap('[', false)
 	return r.a
 }
 
-//  Map returns back an map of children. The result should be a JSON array.
+// Map returns back an map of children. The result should be a JSON array.
 func (t Result) Map() map[string]Result {
 	if t.Type != JSON {
 		return map[string]Result{}

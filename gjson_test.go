@@ -105,18 +105,18 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 	"loggy":{
 		"programmers": [
     	    {
-    	        "firstName": "Brett", 
-    	        "lastName": "McLaughlin", 
+    	        "firstName": "Brett",
+    	        "lastName": "McLaughlin",
     	        "email": "aaaa"
-    	    }, 
+    	    },
     	    {
-    	        "firstName": "Jason", 
-    	        "lastName": "Hunter", 
+    	        "firstName": "Jason",
+    	        "lastName": "Hunter",
     	        "email": "bbbb"
-    	    }, 
+    	    },
     	    {
-    	        "firstName": "Elliotte", 
-    	        "lastName": "Harold", 
+    	        "firstName": "Elliotte",
+    	        "lastName": "Harold",
     	        "email": "cccc"
     	    },
 			{
@@ -442,6 +442,18 @@ func TestUnmarshalMap(t *testing.T) {
 	}
 	if bytes.Compare(b1, b2) != 0 {
 		t.Fatal("b1 != b2")
+	}
+}
+
+func TestSingleArrayValue(t *testing.T) {
+	var json = `{"key": "value"}`
+	var result = Get(json, "key")
+	var array = result.Array()
+	if len(array) != 1 {
+		t.Fatal("array is empty")
+	}
+	if array[0].String() != "value" {
+		t.Fatal("got %s, should be %s", array[0].String(), "value")
 	}
 }
 
