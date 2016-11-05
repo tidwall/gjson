@@ -229,10 +229,24 @@ if !ok{
 If your JSON is contained in a `[]byte` slice, there's the [GetBytes](https://godoc.org/github.com/tidwall/gjson#GetBytes) function. This is preferred over `Get(string(data), path)`.
 
 ```go
-var data []byte = ...
-res := gjson.GetBytes(data, path)
+var json []byte = ...
+result := gjson.GetBytes(json, path)
 ```
 
+If you are using the `gjson.GetBytes(json, path)` function and you want to avoid converting `result.Raw` to a `[]byte`, then you can use this pattern:
+
+```go
+var json []byte = ...
+result := gjson.GetBytes(json, path)
+var raw []byte
+if result.Index > 0 {
+    raw = json[result.Index:result.Index+len(result.Raw)]
+} else {
+    raw = []byte(result.Raw)
+}
+```
+
+This is a best-effort no allocation sub slice of the original json. This method utilizes the `result.Index` field, which is the position of the raw data in the original json. It's possible that the value of `result.Index` equals zero, in which case the `result.Raw` is converted to a `[]byte`.
 
 ## Performance
 
