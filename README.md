@@ -132,7 +132,7 @@ The `result.Value()` function returns an `interface{}` which requires type asser
 
 
 
-The `result.Array()` funtion returns back an array of values.
+The `result.Array()` function returns back an array of values.
 If the result represents a non-existent value, then an empty array will be returned.
 If the result is not a JSON array, the return value will be an array containing one result.
 
@@ -213,6 +213,19 @@ if gjson.Get(json, "name.last").Exists(){
 }
 ```
 
+## Getting many paths at once
+
+The `GetMany(json, paths...)` function can be used to get multiple values at one time from the same json string.
+This is preferrable to calling `Get(json, path)` over and over. 
+It's also optimized to scan over a JSON payload once.
+
+```go
+results := gjson.GetMany(json, "name.first", "name.last", "age")
+```
+
+The return value is a `[]Result` and it will always contain exactly the same number of items as the input paths.
+
+
 ## Unmarshal to a map
 
 To unmarshal to a `map[string]interface{}`:
@@ -248,6 +261,9 @@ if result.Index > 0 {
 
 This is a best-effort no allocation sub slice of the original json. This method utilizes the `result.Index` field, which is the position of the raw data in the original json. It's possible that the value of `result.Index` equals zero, in which case the `result.Raw` is converted to a `[]byte`.
 
+
+
+
 ## Performance
 
 Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/), 
@@ -264,6 +280,17 @@ BenchmarkJSONDecoder-8           	  300000	     14339 ns/op	    4224 B/op	     1
 BenchmarkFFJSONLexer-8           	 1500000	      3156 ns/op	     896 B/op	       8 allocs/op
 BenchmarkEasyJSONLexer-8         	 3000000	       938 ns/op	     613 B/op	       6 allocs/op
 BenchmarkJSONParserGet-8         	 3000000	       442 ns/op	      21 B/op	       0 allocs/op
+```
+
+Benchmarks for the `GetMany` function:
+
+```
+BenchmarkGJSONGetMany4Paths-8     	 4000000	       319 ns/op	     112 B/op	       0 allocs/op
+BenchmarkGJSONGetMany8Paths-8     	 8000000	       218 ns/op	      56 B/op	       0 allocs/op
+BenchmarkGJSONGetMany16Paths-8    	16000000	       160 ns/op	      56 B/op	       0 allocs/op
+BenchmarkGJSONGetMany32Paths-8    	32000000	       130 ns/op	      64 B/op	       0 allocs/op
+BenchmarkGJSONGetMany64Paths-8    	64000000	       117 ns/op	      64 B/op	       0 allocs/op
+BenchmarkGJSONGetMany128Paths-8    128000000	       109 ns/op	      64 B/op	       0 allocs/op
 ```
 
 JSON document used:
@@ -304,6 +331,20 @@ widget.image.hOffset
 widget.text.onMouseUp
 ```
 
+For the `GetMany` benchmarks these paths are used:
+
+```
+widget.window.name
+widget.image.hOffset
+widget.text.onMouseUp
+widget.window.title
+widget.image.alignment
+widget.text.style
+widget.window.height
+widget.image.src
+widget.text.data
+widget.text.size
+```
 
 *These benchmarks were run on a MacBook Pro 15" 2.8 GHz Intel Core i7 using Go 1.7.*
 
