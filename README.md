@@ -49,9 +49,7 @@ This will print:
 ```
 Prichard
 ```
-
-*There's also the [GetBytes](#working-with-bytes) function for working with JSON byte slices.*
-
+*There's also the [GetMany](#get-multiple-values-at-once) function to get multiple values at once, and [GetBytes](#working-with-bytes) for working with JSON byte slices.*
 
 ## Path Syntax
 
@@ -213,19 +211,6 @@ if gjson.Get(json, "name.last").Exists(){
 }
 ```
 
-## Getting many paths at once
-
-The `GetMany(json, paths...)` function can be used to get multiple values at one time from the same json string.
-This is preferrable to calling `Get(json, path)` over and over. 
-It's also optimized to scan over a JSON payload once.
-
-```go
-results := gjson.GetMany(json, "name.first", "name.last", "age")
-```
-
-The return value is a `[]Result` and it will always contain exactly the same number of items as the input paths.
-
-
 ## Unmarshal to a map
 
 To unmarshal to a `map[string]interface{}`:
@@ -261,8 +246,15 @@ if result.Index > 0 {
 
 This is a best-effort no allocation sub slice of the original json. This method utilizes the `result.Index` field, which is the position of the raw data in the original json. It's possible that the value of `result.Index` equals zero, in which case the `result.Raw` is converted to a `[]byte`.
 
+## Get multiple values at once
 
+The `GetMany` function can be used to get multiple values at the same time, and is optimized to scan over a JSON payload once.
 
+```go
+results := gjson.GetMany(json, "name.first", "name.last", "age")
+```
+
+The return value is a `[]Result`, which will always contain exactly the same number of items as the input paths.
 
 ## Performance
 
