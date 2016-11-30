@@ -645,8 +645,11 @@ func parseArrayPath(path string) (r arrayPathResult) {
 					}
 					s := i
 					for ; i < len(path); i++ {
-						if path[i] <= ' ' || path[i] == '=' ||
-							path[i] == '<' || path[i] == '>' ||
+						if path[i] <= ' ' ||
+							path[i] == '!' ||
+							path[i] == '=' ||
+							path[i] == '<' ||
+							path[i] == '>' ||
 							path[i] == '%' ||
 							path[i] == ']' {
 							break
@@ -661,7 +664,11 @@ func parseArrayPath(path string) (r arrayPathResult) {
 					}
 					if i < len(path) {
 						s = i
-						if path[i] == '<' || path[i] == '>' {
+						if path[i] == '!' {
+							if i < len(path)-1 && path[i+1] == '=' {
+								i++
+							}
+						} else if path[i] == '<' || path[i] == '>' {
 							if i < len(path)-1 && path[i+1] == '=' {
 								i++
 							}
@@ -990,6 +997,8 @@ func queryMatches(rp *arrayPathResult, value Result) bool {
 		switch rp.query.op {
 		case "=":
 			return value.Str == rpv
+		case "!=":
+			return value.Str != rpv
 		case "<":
 			return value.Str < rpv
 		case "<=":
@@ -1006,6 +1015,8 @@ func queryMatches(rp *arrayPathResult, value Result) bool {
 		switch rp.query.op {
 		case "=":
 			return value.Num == rpvn
+		case "!=":
+			return value.Num == rpvn
 		case "<":
 			return value.Num < rpvn
 		case "<=":
@@ -1019,6 +1030,8 @@ func queryMatches(rp *arrayPathResult, value Result) bool {
 		switch rp.query.op {
 		case "=":
 			return rpv == "true"
+		case "!=":
+			return rpv != "true"
 		case ">":
 			return rpv == "false"
 		case ">=":
@@ -1028,6 +1041,8 @@ func queryMatches(rp *arrayPathResult, value Result) bool {
 		switch rp.query.op {
 		case "=":
 			return rpv == "false"
+		case "!=":
+			return rpv != "false"
 		case "<":
 			return rpv == "true"
 		case "<=":

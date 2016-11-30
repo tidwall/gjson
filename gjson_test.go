@@ -204,7 +204,10 @@ func TestBasic(t *testing.T) {
 	if mtok.String() != "1002.3" {
 		t.Fatalf("expected %v, got %v", "1002.3", mtok.String())
 	}
-
+	mtok = get(basicJSON, `loggy.programmers.#[firstName != "Brett"].firstName`)
+	if mtok.String() != "Jason" {
+		t.Fatalf("expected %v, got %v", "Jason", mtok.String())
+	}
 	mtok = get(basicJSON, `loggy.programmers.#[firstName % "Bre*"].email`)
 	if mtok.String() != "aaaa" {
 		t.Fatalf("expected %v, got %v", "aaaa", mtok.String())
