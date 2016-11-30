@@ -107,17 +107,20 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
     	    {
     	        "firstName": "Brett",
     	        "lastName": "McLaughlin",
-    	        "email": "aaaa"
+    	        "email": "aaaa",
+				"tag": "good"
     	    },
     	    {
     	        "firstName": "Jason",
     	        "lastName": "Hunter",
-    	        "email": "bbbb"
+    	        "email": "bbbb",
+				"tag": "bad"
     	    },
     	    {
     	        "firstName": "Elliotte",
     	        "lastName": "Harold",
-    	        "email": "cccc"
+    	        "email": "cccc",
+				"tag":, "good"
     	    },
 			{
 				"firstName": 1002.3,
@@ -152,10 +155,17 @@ func get(json, path string) Result {
 
 func TestBasic(t *testing.T) {
 	var mtok Result
-
+	mtok = get(basicJSON, `loggy.programmers.#[tag="good"].firstName`)
+	if mtok.String() != "Brett" {
+		t.Fatalf("expected %v, got %v", "Brett", mtok.String())
+	}
+	mtok = get(basicJSON, `loggy.programmers.#[tag="good"]#.firstName`)
+	if mtok.String() != `["Brett","Elliotte"]` {
+		t.Fatalf("expected %v, got %v", `["Brett","Elliotte"]`, mtok.String())
+	}
 	mtok = get(basicJSON, `loggy.programmers.#[age=101].firstName`)
 	if mtok.String() != "1002.3" {
-		t.Fatalf("expected %v, got %v", "1002,3", mtok.String())
+		t.Fatalf("expected %v, got %v", "1002.3", mtok.String())
 	}
 
 	mtok = get(basicJSON, `loggy.programmers.#[firstName == "Brett"].email`)

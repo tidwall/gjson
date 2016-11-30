@@ -554,6 +554,7 @@ type arrayPathResult struct {
 		path  string
 		op    string
 		value string
+		all   bool
 	}
 }
 
@@ -644,6 +645,9 @@ func parseArrayPath(path string) (r arrayPathResult) {
 									}
 								}
 							} else if path[i] == ']' {
+								if i+1 < len(path) && path[i+1] == '#' {
+									r.query.all = true
+								}
 								break
 							}
 						}
@@ -975,6 +979,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 	var h int
 	var alog []int
 	var partidx int
+	var multires []byte
 	rp := parseArrayPath(path)
 	if !rp.arrch {
 		n, err := strconv.ParseUint(rp.part, 10, 64)
@@ -1031,12 +1036,21 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						res := Get(val, rp.query.path)
 						if queryMatches(&rp, res) {
 							if rp.more {
-								c.value = Get(val, rp.path)
+								res = Get(val, rp.path)
 							} else {
-								c.value.Raw = val
-								c.value.Type = JSON
+								res = Result{Raw: val, Type: JSON}
 							}
-							return i, true
+							if rp.query.all {
+								if len(multires) == 0 {
+									multires = append(multires, '[')
+								} else {
+									multires = append(multires, ',')
+								}
+								multires = append(multires, res.Raw...)
+							} else {
+								c.value = res
+								return i, true
+							}
 						}
 					} else if hit {
 						if rp.alogok {
@@ -1121,6 +1135,12 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						c.value.Type = Number
 						c.value.Num = float64(h - 1)
 						return i + 1, true
+					}
+				}
+				if len(multires) > 0 && !c.value.Exists() {
+					c.value = Result{
+						Raw:  string(append(multires, ']')),
+						Type: JSON,
 					}
 				}
 				return i + 1, false

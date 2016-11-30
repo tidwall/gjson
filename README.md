@@ -66,8 +66,9 @@ The dot and wildcard characters can be escaped with '\'.
   "children": ["Sara","Alex","Jack"],
   "fav.movie": "Deer Hunter",
   "friends": [
-	{"first": "James", "last": "Murphy"},
-	{"first": "Roger", "last": "Craig"}
+	{"first": "Dale", "last": "Murphy"},
+	{"first": "Roger", "last": "Craig"},
+	{"first": "Jane", "last": "Murphy"}
   ]
 }
 ```
@@ -80,12 +81,16 @@ The dot and wildcard characters can be escaped with '\'.
 "child*.2"           >> "Jack"
 "c?ildren.0"         >> "Sara"
 "fav\.movie"         >> "Deer Hunter"
-"friends.#.first"    >> ["James","Roger"]
+"friends.#.first"    >> ["Dale","Roger","Jane"]
 "friends.1.last"     >> "Craig"
 ```
-To query an array:
+To query an array for the first match:
 ```
-`friends.#[last="Murphy"].first` >> "James"
+`friends.#[last="Murphy"].first` >> "Dale"
+```
+To query an array for all matches:
+```
+`friends.#[last="Murphy"]#.first` >> ["Dale","Jane"]
 ```
 
 ## Result Type
