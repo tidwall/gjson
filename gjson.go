@@ -647,6 +647,7 @@ func parseArrayPath(path string) (r arrayPathResult) {
 					for ; i < len(path); i++ {
 						if path[i] <= ' ' || path[i] == '=' ||
 							path[i] == '<' || path[i] == '>' ||
+							path[i] == '%' ||
 							path[i] == ']' {
 							break
 						}
@@ -997,6 +998,8 @@ func queryMatches(rp *arrayPathResult, value Result) bool {
 			return value.Str > rpv
 		case ">=":
 			return value.Str >= rpv
+		case "%":
+			return match.Match(value.Str, rpv)
 		}
 	case Number:
 		rpvn, _ := strconv.ParseFloat(rpv, 64)
