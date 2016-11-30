@@ -185,6 +185,20 @@ name := gjson.Get(json, `programmers.#[lastName="Hunter"].firstName`)
 println(name.String())  // prints "Elliotte"
 ```
 
+## Iterate through an object or array
+
+The `ForEach` function allows for quickly iterating through an object or array. 
+The key and value are passed to the iterator function for objects.
+Only the value is passed for arrays.
+Returning `false` from an iterator will stop iteration.
+
+```go
+result := gjson.Get(json, "programmers")
+result.ForEach(func(key, value Result) bool{
+	println(value.String()) 
+	return true // keep iterating
+})
+```
 
 ## Simple Parse and Get
 

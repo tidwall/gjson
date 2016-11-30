@@ -163,6 +163,43 @@ func TestBasic(t *testing.T) {
 	if mtok.String() != `["Brett","Elliotte"]` {
 		t.Fatalf("expected %v, got %v", `["Brett","Elliotte"]`, mtok.String())
 	}
+
+	mtok = get(basicJSON, `loggy.programmers`)
+	var count int
+	mtok.ForEach(func(key, value Result) bool {
+		if key.Exists() {
+			t.Fatalf("expected %v, got %v", false, key.Exists())
+		}
+		count++
+		if count == 3 {
+			return false
+		}
+		if count == 1 {
+			i := 0
+			value.ForEach(func(key, value Result) bool {
+				switch i {
+				case 0:
+					if key.String() != "firstName" || value.String() != "Brett" {
+						t.Fatalf("expected %v/%v got %v/%v", "firstName", "Brett", key.String(), value.String())
+					}
+				case 1:
+					if key.String() != "lastName" || value.String() != "McLaughlin" {
+						t.Fatalf("expected %v/%v got %v/%v", "lastName", "McLaughlin", key.String(), value.String())
+					}
+				case 2:
+					if key.String() != "email" || value.String() != "aaaa" {
+						t.Fatalf("expected %v/%v got %v/%v", "email", "aaaa", key.String(), value.String())
+					}
+				}
+				i++
+				return true
+			})
+		}
+		return true
+	})
+	if count != 3 {
+		t.Fatalf("expected %v, got %v", 3, count)
+	}
 	mtok = get(basicJSON, `loggy.programmers.#[age=101].firstName`)
 	if mtok.String() != "1002.3" {
 		t.Fatalf("expected %v, got %v", "1002.3", mtok.String())
