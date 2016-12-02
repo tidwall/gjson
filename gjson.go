@@ -334,7 +334,7 @@ end:
 	return
 }
 
-// Parse parses the json and returns a result
+// Parse parses the json and returns a result.
 func Parse(json string) Result {
 	var value Result
 	for i := 0; i < len(json); i++ {
@@ -370,6 +370,12 @@ func Parse(json string) Result {
 		break
 	}
 	return value
+}
+
+// ParseBytes parses the json and returns a result.
+// If working with bytes, this method preferred over Parse(string(data))
+func ParseBytes(json []byte) Result {
+	return Parse(string(json))
 }
 
 func squash(json string) string {
