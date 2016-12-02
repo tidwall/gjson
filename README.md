@@ -66,9 +66,9 @@ The dot and wildcard characters can be escaped with '\'.
   "children": ["Sara","Alex","Jack"],
   "fav.movie": "Deer Hunter",
   "friends": [
-	{"first": "Dale", "last": "Murphy"},
-	{"first": "Roger", "last": "Craig"},
-	{"first": "Jane", "last": "Murphy"}
+    {"first": "Dale", "last": "Murphy", "age": 44},
+    {"first": "Roger", "last": "Craig", "age": 68},
+    {"first": "Jane", "last": "Murphy", "age": 47}
   ]
 }
 ```
@@ -84,13 +84,15 @@ The dot and wildcard characters can be escaped with '\'.
 "friends.#.first"    >> ["Dale","Roger","Jane"]
 "friends.1.last"     >> "Craig"
 ```
-To query an array for the first match:
+
+You can also query an array for the first match by using `#[...]`, or find all matches with `#[...]#`. 
+Queries support the `==`, `!=`, `<`, `<=`, `>`, `>=` comparison operators and the simple pattern matching `%` operator.
+
 ```
-`friends.#[last="Murphy"].first` >> "Dale"
-```
-To query an array for all matches:
-```
-`friends.#[last="Murphy"]#.first` >> ["Dale","Jane"]
+friends.#[last=="Murphy"].first    >> "Dale"
+friends.#[last=="Murphy"]#.first   >> ["Dale","Jane"]
+friends.#[age>45]#.last            >> ["Craig","Murphy"]
+friends.#[first%"D*"].last         >> "Murphy"
 ```
 
 ## Result Type
@@ -129,6 +131,8 @@ result.Bool() bool
 result.Array() []gjson.Result
 result.Map() map[string]gjson.Result
 result.Get(path string) Result
+result.ForEach(iterator func(key, value Result) bool)
+result.Less(token Result, caseSensitive bool) bool
 ```
 
 The `result.Value()` function returns an `interface{}` which requires type assertion and is one of the following Go types:
