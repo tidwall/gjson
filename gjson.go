@@ -191,6 +191,7 @@ func (t Result) ForEach(iterator func(key, value Result) bool) {
 			if json[i] != '"' {
 				continue
 			}
+			s := i
 			i, str, vesc, ok = parseString(json, i+1)
 			if !ok {
 				return
@@ -201,6 +202,7 @@ func (t Result) ForEach(iterator func(key, value Result) bool) {
 				key.Str = str[1 : len(str)-1]
 			}
 			key.Raw = str
+			key.Index = s
 		}
 		i, value, ok = parseAny(json, i, true)
 		if !ok {
@@ -1218,6 +1220,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						c.value.Raw = val
 						c.value.Type = Number
 						c.value.Num = float64(h - 1)
+						c.calcd = true
 						return i + 1, true
 					}
 				}
@@ -1238,6 +1241,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 type parseContext struct {
 	json  string
 	value Result
+	calcd bool
 }
 
 // Get searches json for the specified path.
@@ -1285,7 +1289,7 @@ func Get(json, path string) Result {
 			break
 		}
 	}
-	if len(c.value.Raw) > 0 {
+	if len(c.value.Raw) > 0 && !c.calcd {
 		jhdr := *(*reflect.StringHeader)(unsafe.Pointer(&json))
 		rhdr := *(*reflect.StringHeader)(unsafe.Pointer(&(c.value.Raw)))
 		c.value.Index = int(rhdr.Data - jhdr.Data)
