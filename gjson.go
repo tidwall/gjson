@@ -204,10 +204,18 @@ func (t Result) ForEach(iterator func(key, value Result) bool) {
 			key.Raw = str
 			key.Index = s
 		}
+		for ; i < len(json); i++ {
+			if json[i] <= ' ' || json[i] == ',' || json[i] == ':' {
+				continue
+			}
+			break
+		}
+		s := i
 		i, value, ok = parseAny(json, i, true)
 		if !ok {
 			return
 		}
+		value.Index = s
 		if !iterator(key, value) {
 			return
 		}
