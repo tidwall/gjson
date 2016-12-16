@@ -198,7 +198,7 @@ Returning `false` from an iterator will stop iteration.
 
 ```go
 result := gjson.Get(json, "programmers")
-result.ForEach(func(key, value Result) bool{
+result.ForEach(func(key, value gjson.Result) bool{
 	println(value.String()) 
 	return true // keep iterating
 })
