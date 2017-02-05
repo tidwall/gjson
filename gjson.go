@@ -4,6 +4,10 @@ package gjson
 import (
 	"reflect"
 	"strconv"
+
+	// It's totally safe to use this package, but in case your
+	// project or organization restricts the use of 'unsafe',
+	// there's the "github.com/tidwall/gjson-safe" package.
 	"unsafe"
 
 	"github.com/tidwall/match"
