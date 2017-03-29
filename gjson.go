@@ -1761,11 +1761,10 @@ next_key:
 							goto match_not_atend
 						}
 					}
-					if len(paths[j]) > len(key) {
-						goto nomatch
+					if len(paths[j]) <= len(key) || kplen != 0 {
+						// matched and at the end of the path
+						goto match_atend
 					}
-					// matched and at the end of the path
-					goto match_atend
 				}
 				// no match, jump to the nomatch label
 				goto nomatch
