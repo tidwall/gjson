@@ -4,10 +4,6 @@ package gjson
 import (
 	"reflect"
 	"strconv"
-
-	// It's totally safe to use this package, but in case your
-	// project or organization restricts the use of 'unsafe',
-	// there's the "github.com/tidwall/gjson-safe" package.
 	"unsafe"
 
 	"github.com/tidwall/match"
@@ -1761,7 +1757,7 @@ next_key:
 					}
 					if i < len(paths[j]) {
 						if paths[j][i] == '.' {
-							// matched, but there still more keys in the path
+							// matched, but there are still more keys in path
 							goto match_not_atend
 						}
 					}
