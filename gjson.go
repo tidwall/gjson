@@ -1765,6 +1765,9 @@ next_key:
 							goto match_not_atend
 						}
 					}
+					if len(paths[j]) > len(key) {
+						goto nomatch
+					}
 					// matched and at the end of the path
 					goto match_atend
 				}

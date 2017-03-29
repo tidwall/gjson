@@ -576,6 +576,32 @@ func TestManyBasic(t *testing.T) {
 	testMany(true, `[world]`, strings.Repeat("a.", 70)+"hello")
 }
 
+const sampleJSON = `{ "name": "FirstName", "name1": "FirstName1", "address": "address1", "addressDetails": "address2", }`
+
+func TestIssue20(t *testing.T) {
+	expectedValues := []string{"FirstName", "FirstName1", "address1", "address2"}
+	paths := []string{"name", "name1", "address", "addressDetails"}
+	var result []Result
+	for i := 0; i < 2; i++ {
+		var which string
+		if i == 0 {
+			which = "Get"
+			result = nil
+			for j := 0; j < len(expectedValues); j++ {
+				result = append(result, Get(sampleJSON, paths[j]))
+			}
+		} else if i == 1 {
+			which = "GetMany"
+			result = GetMany(sampleJSON, paths...)
+		}
+		for j := 0; j < len(expectedValues); j++ {
+			if result[j].String() != expectedValues[j] {
+				t.Fatalf("expected '%v', got '%v' for '%s'", expectedValues[j], result[j].String(), which)
+			}
+		}
+	}
+}
+
 func TestRandomMany(t *testing.T) {
 	var lstr string
 	defer func() {
