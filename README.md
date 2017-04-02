@@ -120,6 +120,7 @@ result.Index   // index of raw value in original json, zero means index unknown
 There are a variety of handy functions that work on a result:
 
 ```go
+result.Exists() bool
 result.Value() interface{}
 result.Int() int64
 result.Uint() uint64
