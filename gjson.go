@@ -2,11 +2,10 @@
 package gjson
 
 import (
+	"encoding/json"
 	"reflect"
 	"strconv"
 	"unsafe"
-
-	"encoding/json"
 
 	"github.com/tidwall/match"
 )
