@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"unsafe"
 
+	"encoding/json"
+
 	"github.com/tidwall/match"
 )
 
@@ -1357,64 +1359,14 @@ func GetBytes(json []byte, path string) Result {
 	return result
 }
 
-// unescape unescapes a string
-func unescape(json string) string { //, error) {
-	var str = make([]byte, 0, len(json))
-	for i := 0; i < len(json); i++ {
-		switch {
-		default:
-			str = append(str, json[i])
-		case json[i] < ' ':
-			return "" //, errors.New("invalid character in string")
-		case json[i] == '\\':
-			i++
-			if i >= len(json) {
-				return "" //, errors.New("invalid escape sequence")
-			}
-			switch json[i] {
-			default:
-				return "" //, errors.New("invalid escape sequence")
-			case '\\':
-				str = append(str, '\\')
-			case '/':
-				str = append(str, '/')
-			case 'b':
-				str = append(str, '\b')
-			case 'f':
-				str = append(str, '\f')
-			case 'n':
-				str = append(str, '\n')
-			case 'r':
-				str = append(str, '\r')
-			case 't':
-				str = append(str, '\t')
-			case '"':
-				str = append(str, '"')
-			case 'u':
-				if i+5 > len(json) {
-					return "" //, errors.New("invalid escape sequence")
-				}
-				i++
-				// extract the codepoint
-				var code int
-				for j := i; j < i+4; j++ {
-					switch {
-					default:
-						return "" //, errors.New("invalid escape sequence")
-					case json[j] >= '0' && json[j] <= '9':
-						code += (int(json[j]) - '0') << uint(12-(j-i)*4)
-					case json[j] >= 'a' && json[j] <= 'f':
-						code += (int(json[j]) - 'a' + 10) << uint(12-(j-i)*4)
-					case json[j] >= 'a' && json[j] <= 'f':
-						code += (int(json[j]) - 'a' + 10) << uint(12-(j-i)*4)
-					}
-				}
-				str = append(str, []byte(string(code))...)
-				i += 3 // only 3 because we will increment on the for-loop
-			}
-		}
-	}
-	return string(str) //, nil
+// unescape unescapes a string, we'll use the standard go/json library for this.
+func unescape(s string) string {
+	data := make([]byte, 0, len(s)+2)
+	data = append(data, '"')
+	data = append(data, s...)
+	data = append(data, '"')
+	json.Unmarshal(data, &s)
+	return s
 }
 
 // Less return true if a token is less than another token.
