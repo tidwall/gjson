@@ -244,19 +244,19 @@ func TestBasic(t *testing.T) {
 	}
 	var token Result
 	if token = Parse("-102"); token.Num != -102 {
-		t.Fatal("expected %v, got %v", -102, token.Num)
+		t.Fatalf("expected %v, got %v", -102, token.Num)
 	}
 	if token = Parse("102"); token.Num != 102 {
-		t.Fatal("expected %v, got %v", 102, token.Num)
+		t.Fatalf("expected %v, got %v", 102, token.Num)
 	}
 	if token = Parse("102.2"); token.Num != 102.2 {
-		t.Fatal("expected %v, got %v", 102.2, token.Num)
+		t.Fatalf("expected %v, got %v", 102.2, token.Num)
 	}
 	if token = Parse(`"hello"`); token.Str != "hello" {
-		t.Fatal("expected %v, got %v", "hello", token.Str)
+		t.Fatalf("expected %v, got %v", "hello", token.Str)
 	}
 	if token = Parse(`"\"he\nllo\""`); token.Str != "\"he\nllo\"" {
-		t.Fatal("expected %v, got %v", "\"he\nllo\"", token.Str)
+		t.Fatalf("expected %v, got %v", "\"he\nllo\"", token.Str)
 	}
 	mtok = get(basicJSON, "loggy.programmers.#.firstName")
 	if len(mtok.Array()) != 4 {
@@ -269,7 +269,7 @@ func TestBasic(t *testing.T) {
 	}
 	mtok = get(basicJSON, "loggy.programmers.#.asd")
 	if mtok.Type != JSON {
-		t.Fatal("expected %v, got %v", JSON, mtok.Type)
+		t.Fatalf("expected %v, got %v", JSON, mtok.Type)
 	}
 	if len(mtok.Array()) != 0 {
 		t.Fatalf("expected 0, got %v", len(mtok.Array()))
@@ -518,17 +518,17 @@ func TestSingleArrayValue(t *testing.T) {
 		t.Fatal("array is empty")
 	}
 	if array[0].String() != "value" {
-		t.Fatal("got %s, should be %s", array[0].String(), "value")
+		t.Fatalf("got %s, should be %s", array[0].String(), "value")
 	}
 
 	array = Get(json, "key2.#").Array()
 	if len(array) != 1 {
-		t.Fatal("got '%v', expected '%v'", len(array), 1)
+		t.Fatalf("got '%v', expected '%v'", len(array), 1)
 	}
 
 	array = Get(json, "key3").Array()
 	if len(array) != 0 {
-		t.Fatal("got '%v', expected '%v'", len(array), 0)
+		t.Fatalf("got '%v', expected '%v'", len(array), 0)
 	}
 
 }
@@ -570,10 +570,9 @@ func TestManyBasic(t *testing.T) {
 		if fmt.Sprintf("%v", results) != expect {
 			t.Fatalf("expected %v, got %v", expect, results)
 		}
-		return
-		if testLastWasFallback != shouldFallback {
-			t.Fatalf("expected %v, got %v", shouldFallback, testLastWasFallback)
-		}
+		//if testLastWasFallback != shouldFallback {
+		//	t.Fatalf("expected %v, got %v", shouldFallback, testLastWasFallback)
+		//}
 	}
 	testMany(false, "[Point]", "position.type")
 	testMany(false, `[emptya ["world peace"] 31]`, ".a", "loves", "age")
@@ -723,12 +722,6 @@ func BenchmarkGJSONGetMany64Paths(t *testing.B) {
 }
 func BenchmarkGJSONGetMany128Paths(t *testing.B) {
 	benchmarkGJSONGetManyN(t, 128)
-}
-func BenchmarkGJSONGetMany256Paths(t *testing.B) {
-	benchmarkGJSONGetManyN(t, 256)
-}
-func BenchmarkGJSONGetMany512Paths(t *testing.B) {
-	benchmarkGJSONGetManyN(t, 512)
 }
 func benchmarkGJSONGetManyN(t *testing.B, n int) {
 	var paths []string

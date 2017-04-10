@@ -905,7 +905,7 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 						break
 					}
 				}
-				i, key, kesc, ok = i, c.json[s:], false, false
+				key, kesc, ok = c.json[s:], false, false
 			parse_key_string_done:
 				break
 			}
@@ -1223,16 +1223,15 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						c.value.Type = JSON
 						c.value.Raw = string(jsons)
 						return i + 1, true
-					} else {
-						if rp.alogok {
-							break
-						}
-						c.value.Raw = val
-						c.value.Type = Number
-						c.value.Num = float64(h - 1)
-						c.calcd = true
-						return i + 1, true
 					}
+					if rp.alogok {
+						break
+					}
+					c.value.Raw = val
+					c.value.Type = Number
+					c.value.Num = float64(h - 1)
+					c.calcd = true
+					return i + 1, true
 				}
 				if len(multires) > 0 && !c.value.Exists() {
 					c.value = Result{
