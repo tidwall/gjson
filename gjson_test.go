@@ -63,6 +63,17 @@ func TestRandomValidStrings(t *testing.T) {
 		}
 	}
 }
+
+func TestEmoji(t *testing.T) {
+	const input = `{"utf8":"Example emoji, KO: \ud83d\udd13, \ud83c\udfc3 OK: \u2764\ufe0f "}`
+	value := Get(input, "utf8")
+	var s string
+	json.Unmarshal([]byte(value.Raw), &s)
+	if value.String() != s {
+		t.Fatalf("expected '%v', got '%v'", s, value.String())
+	}
+}
+
 func testEscapePath(t *testing.T, json, path, expect string) {
 	if Get(json, path).String() != expect {
 		t.Fatalf("expected '%v', got '%v'", expect, Get(json, path).String())
