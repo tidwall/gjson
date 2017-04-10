@@ -286,25 +286,25 @@ Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/js
 and [jsonparser](https://github.com/buger/jsonparser)
 
 ```
-BenchmarkGJSONGet-8              	15000000	       333 ns/op	       0 B/op	       0 allocs/op
-BenchmarkGJSONUnmarshalMap-8     	  900000	      4188 ns/op	    1920 B/op	      26 allocs/op
-BenchmarkJSONUnmarshalMap-8      	  600000	      8908 ns/op	    3048 B/op	      69 allocs/op
-BenchmarkJSONUnmarshalStruct-8   	  600000	      9026 ns/op	    1832 B/op	      69 allocs/op
-BenchmarkJSONDecoder-8           	  300000	     14339 ns/op	    4224 B/op	     184 allocs/op
-BenchmarkFFJSONLexer-8           	 1500000	      3156 ns/op	     896 B/op	       8 allocs/op
-BenchmarkEasyJSONLexer-8         	 3000000	       938 ns/op	     613 B/op	       6 allocs/op
-BenchmarkJSONParserGet-8         	 3000000	       442 ns/op	      21 B/op	       0 allocs/op
+BenchmarkGJSONGet-8                 15000000        333 ns/op          0 B/op         0 allocs/op
+BenchmarkGJSONUnmarshalMap-8          900000       4188 ns/op       1920 B/op        26 allocs/op
+BenchmarkJSONUnmarshalMap-8           600000       8908 ns/op       3048 B/op        69 allocs/op
+BenchmarkJSONUnmarshalStruct-8        600000       9026 ns/op       1832 B/op        69 allocs/op
+BenchmarkJSONDecoder-8                300000      14339 ns/op       4224 B/op       184 allocs/op
+BenchmarkFFJSONLexer-8               1500000       3156 ns/op        896 B/op         8 allocs/op
+BenchmarkEasyJSONLexer-8             3000000        938 ns/op        613 B/op         6 allocs/op
+BenchmarkJSONParserGet-8             3000000        442 ns/op         21 B/op         0 allocs/op
 ```
 
 Benchmarks for the `GetMany` function:
 
 ```
-BenchmarkGJSONGetMany4Paths-8     	 4000000	       319 ns/op	     112 B/op	       0 allocs/op
-BenchmarkGJSONGetMany8Paths-8     	 8000000	       218 ns/op	      56 B/op	       0 allocs/op
-BenchmarkGJSONGetMany16Paths-8    	16000000	       160 ns/op	      56 B/op	       0 allocs/op
-BenchmarkGJSONGetMany32Paths-8    	32000000	       130 ns/op	      64 B/op	       0 allocs/op
-BenchmarkGJSONGetMany64Paths-8    	64000000	       117 ns/op	      64 B/op	       0 allocs/op
-BenchmarkGJSONGetMany128Paths-8    128000000	       109 ns/op	      64 B/op	       0 allocs/op
+BenchmarkGJSONGetMany4Paths-8        4000000       319 ns/op         112 B/op         0 allocs/op
+BenchmarkGJSONGetMany8Paths-8        8000000       218 ns/op          56 B/op         0 allocs/op
+BenchmarkGJSONGetMany16Paths-8      16000000       160 ns/op          56 B/op         0 allocs/op
+BenchmarkGJSONGetMany32Paths-8      32000000       130 ns/op          64 B/op         0 allocs/op
+BenchmarkGJSONGetMany64Paths-8      64000000       117 ns/op          64 B/op         0 allocs/op
+BenchmarkGJSONGetMany128Paths-8    128000000       109 ns/op          64 B/op         0 allocs/op
 ```
 
 JSON document used:
