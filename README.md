@@ -11,7 +11,7 @@
 
 <p align="center">get a json value quickly</a></p>
 
-GJSON is a Go package that provides a [very fast](#performance) and simple way to get a value from a json document. The purpose for this library it to give efficient json indexing for the [BuntDB](https://github.com/tidwall/buntdb) project. 
+GJSON is a Go package that provides a [very fast](#performance) and simple way to get values from a json document.
 
 Getting Started
 ===============
@@ -55,7 +55,7 @@ A path is a series of keys separated by a dot.
 A key may contain special wildcard characters '\*' and '?'.
 To access an array value use the index as the key.
 To get the number of elements in an array or to access a child path, use the '#' character.
-The dot and wildcard characters can be escaped with '\'.
+The dot and wildcard characters can be escaped with '\\'.
 
 ```json
 {
