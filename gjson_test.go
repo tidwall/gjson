@@ -138,10 +138,56 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 				"age": 101
 			}
     	]
-	}
+	},
+	"lastly":{"yay":"final"}
 }`
 var basicJSONB = []byte(basicJSON)
 
+func TestParseAny(t *testing.T) {
+	assert(t, Parse("100").Float() == 100)
+	assert(t, Parse("true").Bool())
+	assert(t, Parse("valse").Bool() == false)
+}
+
+func TestManyVariousPathCounts(t *testing.T) {
+	json := `{"a":"a","b":"b","c":"c"}`
+	counts := []int{3, 4, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 128, 129, 255, 256, 257, 511, 512, 513}
+	paths := []string{"a", "b", "c"}
+	expects := []string{"a", "b", "c"}
+	for _, count := range counts {
+		var gpaths []string
+		var gexpects []string
+		for i := 0; i < count; i++ {
+			if i < len(paths) {
+				gpaths = append(gpaths, paths[i])
+				gexpects = append(gexpects, expects[i])
+			} else {
+				gpaths = append(gpaths, fmt.Sprintf("not%d", i))
+				gexpects = append(gexpects, "null")
+			}
+		}
+		results := GetMany(json, gpaths...)
+		for i := 0; i < len(paths); i++ {
+			if results[i].String() != expects[i] {
+				t.Fatalf("expected '%v', got '%v'", expects[i], results[i].String())
+			}
+		}
+	}
+}
+func TestManyRecursion(t *testing.T) {
+	var json string
+	var path string
+	for i := 0; i < 100; i++ {
+		json += `{"a":`
+		path += ".a"
+	}
+	json += `"b"`
+	for i := 0; i < 100; i++ {
+		json += `}`
+	}
+	path = path[1:]
+	assert(t, GetMany(json, path)[0].String() == "b")
+}
 func TestByteSafety(t *testing.T) {
 	jsonb := []byte(`{"name":"Janet","age":38}`)
 	mtok := GetBytes(jsonb, "name")
@@ -161,7 +207,7 @@ func TestByteSafety(t *testing.T) {
 }
 
 func get(json, path string) Result {
-	return GetBytes([]byte(basicJSONB), path)
+	return GetBytes([]byte(json), path)
 }
 
 func TestBasic(t *testing.T) {
@@ -174,6 +220,61 @@ func TestBasic(t *testing.T) {
 	if mtok.String() != `["Brett","Elliotte"]` {
 		t.Fatalf("expected %v, got %v", `["Brett","Elliotte"]`, mtok.String())
 	}
+}
+func TestTypes(t *testing.T) {
+	assert(t, (Result{Type: String}).Type.String() == "String")
+	assert(t, (Result{Type: Number}).Type.String() == "Number")
+	assert(t, (Result{Type: Null}).Type.String() == "Null")
+	assert(t, (Result{Type: False}).Type.String() == "False")
+	assert(t, (Result{Type: True}).Type.String() == "True")
+	assert(t, (Result{Type: JSON}).Type.String() == "JSON")
+	assert(t, (Result{Type: 100}).Type.String() == "")
+	// bool
+	assert(t, (Result{Type: String, Str: "true"}).Bool())
+	assert(t, (Result{Type: True}).Bool())
+	assert(t, (Result{Type: False}).Bool() == false)
+	assert(t, (Result{Type: Number, Num: 1}).Bool())
+	// int
+	assert(t, (Result{Type: String, Str: "1"}).Int() == 1)
+	assert(t, (Result{Type: True}).Int() == 1)
+	assert(t, (Result{Type: False}).Int() == 0)
+	assert(t, (Result{Type: Number, Num: 1}).Int() == 1)
+	// uint
+	assert(t, (Result{Type: String, Str: "1"}).Uint() == 1)
+	assert(t, (Result{Type: True}).Uint() == 1)
+	assert(t, (Result{Type: False}).Uint() == 0)
+	assert(t, (Result{Type: Number, Num: 1}).Uint() == 1)
+	// float
+	assert(t, (Result{Type: String, Str: "1"}).Float() == 1)
+	assert(t, (Result{Type: True}).Float() == 1)
+	assert(t, (Result{Type: False}).Float() == 0)
+	assert(t, (Result{Type: Number, Num: 1}).Float() == 1)
+}
+func TestForEach(t *testing.T) {
+	Result{}.ForEach(nil)
+	Result{Type: String, Str: "Hello"}.ForEach(func(_, value Result) bool {
+		assert(t, value.String() == "Hello")
+		return false
+	})
+	Result{Type: JSON, Raw: "*invalid*"}.ForEach(nil)
+
+	json := ` {"name": {"first": "Janet","last": "Prichard"},
+	"asd\nf":"\ud83d\udd13","age": 47}`
+	var count int
+	ParseBytes([]byte(json)).ForEach(func(key, value Result) bool {
+		count++
+		return true
+	})
+	assert(t, count == 3)
+	ParseBytes([]byte(`{"bad`)).ForEach(nil)
+	ParseBytes([]byte(`{"ok":"bad`)).ForEach(nil)
+}
+func TestMap(t *testing.T) {
+	assert(t, len(ParseBytes([]byte(`"asdf"`)).Map()) == 0)
+	assert(t, ParseBytes([]byte(`{"asdf":"ghjk"`)).Map()["asdf"].String() == "ghjk")
+	assert(t, len(Result{Type: JSON, Raw: "**invalid**"}.Map()) == 0)
+	assert(t, Result{Type: JSON, Raw: "**invalid**"}.Value() == nil)
+	assert(t, Result{Type: JSON, Raw: "{"}.Map() != nil)
 }
 func TestBasic1(t *testing.T) {
 	mtok := get(basicJSON, `loggy.programmers`)
@@ -568,8 +669,8 @@ func TestManyBasic(t *testing.T) {
 		testWatchForFallback = false
 	}()
 	testMany := func(shouldFallback bool, expect string, paths ...string) {
-		results := GetMany(
-			manyJSON,
+		results := GetManyBytes(
+			[]byte(manyJSON),
 			paths...,
 		)
 		if len(results) != len(paths) {
@@ -593,8 +694,11 @@ func TestManyBasic(t *testing.T) {
 	testMany(true, `[Cat Nancy]`, "name\\.first", "name.first")
 	testMany(true, `[world]`, strings.Repeat("a.", 70)+"hello")
 }
-
 func testMany(t *testing.T, json string, paths, expected []string) {
+	testManyAny(t, json, paths, expected, true)
+	testManyAny(t, json, paths, expected, false)
+}
+func testManyAny(t *testing.T, json string, paths, expected []string, bytes bool) {
 	var result []Result
 	for i := 0; i < 2; i++ {
 		var which string
@@ -602,11 +706,19 @@ func testMany(t *testing.T, json string, paths, expected []string) {
 			which = "Get"
 			result = nil
 			for j := 0; j < len(expected); j++ {
-				result = append(result, Get(json, paths[j]))
+				if bytes {
+					result = append(result, GetBytes([]byte(json), paths[j]))
+				} else {
+					result = append(result, Get(json, paths[j]))
+				}
 			}
 		} else if i == 1 {
 			which = "GetMany"
-			result = GetMany(json, paths...)
+			if bytes {
+				result = GetManyBytes([]byte(json), paths...)
+			} else {
+				result = GetMany(json, paths...)
+			}
 		}
 		for j := 0; j < len(expected); j++ {
 			if result[j].String() != expected[j] {
