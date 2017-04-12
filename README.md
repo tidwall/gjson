@@ -11,7 +11,7 @@
 
 <p align="center">get a json value quickly</a></p>
 
-GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get a value from a json document with only one line of code.
+GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a json document with one line of code.
 
 Getting Started
 ===============
