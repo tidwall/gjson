@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/mailru/easyjson/jlexer"
 	fflib "github.com/pquerna/ffjson/fflib/v1"
 )
@@ -1159,6 +1160,106 @@ func BenchmarkJSONParserGet(t *testing.B) {
 					t.Fatal("did not find the value")
 				}
 			}
+		}
+	}
+	t.N *= len(benchPaths) // because we are running against 3 paths
+}
+func jsoniterWindowName(t *testing.B, iter *jsoniter.Iterator) {
+	var v string
+	for {
+		key := iter.ReadObject()
+		if key != "window" {
+			iter.Skip()
+			continue
+		}
+		for {
+			key := iter.ReadObject()
+			if key != "name" {
+				iter.Skip()
+				continue
+			}
+			v = iter.ReadString()
+			break
+		}
+		break
+	}
+	if v == "" {
+		t.Fatal("did not find the value")
+	}
+}
+
+func jsoniterTextOnMouseUp(t *testing.B, iter *jsoniter.Iterator) {
+	var v string
+	for {
+		key := iter.ReadObject()
+		if key != "text" {
+			iter.Skip()
+			continue
+		}
+		for {
+			key := iter.ReadObject()
+			if key != "onMouseUp" {
+				iter.Skip()
+				continue
+			}
+			v = iter.ReadString()
+			break
+		}
+		break
+	}
+	if v == "" {
+		t.Fatal("did not find the value")
+	}
+}
+func jsoniterImageOffset(t *testing.B, iter *jsoniter.Iterator) {
+	var v int
+	for {
+		key := iter.ReadObject()
+		if key != "image" {
+			iter.Skip()
+			continue
+		}
+		for {
+			key := iter.ReadObject()
+			if key != "hOffset" {
+				iter.Skip()
+				continue
+			}
+			v = iter.ReadInt()
+			break
+		}
+		break
+	}
+	if v == 0 {
+		t.Fatal("did not find the value")
+	}
+}
+func jsoniterWidget(t *testing.B, iter *jsoniter.Iterator, j int) {
+	for {
+		key := iter.ReadObject()
+		if key != "widget" {
+			iter.Skip()
+			continue
+		}
+		switch benchPaths[j] {
+		case "widget.window.name":
+			jsoniterWindowName(t, iter)
+		case "widget.image.hOffset":
+			jsoniterImageOffset(t, iter)
+		case "widget.text.onMouseUp":
+			jsoniterTextOnMouseUp(t, iter)
+		}
+		break
+	}
+}
+
+func BenchmarkJSONIterator(t *testing.B) {
+	t.ReportAllocs()
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		for j := 0; j < len(benchPaths); j++ {
+			iter := jsoniter.ParseString(exampleJSON)
+			jsoniterWidget(t, iter, j)
 		}
 	}
 	t.N *= len(benchPaths) // because we are running against 3 paths

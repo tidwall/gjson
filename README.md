@@ -3,15 +3,14 @@
     src="logo.png" 
     width="240" height="78" border="0" alt="GJSON">
 <br>
-<a href="https://travis-ci.org/tidwall/gjson"><img src="https://img.shields.io/travis/tidwall/gjson.svg?style=flat-square" alt="Build Status"></a><!--
-<a href="http://gocover.io/github.com/tidwall/gjson"><img src="https://img.shields.io/badge/coverage-97%25-brightgreen.svg?style=flat-square" alt="Code Coverage"></a>
--->
+<a href="https://travis-ci.org/tidwall/gjson"><img src="https://img.shields.io/travis/tidwall/gjson.svg?style=flat-square" alt="Build Status"></a>
 <a href="https://godoc.org/github.com/tidwall/gjson"><img src="https://img.shields.io/badge/api-reference-blue.svg?style=flat-square" alt="GoDoc"></a>
 </p>
 
 <p align="center">get a json value quickly</a></p>
 
-GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a json document with one line of code.
+GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a json document.
+It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array), and [map unmarshalling](#unmarshal-to-a-map).
 
 Getting Started
 ===============
@@ -283,26 +282,28 @@ The return value is a `[]Result`, which will always contain exactly the same num
 Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/), 
 [ffjson](https://github.com/pquerna/ffjson), 
 [EasyJSON](https://github.com/mailru/easyjson),
-and [jsonparser](https://github.com/buger/jsonparser)
+[jsonparser](https://github.com/buger/jsonparser),
+and [json-iterator](https://github.com/json-iterator/go)
 
 ```
-BenchmarkGJSONGet-8                 15000000        333 ns/op          0 B/op         0 allocs/op
-BenchmarkGJSONUnmarshalMap-8          900000       4188 ns/op       1920 B/op        26 allocs/op
-BenchmarkJSONUnmarshalMap-8           600000       8908 ns/op       3048 B/op        69 allocs/op
-BenchmarkJSONUnmarshalStruct-8        600000       9026 ns/op       1832 B/op        69 allocs/op
-BenchmarkJSONDecoder-8                300000      14339 ns/op       4224 B/op       184 allocs/op
-BenchmarkFFJSONLexer-8               1500000       3156 ns/op        896 B/op         8 allocs/op
-BenchmarkEasyJSONLexer-8             3000000        938 ns/op        613 B/op         6 allocs/op
-BenchmarkJSONParserGet-8             3000000        442 ns/op         21 B/op         0 allocs/op
+BenchmarkGJSONGet-8                  3000000        372 ns/op          0 B/op         0 allocs/op
+BenchmarkGJSONUnmarshalMap-8          900000       4154 ns/op       1920 B/op        26 allocs/op
+BenchmarkJSONUnmarshalMap-8           600000       9019 ns/op       3048 B/op        69 allocs/op
+BenchmarkJSONUnmarshalStruct-8        600000       9268 ns/op       1832 B/op        69 allocs/op
+BenchmarkJSONDecoder-8                300000      14120 ns/op       4224 B/op       184 allocs/op
+BenchmarkFFJSONLexer-8               1500000       3111 ns/op        896 B/op         8 allocs/op
+BenchmarkEasyJSONLexer-8             3000000        887 ns/op        613 B/op         6 allocs/op
+BenchmarkJSONParserGet-8             3000000        499 ns/op         21 B/op         0 allocs/op
+BenchmarkJSONIterator-8              3000000        812 ns/op        544 B/op         9 allocs/op
 ```
 
 Benchmarks for the `GetMany` function:
 
 ```
-BenchmarkGJSONGetMany4Paths-8        4000000       319 ns/op         112 B/op         0 allocs/op
-BenchmarkGJSONGetMany8Paths-8        8000000       218 ns/op          56 B/op         0 allocs/op
-BenchmarkGJSONGetMany16Paths-8      16000000       160 ns/op          56 B/op         0 allocs/op
-BenchmarkGJSONGetMany32Paths-8      32000000       130 ns/op          64 B/op         0 allocs/op
+BenchmarkGJSONGetMany4Paths-8        4000000       303 ns/op         112 B/op         0 allocs/op
+BenchmarkGJSONGetMany8Paths-8        8000000       208 ns/op          56 B/op         0 allocs/op
+BenchmarkGJSONGetMany16Paths-8      16000000       156 ns/op          56 B/op         0 allocs/op
+BenchmarkGJSONGetMany32Paths-8      32000000       127 ns/op          64 B/op         0 allocs/op
 BenchmarkGJSONGetMany64Paths-8      64000000       117 ns/op          64 B/op         0 allocs/op
 BenchmarkGJSONGetMany128Paths-8    128000000       109 ns/op          64 B/op         0 allocs/op
 ```
@@ -360,7 +361,7 @@ widget.text.data
 widget.text.size
 ```
 
-*These benchmarks were run on a MacBook Pro 15" 2.8 GHz Intel Core i7 using Go 1.7.*
+*These benchmarks were run on a MacBook Pro 15" 2.8 GHz Intel Core i7 using Go 1.8.*
 
 ## Contact
 Josh Baker [@tidwall](http://twitter.com/tidwall)
