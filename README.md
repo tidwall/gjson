@@ -126,6 +126,7 @@ result.Uint() uint64
 result.Float() float64
 result.String() string
 result.Bool() bool
+result.Time() time.Time
 result.Array() []gjson.Result
 result.Map() map[string]gjson.Result
 result.Get(path string) Result

@@ -114,6 +114,7 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 	"items":[1,2,3,{"tags":[1,2,3],"points":[[1,2],[3,4]]},4,5,6,7],
 	"arr":["1",2,"3",{"hello":"world"},"4",5],
 	"vals":[1,2,3,{"sadf":sdf"asdf"}],"name":{"first":"tom","last":null},
+	"created":"2014-05-16T08:28:06.989Z",
 	"loggy":{
 		"programmers": [
     	    {
@@ -143,6 +144,10 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 	"lastly":{"yay":"final"}
 }`
 var basicJSONB = []byte(basicJSON)
+
+func TestTimeResult(t *testing.T) {
+	assert(t, Get(basicJSON, "created").String() == Get(basicJSON, "created").Time().Format(time.RFC3339Nano))
+}
 
 func TestParseAny(t *testing.T) {
 	assert(t, Parse("100").Float() == 100)

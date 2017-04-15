@@ -4,6 +4,7 @@ package gjson
 import (
 	"reflect"
 	"strconv"
+	"time"
 	"unicode/utf16"
 	"unicode/utf8"
 	"unsafe"
@@ -138,6 +139,12 @@ func (t Result) Float() float64 {
 	case Number:
 		return t.Num
 	}
+}
+
+// Time returns a time.Time representation.
+func (t Result) Time() time.Time {
+	res, _ := time.Parse(time.RFC3339, t.String())
+	return res
 }
 
 // Array returns back an array of values.
