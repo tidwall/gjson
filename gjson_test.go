@@ -422,8 +422,8 @@ func TestBasic4(t *testing.T) {
 	}
 	_ = token.Value().(string)
 	token = get(basicJSON, "name.last")
-	if token.String() != "null" {
-		t.Fatal("expecting 'null'", "got", token.String())
+	if token.String() != "" {
+		t.Fatal("expecting ''", "got", token.String())
 	}
 	if token.Value() != nil {
 		t.Fatal("should be nil")
@@ -683,6 +683,7 @@ func TestManyBasic(t *testing.T) {
 			t.Fatalf("expected %v, got %v", len(paths), len(results))
 		}
 		if fmt.Sprintf("%v", results) != expect {
+			fmt.Printf("%v\n", paths)
 			t.Fatalf("expected %v, got %v", expect, results)
 		}
 		//if testLastWasFallback != shouldFallback {
@@ -693,7 +694,7 @@ func TestManyBasic(t *testing.T) {
 	testMany(false, `[emptya ["world peace"] 31]`, ".a", "loves", "age")
 	testMany(false, `[["world peace"]]`, "loves")
 	testMany(false, `[{"last":"Anderson","first":"Nancy"} Nancy]`, "name", "name.first")
-	testMany(true, `[null]`, strings.Repeat("a.", 40)+"hello")
+	testMany(true, `[]`, strings.Repeat("a.", 40)+"hello")
 	res := Get(manyJSON, strings.Repeat("a.", 48)+"a")
 	testMany(true, `[`+res.String()+`]`, strings.Repeat("a.", 48)+"a")
 	// these should fallback

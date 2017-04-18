@@ -68,7 +68,7 @@ type Result struct {
 func (t Result) String() string {
 	switch t.Type {
 	default:
-		return "null"
+		return ""
 	case False:
 		return "false"
 	case Number:
