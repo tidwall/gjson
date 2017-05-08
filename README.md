@@ -10,7 +10,7 @@
 <p align="center">get a json value quickly</a></p>
 
 GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a json document.
-It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array). It can also [unmarshal](#unmarshalling) 3 to 4 times faster than the standard Go `json/encoding` unmarshaller.
+It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array). It can also [unmarshal](#unmarshalling) 3 to 4 times faster than the standard Go `encoding/json` unmarshaller.
 
 Getting Started
 ===============
@@ -235,10 +235,9 @@ if gjson.Get(json, "name.last").Exists(){
 
 ## Unmarshalling
 
-There's a `gjson.Unmarshal` function that loads json data into the value.
-It's a drop in replacement for `json.Unmarshal` and you can typically see a
-3 to 4 times boost in performance without the need for external tools or
-generators.
+There's a `gjson.Unmarshal` function which loads json data into a value.
+It's a drop in replacement for `json.Unmarshal` and you can typically
+see a 3-4x boost in performance without the need for external generators.
 
 This function works almost identically to `json.Unmarshal` except that it
 expects the json to be well-formed prior to being called. Invalid json
