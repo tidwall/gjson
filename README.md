@@ -241,8 +241,7 @@ see a 3-4x boost in performance without the need for external generators.
 
 This function works almost identically to `json.Unmarshal` except that it
 expects the json to be well-formed prior to being called. Invalid json
-will not panic, but it may return back unexpected results. Therefore the
-return value of this function will always be nil.
+will not panic or cause a decoding error.
 
 Another difference is that `gjson.Unmarshal` will automatically attempt to
 convert JSON values to any Go type. For example, the JSON string "100" or
