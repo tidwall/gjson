@@ -26,7 +26,7 @@ $ go get -u github.com/tidwall/gjson
 This will retrieve the library.
 
 ## Get a value
-Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". This function expects that the json is well-formed and validates. Invalid json will not panic, but it may return back unexpected results. When the value is found it's returned immediately. 
+Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". This function expects that the json is well-formed. Bad json will not panic, but it may return back unexpected results. When the value is found it's returned immediately. 
 
 ```go
 package main
@@ -240,7 +240,7 @@ It's a drop in replacement for `json.Unmarshal` and you can typically
 see a 3-4x boost in performance without the need for external generators.
 
 This function works almost identically to `json.Unmarshal` except that it
-expects the json to be well-formed prior to being called. Invalid json
+expects the json to be well-formed prior to being called. Bad json
 will not panic or cause a decoding error.
 
 Another difference is that `gjson.Unmarshal` will automatically attempt to
