@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -787,6 +788,119 @@ func TestRandomMany(t *testing.T) {
 	}
 }
 
+type ComplicatedType struct {
+	unsettable int
+	Tagged     string `json:"tagged"`
+	NotTagged  bool
+	Nested     struct {
+		Yellow string `json:"yellow"`
+	}
+	NestedTagged struct {
+		Green string
+		Map   map[string]interface{}
+		Ints  struct {
+			Int   int `json:"int"`
+			Int8  int8
+			Int16 int16
+			Int32 int32
+			Int64 int64 `json:"int64"`
+		}
+		Uints struct {
+			Uint   uint
+			Uint8  uint8
+			Uint16 uint16
+			Uint32 uint32
+			Uint64 uint64
+		}
+		Floats struct {
+			Float64 float64
+			Float32 float32
+		}
+		Byte byte
+		Bool bool
+	} `json:"nestedTagged"`
+	LeftOut      string `json:"-"`
+	SelfPtr      *ComplicatedType
+	SelfSlice    []ComplicatedType
+	SelfSlicePtr []*ComplicatedType
+	SelfPtrSlice *[]ComplicatedType
+	Interface    interface{} `json:"interface"`
+	Array        [3]int
+	Time         time.Time `json:"time"`
+	Binary       []byte
+	NonBinary    []byte
+}
+
+var complicatedJSON = `
+{
+	"tagged": "OK",
+	"Tagged": "KO",
+	"NotTagged": true,
+	"unsettable": 101,
+	"Nested": {
+		"Yellow": "Green",
+		"yellow": "yellow"
+	},
+	"nestedTagged": {
+		"Green": "Green",
+		"Map": {
+			"this": "that", 
+			"and": "the other thing"
+		},
+		"Ints": {
+			"Uint": 99,
+			"Uint16": 16,
+			"Uint32": 32,
+			"Uint64": 65
+		},
+		"Uints": {
+			"int": -99,
+			"Int": -98,
+			"Int16": -16,
+			"Int32": -32,
+			"int64": -64,
+			"Int64": -65
+		},
+		"Uints": {
+			"Float32": 32.32,
+			"Float64": 64.64
+		},
+		"Byte": 254,
+		"Bool": true
+	},
+	"LeftOut": "you shouldn't be here",
+	"SelfPtr": {"tagged":"OK","nestedTagged":{"Ints":{"Uint32":32}}},
+	"SelfSlice": [{"tagged":"OK","nestedTagged":{"Ints":{"Uint32":32}}}],
+	"SelfSlicePtr": [{"tagged":"OK","nestedTagged":{"Ints":{"Uint32":32}}}],
+	"SelfPtrSlice": [{"tagged":"OK","nestedTagged":{"Ints":{"Uint32":32}}}],
+	"interface": "Tile38 Rocks!",
+	"Interface": "Please Download",
+	"Array": [0,2,3,4,5],
+	"time": "2017-05-07T13:24:43-07:00",
+	"Binary": "R0lGODlhPQBEAPeo",
+	"NonBinary": [9,3,100,115]
+}
+`
+
+func TestUnmarshal(t *testing.T) {
+	var s1 ComplicatedType
+	var s2 ComplicatedType
+	if err := json.Unmarshal([]byte(complicatedJSON), &s1); err != nil {
+		t.Fatal(err)
+	}
+	if err := Unmarshal([]byte(complicatedJSON), &s2); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(&s1, &s2) {
+		t.Fatal("not equal")
+	}
+	var str string
+	if err := json.Unmarshal([]byte(Get(complicatedJSON, "LeftOut").Raw), &str); err != nil {
+		t.Fatal(err)
+	}
+	assert(t, str == Get(complicatedJSON, "LeftOut").String())
+}
+
 type BenchStruct struct {
 	Widget struct {
 		Window struct {
@@ -894,6 +1008,34 @@ func BenchmarkGJSONUnmarshalMap(t *testing.B) {
 					}
 				}
 				parts = parts[1:]
+			}
+		}
+	}
+	t.N *= len(benchPaths) // because we are running against 3 paths
+}
+
+func BenchmarkGJSONUnmarshalStruct(t *testing.B) {
+	t.ReportAllocs()
+	t.ResetTimer()
+	for i := 0; i < t.N; i++ {
+		for j := 0; j < len(benchPaths); j++ {
+			var s BenchStruct
+			if err := Unmarshal([]byte(exampleJSON), &s); err != nil {
+				t.Fatal(err)
+			}
+			switch benchPaths[j] {
+			case "widget.window.name":
+				if s.Widget.Window.Name == "" {
+					t.Fatal("did not find the value")
+				}
+			case "widget.image.hOffset":
+				if s.Widget.Image.HOffset == 0 {
+					t.Fatal("did not find the value")
+				}
+			case "widget.text.onMouseUp":
+				if s.Widget.Text.OnMouseUp == "" {
+					t.Fatal("did not find the value")
+				}
 			}
 		}
 	}
