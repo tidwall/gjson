@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -2059,6 +2060,18 @@ func assign(jsval Result, goval reflect.Value) {
 	}
 }
 
+var validate uintptr = 1
+
+// UnmarshalValidationEnabled provides the option to disable JSON validation
+// during the Unmarshal routine. Validation is enabled by default.
+func UnmarshalValidationEnabled(enabled bool) {
+	if enabled {
+		atomic.StoreUintptr(&validate, 1)
+	} else {
+		atomic.StoreUintptr(&validate, 0)
+	}
+}
+
 // Unmarshal loads the JSON data into the value pointed to by v.
 //
 // This function works almost identically to json.Unmarshal except  that
@@ -2066,9 +2079,11 @@ func assign(jsval Result, goval reflect.Value) {
 // type. For example, the JSON string "100" or the JSON number 100 can be equally
 // assigned to Go string, int, byte, uint64, etc. This rule applies to all types.
 func Unmarshal(data []byte, v interface{}) error {
-	_, ok := validpayload(data, 0)
-	if !ok {
-		return errors.New("invalid json")
+	if atomic.LoadUintptr(&validate) == 1 {
+		_, ok := validpayload(data, 0)
+		if !ok {
+			return errors.New("invalid json")
+		}
 	}
 	if v := reflect.ValueOf(v); v.Kind() == reflect.Ptr {
 		assign(ParseBytes(data), v)
