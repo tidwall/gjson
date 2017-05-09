@@ -10,7 +10,7 @@
 <p align="center">get a json value quickly</a></p>
 
 GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a json document.
-It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array). It can also [unmarshal](#unmarshalling) 3 to 4 times faster than the standard Go `encoding/json` unmarshaller.
+It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array). It can also [unmarshal](#unmarshalling) 2 to 3 times faster than the standard Go `encoding/json` unmarshaller.
 
 Getting Started
 ===============
@@ -26,7 +26,7 @@ $ go get -u github.com/tidwall/gjson
 This will retrieve the library.
 
 ## Get a value
-Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". This function expects that the json is well-formed. Bad json will not panic, but it may return back unexpected results. When the value is found it's returned immediately. 
+Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". This function expects that the json is well-formed and validates. Invalid json will not panic, but it may return back unexpected results. When the value is found it's returned immediately. 
 
 ```go
 package main
@@ -237,16 +237,13 @@ if gjson.Get(json, "name.last").Exists(){
 
 There's a `gjson.Unmarshal` function which loads json data into a value.
 It's a drop in replacement for `json.Unmarshal` and you can typically
-see a 3-4x boost in performance without the need for external generators.
+see a 2-3x boost in performance without the need for external generators.
 
-This function works almost identically to `json.Unmarshal` except that it
-expects the json to be well-formed prior to being called. Bad json
-will not panic or cause a decoding error.
-
-Another difference is that `gjson.Unmarshal` will automatically attempt to
-convert JSON values to any Go type. For example, the JSON string "100" or
-the JSON number 100 can be equally assigned to Go string, int, byte, uint64,
-etc. This rule applies to all types.
+This function works almost identically to `json.Unmarshal` except that 
+`gjson.Unmarshal` will automatically attempt to convert JSON values to any
+Go type. For example, the JSON string "100" or the JSON number 100 can be
+equally assigned to Go string, int, byte, uint64, etc. This rule applies to
+all types.
 
 
 ```go

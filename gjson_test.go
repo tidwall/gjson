@@ -901,6 +901,109 @@ func TestUnmarshal(t *testing.T) {
 	assert(t, str == Get(complicatedJSON, "LeftOut").String())
 }
 
+func testvalid(json string, expect bool) {
+	_, ok := validpayload([]byte(json), 0)
+	if ok != expect {
+		panic("mismatch")
+	}
+}
+
+func TestValidBasic(t *testing.T) {
+	testvalid("0", true)
+	testvalid("00", false)
+	testvalid("-00", false)
+	testvalid("-.", false)
+	testvalid("0.0", true)
+	testvalid("10.0", true)
+	testvalid("10e1", true)
+	testvalid("10EE", false)
+	testvalid("10E-", false)
+	testvalid("10E+", false)
+	testvalid("10E123", true)
+	testvalid("10E-123", true)
+	testvalid("10E-0123", true)
+	testvalid("", false)
+	testvalid(" ", false)
+	testvalid("{}", true)
+	testvalid("{", false)
+	testvalid("-", false)
+	testvalid("-1", true)
+	testvalid("-1.", false)
+	testvalid("-1.0", true)
+	testvalid(" -1.0", true)
+	testvalid(" -1.0 ", true)
+	testvalid("-1.0 ", true)
+	testvalid("-1.0 i", false)
+	testvalid("-1.0 i", false)
+	testvalid("true", true)
+	testvalid(" true", true)
+	testvalid(" true ", true)
+	testvalid(" True ", false)
+	testvalid(" tru", false)
+	testvalid("false", true)
+	testvalid(" false", true)
+	testvalid(" false ", true)
+	testvalid(" False ", false)
+	testvalid(" fals", false)
+	testvalid("null", true)
+	testvalid(" null", true)
+	testvalid(" null ", true)
+	testvalid(" Null ", false)
+	testvalid(" nul", false)
+	testvalid(" []", true)
+	testvalid(" [true]", true)
+	testvalid(" [ true, null ]", true)
+	testvalid(" [ true,]", false)
+	testvalid(`{"hello":"world"}`, true)
+	testvalid(`{ "hello": "world" }`, true)
+	testvalid(`{ "hello": "world", }`, false)
+	testvalid(`{"a":"b",}`, false)
+	testvalid(`{"a":"b","a"}`, false)
+	testvalid(`{"a":"b","a":}`, false)
+	testvalid(`{"a":"b","a":1}`, true)
+	testvalid(`{"a":"b","a": 1, "c":{"hi":"there"} }`, true)
+	testvalid(`{"a":"b","a": 1, "c":{"hi":"there", "easy":["going",{"mixed":"bag"}]} }`, true)
+	testvalid(`""`, true)
+	testvalid(`"`, false)
+	testvalid(`"\n"`, true)
+	testvalid(`"\"`, false)
+	testvalid(`"\\"`, true)
+	testvalid(`"a\\b"`, true)
+	testvalid(`"a\\b\\\"a"`, true)
+	testvalid(`"a\\b\\\uFFAAa"`, true)
+	testvalid(`"a\\b\\\uFFAZa"`, false)
+	testvalid(`"a\\b\\\uFFA"`, false)
+	testvalid(string(complicatedJSON), true)
+	testvalid(string(exampleJSON), true)
+}
+
+var jsonchars = []string{"{", "[", ",", ":", "}", "]", "1", "0", "true", "false", "null", `""`, `"\""`, `"a"`}
+
+func makeRandomJSONChars(b []byte) {
+	var bb []byte
+	for len(bb) < len(b) {
+		bb = append(bb, jsonchars[rand.Int()%len(jsonchars)]...)
+	}
+	copy(b, bb[:len(b)])
+}
+func TestValidRandom(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, 100000)
+	start := time.Now()
+	for time.Since(start) < time.Second*3 {
+		n := rand.Int() % len(b)
+		rand.Read(b[:n])
+		validpayload(b[:n], 0)
+	}
+
+	start = time.Now()
+	for time.Since(start) < time.Second*3 {
+		n := rand.Int() % len(b)
+		makeRandomJSONChars(b[:n])
+		validpayload(b[:n], 0)
+	}
+}
+
 type BenchStruct struct {
 	Widget struct {
 		Window struct {
