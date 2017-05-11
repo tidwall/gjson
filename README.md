@@ -136,8 +136,6 @@ result.Less(token Result, caseSensitive bool) bool
 
 The `result.Value()` function returns an `interface{}` which requires type assertion and is one of the following Go types:
 
-
-
 The `result.Array()` function returns back an array of values.
 If the result represents a non-existent value, then an empty array will be returned.
 If the result is not a JSON array, the return value will be an array containing one result.
@@ -169,14 +167,14 @@ Suppose you want all the last names from the following json:
       "lastName": "Harold", 
     }
   ]
-}`
+}
 ```
 
 You would use the path "programmers.#.lastName" like such:
 
 ```go
 result := gjson.Get(json, "programmers.#.lastName")
-for _,name := range result.Array() {
+for _, name := range result.Array() {
 	println(name.String())
 }
 ```
@@ -197,7 +195,7 @@ Returning `false` from an iterator will stop iteration.
 
 ```go
 result := gjson.Get(json, "programmers")
-result.ForEach(func(key, value gjson.Result) bool{
+result.ForEach(func(key, value gjson.Result) bool {
 	println(value.String()) 
 	return true // keep iterating
 })
@@ -228,7 +226,7 @@ if !value.Exists() {
 }
 
 // Or as one step
-if gjson.Get(json, "name.last").Exists(){
+if gjson.Get(json, "name.last").Exists() {
 	println("has a last name")
 }
 ```
@@ -286,7 +284,7 @@ To unmarshal to a `map[string]interface{}`:
 
 ```go
 m, ok := gjson.Parse(json).Value().(map[string]interface{})
-if !ok{
+if !ok {
 	// not a map
 }
 ```
