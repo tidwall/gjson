@@ -23,7 +23,7 @@ To start using GJSON, install Go and run `go get`:
 $ go get -u github.com/tidwall/gjson
 ```
 
-This will retrieve the library.
+This will retrieve the library. [You can also use GJSON as a CLI.](#use-as-cli)
 
 ## Get a value
 Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". This function expects that the json is well-formed. Bad json will not panic, but it may return back unexpected results. When the value is found it's returned immediately. 
@@ -408,6 +408,66 @@ widget.text.size
 ```
 
 *These benchmarks were run on a MacBook Pro 15" 2.8 GHz Intel Core i7 using Go 1.8.*
+
+## Use as CLI
+
+### Installation
+
+```sh
+$ go get -u github.com/tidwall/gjson/...
+$ which gjson
+$GOPATH/bin/gjson
+```
+
+### Usage
+
+View the help dialogue with the `-help` flag.
+
+```sh
+$ gjson -help
+usage: gjson [options] [path ...]
+  -in string
+      read JSON data from this file instead of stdin
+  -incl-path
+      include paths in output
+  -out string
+      write result to this file instead of stdout
+  -version
+      print version and exit
+```
+
+By default, GJSON reads from stdin and writes to stdout. Use the `-in` / `-out` flags to specify files to read to / write from. Note that GJSON **overwrites** the contents of `-out` (and creates the file if it doesn't exist yet).
+
+GJSON expects one or more paths as command line arguments. A path with escaped characters should be wrapped in quotes.
+
+### Examples
+
+```sh
+$ echo '{"name":{"first":"Janet","last":"Prichard"},"age":47}' | gjson name.last
+Prichard
+```
+
+The following examples use the JSON data from [this section](#path-syntax).
+
+```sh
+$ gjson name.last < data.json
+Anderson
+```
+
+```sh
+$ gjson name.last age "fav\.movie" < data.json > out
+$ cat out
+Anderson
+37
+Deer Hunter
+```
+
+```sh
+$ gjson -in data.json -out out -include-path children children.#
+$ cat out
+"children" : ["Sara","Alex","Jack"]
+"children.#" : 3
+```
 
 ## Contact
 Josh Baker [@tidwall](http://twitter.com/tidwall)
