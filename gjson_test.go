@@ -8,6 +8,7 @@ import (
 	"io"
 	"math/rand"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -228,6 +229,52 @@ func TestBasic(t *testing.T) {
 		t.Fatalf("expected %v, got %v", `["Brett","Elliotte"]`, mtok.String())
 	}
 }
+func TestPlus53BitInts(t *testing.T) {
+	json := `{"IdentityData":{"GameInstanceId":634866135153775564}}`
+	value := Get(json, "IdentityData.GameInstanceId")
+	assert(t, value.Uint() == 634866135153775564)
+	assert(t, value.Int() == 634866135153775564)
+	assert(t, value.Float() == 634866135153775616)
+
+	json = `{"IdentityData":{"GameInstanceId":634866135153775564.88172}}`
+	value = Get(json, "IdentityData.GameInstanceId")
+	assert(t, value.Uint() == 634866135153775616)
+	assert(t, value.Int() == 634866135153775616)
+	assert(t, value.Float() == 634866135153775616.88172)
+
+	json = `{
+		"min_uint64": 0,
+		"max_uint64": 18446744073709551615,
+		"overflow_uint64": 18446744073709551616,
+		"min_int64": -9223372036854775808,
+		"max_int64": 9223372036854775807,
+		"overflow_int64": 9223372036854775808,
+		"min_uint53":  0,
+		"max_uint53":  4503599627370495,
+		"overflow_uint53": 4503599627370496,
+		"min_int53": -2251799813685248,
+		"max_int53": 2251799813685247,
+		"overflow_int53": 2251799813685248
+	}`
+
+	assert(t, Get(json, "min_uint53").Uint() == 0)
+	assert(t, Get(json, "max_uint53").Uint() == 4503599627370495)
+	assert(t, Get(json, "overflow_uint53").Int() == 4503599627370496)
+	assert(t, Get(json, "min_int53").Int() == -2251799813685248)
+	assert(t, Get(json, "max_int53").Int() == 2251799813685247)
+	assert(t, Get(json, "overflow_int53").Int() == 2251799813685248)
+	assert(t, Get(json, "min_uint64").Uint() == 0)
+	assert(t, Get(json, "max_uint64").Uint() == 18446744073709551615)
+	// this next value overflows the max uint64 by one which will just
+	// flip the number to zero
+	assert(t, Get(json, "overflow_uint64").Int() == 0)
+	assert(t, Get(json, "min_int64").Int() == -9223372036854775808)
+	assert(t, Get(json, "max_int64").Int() == 9223372036854775807)
+	// this next value overflows the max int64 by one which will just
+	// flip the number to the negative sign.
+	assert(t, Get(json, "overflow_int64").Int() == -9223372036854775808)
+}
+
 func TestTypes(t *testing.T) {
 	assert(t, (Result{Type: String}).Type.String() == "String")
 	assert(t, (Result{Type: Number}).Type.String() == "Number")
@@ -495,7 +542,7 @@ func TestUnescape(t *testing.T) {
 }
 func assert(t testing.TB, cond bool) {
 	if !cond {
-		t.Fatal("assert failed")
+		panic("assert failed")
 	}
 }
 func TestLess(t *testing.T) {
@@ -1551,5 +1598,29 @@ func BenchmarkConvertGetBytes(t *testing.B) {
 	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
 		GetBytes(data, "50.widget.text.onMouseUp")
+	}
+}
+func BenchmarkParseUintNumParser(t *testing.B) {
+	var s = "634866135153775564"
+	for i := 0; i < t.N; i++ {
+		parseUint(s)
+	}
+}
+func BenchmarkStdlibParseUintNumParser(t *testing.B) {
+	var s = "634866135153775564"
+	for i := 0; i < t.N; i++ {
+		strconv.ParseUint(s, 10, 64)
+	}
+}
+func BenchmarkParseIntNumParser(t *testing.B) {
+	var s = "-634866135153775564"
+	for i := 0; i < t.N; i++ {
+		parseInt(s)
+	}
+}
+func BenchmarkStdlibParseIntNumParser(t *testing.B) {
+	var s = "-634866135153775564"
+	for i := 0; i < t.N; i++ {
+		strconv.ParseInt(s, 10, 64)
 	}
 }

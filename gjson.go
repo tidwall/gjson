@@ -110,10 +110,20 @@ func (t Result) Int() int64 {
 	case True:
 		return 1
 	case String:
-		n, _ := strconv.ParseInt(t.Str, 10, 64)
+		n, _ := parseInt(t.Str)
 		return n
 	case Number:
-		return int64(t.Num)
+		// try to directly convert the float64 to int64
+		n, ok := floatToInt(t.Num)
+		if !ok {
+			// now try to parse the raw string
+			n, ok = parseInt(t.Raw)
+			if !ok {
+				// fallback to a standard conversion
+				return int64(t.Num)
+			}
+		}
+		return n
 	}
 }
 
@@ -125,10 +135,20 @@ func (t Result) Uint() uint64 {
 	case True:
 		return 1
 	case String:
-		n, _ := strconv.ParseUint(t.Str, 10, 64)
+		n, _ := parseUint(t.Str)
 		return n
 	case Number:
-		return uint64(t.Num)
+		// try to directly convert the float64 to uint64
+		n, ok := floatToUint(t.Num)
+		if !ok {
+			// now try to parse the raw string
+			n, ok = parseUint(t.Raw)
+			if !ok {
+				// fallback to a standard conversion
+				return uint64(t.Num)
+			}
+		}
+		return n
 	}
 }
 
@@ -1091,8 +1111,8 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 	var multires []byte
 	rp := parseArrayPath(path)
 	if !rp.arrch {
-		n, err := strconv.ParseUint(rp.part, 10, 64)
-		if err != nil {
+		n, ok := parseUint(rp.part)
+		if !ok {
 			partidx = -1
 		} else {
 			partidx = int(n)
@@ -2232,6 +2252,9 @@ func validstring(data []byte, i int) (outi int, ok bool) {
 			return i, false
 		} else if data[i] == '\\' {
 			i++
+			if i == len(data) {
+				return i, false
+			}
 			switch data[i] {
 			default:
 				return i, false
@@ -2347,4 +2370,63 @@ func validnull(data []byte, i int) (outi int, ok bool) {
 func Valid(json string) bool {
 	_, ok := validpayload([]byte(json), 0)
 	return ok
+}
+
+func parseUint(s string) (n uint64, ok bool) {
+	var i int
+	if i == len(s) {
+		return 0, false
+	}
+	for ; i < len(s); i++ {
+		if s[i] >= '0' && s[i] <= '9' {
+			n = n*10 + uint64(s[i]-'0')
+		} else {
+			return 0, false
+		}
+	}
+	return n, true
+}
+
+func parseInt(s string) (n int64, ok bool) {
+	var i int
+	var sign bool
+	if len(s) > 0 && s[0] == '-' {
+		sign = true
+		i++
+	}
+	if i == len(s) {
+		return 0, false
+	}
+	for ; i < len(s); i++ {
+		if s[i] >= '0' && s[i] <= '9' {
+			n = n*10 + int64(s[i]-'0')
+		} else {
+			return 0, false
+		}
+	}
+	if sign {
+		return n * -1, true
+	}
+	return n, true
+}
+
+const minUint53 = 0
+const maxUint53 = 4503599627370495
+const minInt53 = -2251799813685248
+const maxInt53 = 2251799813685247
+
+func floatToUint(f float64) (n uint64, ok bool) {
+	n = uint64(f)
+	if float64(n) == f && n >= minUint53 && n <= maxUint53 {
+		return n, true
+	}
+	return 0, false
+}
+
+func floatToInt(f float64) (n int64, ok bool) {
+	n = int64(f)
+	if float64(n) == f && n >= minInt53 && n <= maxInt53 {
+		return n, true
+	}
+	return 0, false
 }
