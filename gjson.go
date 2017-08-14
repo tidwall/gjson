@@ -187,6 +187,16 @@ func (t Result) Array() []Result {
 	return r.a
 }
 
+// IsObject returns true if the result value is a JSON object.
+func (t Result) IsObject() bool {
+	return t.Type == JSON && len(t.Raw) > 0 && t.Raw[0] == '{'
+}
+
+// IsObject returns true if the result value is a JSON array.
+func (t Result) IsArray() bool {
+	return t.Type == JSON && len(t.Raw) > 0 && t.Raw[0] == '['
+}
+
 // ForEach iterates through values.
 // If the result represents a non-existent value, then no values will be iterated.
 // If the result is an Object, the iterator will pass the key and value of each item.

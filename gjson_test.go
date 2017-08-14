@@ -223,6 +223,23 @@ func TestBasic(t *testing.T) {
 	}
 }
 
+func TestIsArrayIsObject(t *testing.T) {
+	mtok := get(basicJSON, "loggy")
+	assert(t, mtok.IsObject())
+	assert(t, !mtok.IsArray())
+
+	mtok = get(basicJSON, "loggy.programmers")
+	assert(t, !mtok.IsObject())
+	assert(t, mtok.IsArray())
+
+	mtok = get(basicJSON, `loggy.programmers.#[tag="good"]#.firstName`)
+	assert(t, mtok.IsArray())
+
+	mtok = get(basicJSON, `loggy.programmers.0.firstName`)
+	assert(t, !mtok.IsObject())
+	assert(t, !mtok.IsArray())
+}
+
 func TestPlus53BitInts(t *testing.T) {
 	json := `{"IdentityData":{"GameInstanceId":634866135153775564}}`
 	value := Get(json, "IdentityData.GameInstanceId")
