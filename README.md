@@ -407,7 +407,8 @@ widget.text.data
 widget.text.size
 ```
 
-*These benchmarks were run on a MacBook Pro 15" 2.8 GHz Intel Core i7 using Go 1.8.*
+*These benchmarks were run on a MacBook Pro 15" 2.8 GHz Intel Core i7 using Go 1.8 and can be be found [here](https://github.com/tidwall/gjson-benchmarks).*
+
 
 ## Contact
 Josh Baker [@tidwall](http://twitter.com/tidwall)
