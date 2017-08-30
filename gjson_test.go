@@ -285,7 +285,17 @@ func TestPlus53BitInts(t *testing.T) {
 	// flip the number to the negative sign.
 	assert(t, Get(json, "overflow_int64").Int() == -9223372036854775808)
 }
-
+func TestIssue38(t *testing.T) {
+	// These should not fail, even though the unicode is invalid.
+	Get(`["S3O PEDRO DO BUTI\udf93"]`, "0")
+	Get(`["S3O PEDRO DO BUTI\udf93asdf"]`, "0")
+	Get(`["S3O PEDRO DO BUTI\udf93\u"]`, "0")
+	Get(`["S3O PEDRO DO BUTI\udf93\u1"]`, "0")
+	Get(`["S3O PEDRO DO BUTI\udf93\u13"]`, "0")
+	Get(`["S3O PEDRO DO BUTI\udf93\u134"]`, "0")
+	Get(`["S3O PEDRO DO BUTI\udf93\u1345"]`, "0")
+	Get(`["S3O PEDRO DO BUTI\udf93\u1345asd"]`, "0")
+}
 func TestTypes(t *testing.T) {
 	assert(t, (Result{Type: String}).Type.String() == "String")
 	assert(t, (Result{Type: Number}).Type.String() == "Number")
