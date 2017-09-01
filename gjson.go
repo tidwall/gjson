@@ -353,13 +353,13 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
 			value.Raw = squash(json[i:])
 		case 'n':
 			value.Type = Null
-			value.Raw = tolit(json[i:])
+			value.Raw = tolit(json[i:], 4)
 		case 't':
 			value.Type = True
-			value.Raw = tolit(json[i:])
+			value.Raw = tolit(json[i:], 4)
 		case 'f':
 			value.Type = False
-			value.Raw = tolit(json[i:])
+			value.Raw = tolit(json[i:], 5)
 		case '"':
 			value.Type = String
 			value.Raw, value.Str = tostr(json[i:])
@@ -367,7 +367,7 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
 		i += len(value.Raw) - 1
 
 		if r.vc == '{' {
-			if count%2 == 0 {
+			if count&0x1 == 0 {
 				key = value
 			} else {
 				if valueize {
@@ -411,13 +411,13 @@ func Parse(json string) Result {
 			}
 		case 'n':
 			value.Type = Null
-			value.Raw = tolit(json[i:])
+			value.Raw = tolit(json[i:], 4)
 		case 't':
 			value.Type = True
-			value.Raw = tolit(json[i:])
+			value.Raw = tolit(json[i:], 4)
 		case 'f':
 			value.Type = False
-			value.Raw = tolit(json[i:])
+			value.Raw = tolit(json[i:], 5)
 		case '"':
 			value.Type = String
 			value.Raw, value.Str = tostr(json[i:])
@@ -430,7 +430,10 @@ func Parse(json string) Result {
 // ParseBytes parses the json and returns a result.
 // If working with bytes, this method preferred over Parse(string(data))
 func ParseBytes(json []byte) Result {
-	return Parse(string(json))
+	return Parse(*(*string)(unsafe.Pointer(&reflect.StringHeader{
+		Data: uintptr(unsafe.Pointer(&json[0])),
+		Len:  len(json),
+	})))
 }
 
 func squash(json string) string {
@@ -458,7 +461,7 @@ func squash(json string) string {
 								}
 								n++
 							}
-							if n%2 == 0 {
+							if n&0x1 == 0 {
 								continue
 							}
 						}
@@ -480,42 +483,27 @@ func squash(json string) string {
 
 func tonum(json string) (raw string, num float64) {
 	for i := 1; i < len(json); i++ {
-		// less than dash might have valid characters
-		if json[i] <= '-' {
-			if json[i] <= ' ' || json[i] == ',' {
-				// break on whitespace and comma
-				raw = json[:i]
-				num, _ = strconv.ParseFloat(raw, 64)
-				return
-			}
-			// could be a '+' or '-'. let's assume so.
+		// Allow characters > . that don't terminate a JSON type
+		if json[i] >= '.' && json[i] != ']' && json[i] != '}' {
 			continue
 		}
-		if json[i] < ']' {
-			// probably a valid number
-			continue
-		}
-		if json[i] == 'e' || json[i] == 'E' {
-			// allow for exponential numbers
-			continue
-		}
-		// likely a ']' or '}'
+
 		raw = json[:i]
 		num, _ = strconv.ParseFloat(raw, 64)
 		return
 	}
+
 	raw = json
 	num, _ = strconv.ParseFloat(raw, 64)
 	return
 }
 
-func tolit(json string) (raw string) {
-	for i := 1; i < len(json); i++ {
-		if json[i] <= 'a' || json[i] >= 'z' {
-			return json[:i]
-		}
+func tolit(json string, chars int) (raw string) {
+	if chars >= len(json) { // invalid, not enough characters
+		return json
 	}
-	return json
+
+	return json[:chars]
 }
 
 func tostr(json string) (raw string, str string) {
@@ -543,7 +531,7 @@ func tostr(json string) (raw string, str string) {
 							}
 							n++
 						}
-						if n%2 == 0 {
+						if n&0x1 == 0 {
 							continue
 						}
 					}
@@ -628,7 +616,7 @@ func parseString(json string, i int) (int, string, bool, bool) {
 							}
 							n++
 						}
-						if n%2 == 0 {
+						if n&0x1 == 0 {
 							continue
 						}
 					}
@@ -766,7 +754,7 @@ func parseArrayPath(path string) (r arrayPathResult) {
 												}
 												n++
 											}
-											if n%2 == 0 {
+											if n&0x1 == 0 {
 												continue
 											}
 										}
@@ -880,7 +868,7 @@ func parseSquash(json string, i int) (int, string) {
 								}
 								n++
 							}
-							if n%2 == 0 {
+							if n&0x1 == 0 {
 								continue
 							}
 						}
@@ -937,7 +925,7 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 										}
 										n++
 									}
-									if n%2 == 0 {
+									if n&0x1 == 0 {
 										continue
 									}
 								}
