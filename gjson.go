@@ -571,6 +571,15 @@ func (t Result) Exists() bool {
 	return t.Type != Null || len(t.Raw) != 0
 }
 
+// IsNull returns true if type is Null.
+//
+//  if gjson.Get(json, "name.nullable").IsNull() {
+//		println("value is null")
+//  }
+func (t Result) IsNull() bool {
+	return t.Type == Null
+}
+
 // Value returns one of these types:
 //
 //	bool, for JSON booleans
