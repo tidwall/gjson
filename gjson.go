@@ -1850,6 +1850,9 @@ next_key:
 			nomatch: // noop label
 			}
 
+			if !hasMatch && i < len(json) && json[i] == '}' {
+				return i + 1, true
+			}
 			if !parsedVal {
 				if hasMatch {
 					// we found a match and the value has not been parsed yet.

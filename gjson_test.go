@@ -1086,3 +1086,18 @@ func TestGetMany47(t *testing.T) {
 		}
 	}
 }
+
+func TestGetMany48(t *testing.T) {
+	json := `{"bar": {"id": 99, "xyz": "my xyz"}, "foo": {"myfoo": [605]}}`
+	paths := []string{"foo.myfoo", "bar.id", "bar.xyz", "bar.abc"}
+	expected := []string{"[605]", "99", "my xyz", ""}
+	results := GetMany(json, paths...)
+	if len(expected) != len(results) {
+		t.Fatalf("expected %v, got %v", len(expected), len(results))
+	}
+	for i, path := range paths {
+		if results[i].String() != expected[i] {
+			t.Fatalf("expected '%v', got '%v' for path '%v'", expected[i], results[i].String(), path)
+		}
+	}
+}
