@@ -1071,3 +1071,18 @@ func TestValidRandom(t *testing.T) {
 		validpayload(b[:n], 0)
 	}
 }
+
+func TestGetMany47(t *testing.T) {
+	json := `{"bar": {"id": 99, "mybar": "my mybar" }, "foo": {"myfoo": [605]}}`
+	paths := []string{"foo.myfoo", "bar.id", "bar.mybar", "bar.mybarx"}
+	expected := []string{"[605]", "99", "my mybar", ""}
+	results := GetMany(json, paths...)
+	if len(expected) != len(results) {
+		t.Fatalf("expected %v, got %v", len(expected), len(results))
+	}
+	for i, path := range paths {
+		if results[i].String() != expected[i] {
+			t.Fatalf("expected '%v', got '%v' for path '%v'", expected[i], results[i].String(), path)
+		}
+	}
+}
