@@ -136,7 +136,8 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 			}
     	]
 	},
-	"lastly":{"yay":"final"}
+	"lastly":{"yay":"final"},
+	"nullable": null
 }`
 var basicJSONB = []byte(basicJSON)
 
@@ -238,6 +239,12 @@ func TestIsArrayIsObject(t *testing.T) {
 	mtok = get(basicJSON, `loggy.programmers.0.firstName`)
 	assert(t, !mtok.IsObject())
 	assert(t, !mtok.IsArray())
+}
+
+func TestIsNull(t *testing.T) {
+	value := get(basicJSON, "nullable")
+	assert(t, value.IsNull())
+	assert(t, value.Exists())
 }
 
 func TestPlus53BitInts(t *testing.T) {
