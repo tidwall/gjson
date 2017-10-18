@@ -2099,6 +2099,8 @@ var validate uintptr = 1
 
 // UnmarshalValidationEnabled provides the option to disable JSON validation
 // during the Unmarshal routine. Validation is enabled by default.
+//
+// Deprecated: Use encoder/json.Unmarshal instead
 func UnmarshalValidationEnabled(enabled bool) {
 	if enabled {
 		atomic.StoreUintptr(&validate, 1)
@@ -2113,6 +2115,8 @@ func UnmarshalValidationEnabled(enabled bool) {
 // gjson.Unmarshal will automatically attempt to convert JSON values to any Go
 // type. For example, the JSON string "100" or the JSON number 100 can be equally
 // assigned to Go string, int, byte, uint64, etc. This rule applies to all types.
+//
+// Deprecated: Use encoder/json.Unmarshal instead
 func Unmarshal(data []byte, v interface{}) error {
 	if atomic.LoadUintptr(&validate) == 1 {
 		_, ok := validpayload(data, 0)

@@ -234,53 +234,6 @@ if gjson.Get(json, "name.last").Exists() {
 }
 ```
 
-## Unmarshalling
-
-There's a `gjson.Unmarshal` function which loads json data into a value.
-It's a general replacement for `json.Unmarshal` and you can typically
-see a 2-3x boost in performance without the need for external generators.
-
-This function works almost identically to `json.Unmarshal` except that 
-`gjson.Unmarshal` will automatically attempt to convert JSON values to any
-Go type. For example, the JSON string "100" or the JSON number 100 can be
-equally assigned to Go string, int, byte, uint64, etc. This rule applies to
-all types.
-
-
-```go
-package main
-
-import (
-	"fmt"
-
-	"github.com/tidwall/gjson"
-)
-
-type Animal struct {
-	Type  string `json:"type"`
-	Sound string `json:"sound"`
-	Age   int    `json:"age"`
-}
-
-var json = `{
-	"type": "Dog",
-	"Sound": "Bark",
-	"Age": "11"
-}`
-
-func main() {
-	var dog Animal
-	gjson.Unmarshal([]byte(json), &dog)
-	fmt.Printf("type: %s, sound: %s, age: %d\n", dog.Type, dog.Sound, dog.Age)
-}
-```
-
-This will print:
-
-```
-type: Dog, sound: Bark, age: 11
-```
-
 ## Unmarshal to a map
 
 To unmarshal to a `map[string]interface{}`:
@@ -338,7 +291,6 @@ and [json-iterator](https://github.com/json-iterator/go)
 BenchmarkGJSONGet-8                  3000000        372 ns/op          0 B/op         0 allocs/op
 BenchmarkGJSONUnmarshalMap-8          900000       4154 ns/op       1920 B/op        26 allocs/op
 BenchmarkJSONUnmarshalMap-8           600000       9019 ns/op       3048 B/op        69 allocs/op
-BenchmarkJSONUnmarshalStruct-8        600000       9268 ns/op       1832 B/op        69 allocs/op
 BenchmarkJSONDecoder-8                300000      14120 ns/op       4224 B/op       184 allocs/op
 BenchmarkFFJSONLexer-8               1500000       3111 ns/op        896 B/op         8 allocs/op
 BenchmarkEasyJSONLexer-8             3000000        887 ns/op        613 B/op         6 allocs/op
