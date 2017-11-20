@@ -1101,3 +1101,12 @@ func TestGetMany48(t *testing.T) {
 		}
 	}
 }
+
+func TestResultRawForLiteral(t *testing.T) {
+	for _, lit := range []string{"null", "true", "false"} {
+		result := Parse(lit)
+		if result.Raw != lit {
+			t.Fatalf("expected '%v', got '%v'", lit, result.Raw)
+		}
+	}
+}

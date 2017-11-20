@@ -511,7 +511,7 @@ func tonum(json string) (raw string, num float64) {
 
 func tolit(json string) (raw string) {
 	for i := 1; i < len(json); i++ {
-		if json[i] <= 'a' || json[i] >= 'z' {
+		if json[i] < 'a' || json[i] > 'z' {
 			return json[:i]
 		}
 	}
