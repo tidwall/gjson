@@ -1110,3 +1110,22 @@ func TestResultRawForLiteral(t *testing.T) {
 		}
 	}
 }
+
+func TestNullArray(t *testing.T) {
+	n := len(Get(`{"data":null}`, "data").Array())
+	if n != 0 {
+		t.Fatalf("expected '%v', got '%v'", 0, n)
+	}
+	n = len(Get(`{}`, "data").Array())
+	if n != 0 {
+		t.Fatalf("expected '%v', got '%v'", 0, n)
+	}
+	n = len(Get(`{"data":[]}`, "data").Array())
+	if n != 0 {
+		t.Fatalf("expected '%v', got '%v'", 0, n)
+	}
+	n = len(Get(`{"data":[null]}`, "data").Array())
+	if n != 1 {
+		t.Fatalf("expected '%v', got '%v'", 1, n)
+	}
+}

@@ -177,8 +177,8 @@ func (t Result) Time() time.Time {
 // If the result represents a non-existent value, then an empty array will be returned.
 // If the result is not a JSON array, the return value will be an array containing one result.
 func (t Result) Array() []Result {
-	if !t.Exists() {
-		return nil
+	if t.Type == Null {
+		return []Result{}
 	}
 	if t.Type != JSON {
 		return []Result{t}
@@ -192,7 +192,7 @@ func (t Result) IsObject() bool {
 	return t.Type == JSON && len(t.Raw) > 0 && t.Raw[0] == '{'
 }
 
-// IsObject returns true if the result value is a JSON array.
+// IsArray returns true if the result value is a JSON array.
 func (t Result) IsArray() bool {
 	return t.Type == JSON && len(t.Raw) > 0 && t.Raw[0] == '['
 }
