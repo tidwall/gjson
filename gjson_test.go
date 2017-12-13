@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1128,4 +1129,152 @@ func TestNullArray(t *testing.T) {
 	if n != 1 {
 		t.Fatalf("expected '%v', got '%v'", 1, n)
 	}
+}
+
+func TestRandomGetMany(t *testing.T) {
+	start := time.Now()
+	for time.Since(start) < time.Second*3 {
+		testRandomGetMany(t)
+	}
+}
+func testRandomGetMany(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+	json, keys := randomJSON()
+	for _, key := range keys {
+		r := Get(json, key)
+		if !r.Exists() {
+			t.Fatal("should exist")
+		}
+	}
+	rkeysi := rand.Perm(len(keys))
+	rkeysn := 1 + rand.Int()%32
+	if len(rkeysi) > rkeysn {
+		rkeysi = rkeysi[:rkeysn]
+	}
+	var rkeys []string
+	for i := 0; i < len(rkeysi); i++ {
+		rkeys = append(rkeys, keys[rkeysi[i]])
+	}
+	mres1 := GetMany(json, rkeys...)
+	var mres2 []Result
+	for _, rkey := range rkeys {
+		mres2 = append(mres2, Get(json, rkey))
+	}
+	if len(mres1) != len(mres2) {
+		t.Fatalf("expected %d, got %d", len(mres2), len(mres1))
+	}
+	for i := 0; i < len(mres1); i++ {
+		mres1[i].Index = 0
+		mres2[i].Index = 0
+		v1 := fmt.Sprintf("%#v", mres1[i])
+		v2 := fmt.Sprintf("%#v", mres2[i])
+		if v1 != v2 {
+			t.Fatalf("\nexpected %s\n"+
+				"     got %s", v2, v1)
+		}
+	}
+}
+
+func TestIssue54(t *testing.T) {
+	var r []Result
+	json := `{"MarketName":null,"Nounce":6115}`
+	r = GetMany(json, "Nounce", "Buys", "Sells", "Fills")
+	if strings.Replace(fmt.Sprintf("%v", r), " ", "", -1) != "[6115]" {
+		t.Fatalf("expected '%v', got '%v'", "[6115]", strings.Replace(fmt.Sprintf("%v", r), " ", "", -1))
+	}
+	r = GetMany(json, "Nounce", "Buys", "Sells")
+	if strings.Replace(fmt.Sprintf("%v", r), " ", "", -1) != "[6115]" {
+		t.Fatalf("expected '%v', got '%v'", "[6115]", strings.Replace(fmt.Sprintf("%v", r), " ", "", -1))
+	}
+	r = GetMany(json, "Nounce")
+	if strings.Replace(fmt.Sprintf("%v", r), " ", "", -1) != "[6115]" {
+		t.Fatalf("expected '%v', got '%v'", "[6115]", strings.Replace(fmt.Sprintf("%v", r), " ", "", -1))
+	}
+}
+
+func randomString() string {
+	var key string
+	N := 1 + rand.Int()%16
+	for i := 0; i < N; i++ {
+		r := rand.Int() % 62
+		if r < 10 {
+			key += string(byte('0' + r))
+		} else if r-10 < 26 {
+			key += string(byte('a' + r - 10))
+		} else {
+			key += string(byte('A' + r - 10 - 26))
+		}
+	}
+	return `"` + key + `"`
+}
+func randomBool() string {
+	switch rand.Int() % 2 {
+	default:
+		return "false"
+	case 1:
+		return "true"
+	}
+}
+func randomNumber() string {
+	return strconv.FormatInt(int64(rand.Int()%1000000), 10)
+}
+
+func randomObjectOrArray(keys []string, prefix string, array bool, depth int) (string, []string) {
+	N := 5 + rand.Int()%5
+	var json string
+	if array {
+		json = "["
+	} else {
+		json = "{"
+	}
+	for i := 0; i < N; i++ {
+		if i > 0 {
+			json += ","
+		}
+		var pkey string
+		if array {
+			pkey = prefix + "." + strconv.FormatInt(int64(i), 10)
+		} else {
+			key := randomString()
+			pkey = prefix + "." + key[1:len(key)-1]
+			json += key + `:`
+		}
+		keys = append(keys, pkey[1:])
+		var kind int
+		if depth == 5 {
+			kind = rand.Int() % 4
+		} else {
+			kind = rand.Int() % 6
+		}
+		switch kind {
+		case 0:
+			json += randomString()
+		case 1:
+			json += randomBool()
+		case 2:
+			json += "null"
+		case 3:
+			json += randomNumber()
+		case 4:
+			var njson string
+			njson, keys = randomObjectOrArray(keys, pkey, true, depth+1)
+			json += njson
+		case 5:
+			var njson string
+			njson, keys = randomObjectOrArray(keys, pkey, false, depth+1)
+			json += njson
+		}
+
+	}
+	if array {
+		json += "]"
+	} else {
+		json += "}"
+	}
+	return json, keys
+}
+
+func randomJSON() (json string, keys []string) {
+	//rand.Seed(time.Now().UnixNano())
+	return randomObjectOrArray(nil, "", false, 0)
 }

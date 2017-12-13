@@ -1880,7 +1880,7 @@ next_key:
 				} else {
 					// Since there was no matches we can just parse the value and
 					// ignore the result.
-					if i, _, ok = parseAny(json, i, false); !ok {
+					if i, _, ok = parseAny(json, i, true); !ok {
 						return i, false
 					}
 				}
