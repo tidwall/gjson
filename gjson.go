@@ -1610,11 +1610,7 @@ func GetMany(json string, path ...string) []Result {
 // The return value is a Result array where the number of items
 // will be equal to the number of input paths.
 func GetManyBytes(json []byte, path ...string) []Result {
-	res := make([]Result, len(path))
-	for i, path := range path {
-		res[i] = GetBytes(json, path)
-	}
-	return res
+	return GetMany(string(json), path...)
 }
 
 var fieldsmu sync.RWMutex
