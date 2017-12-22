@@ -1275,7 +1275,6 @@ func randomObjectOrArray(keys []string, prefix string, array bool, depth int) (s
 }
 
 func randomJSON() (json string, keys []string) {
-	//rand.Seed(time.Now().UnixNano())
 	return randomObjectOrArray(nil, "", false, 0)
 }
 
