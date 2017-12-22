@@ -1278,3 +1278,14 @@ func randomJSON() (json string, keys []string) {
 	//rand.Seed(time.Now().UnixNano())
 	return randomObjectOrArray(nil, "", false, 0)
 }
+
+func TestIssue55(t *testing.T) {
+	json := `{"one": {"two": 2, "three": 3}, "four": 4, "five": 5}`
+	results := GetMany(json, "four", "five", "one.two", "one.six")
+	expected := []string{"4", "5", "2", ""}
+	for i, r := range results {
+		if r.String() != expected[i] {
+			t.Fatalf("expected %v, got %v", expected[i], r.String())
+		}
+	}
+}

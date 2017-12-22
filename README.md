@@ -271,7 +271,7 @@ This is a best-effort no allocation sub slice of the original json. This method 
 
 ## Get multiple values at once
 
-The `GetMany` function can be used to get multiple values at the same time, and is optimized to scan over a JSON payload once.
+The `GetMany` function can be used to get multiple values at the same time.
 
 ```go
 results := gjson.GetMany(json, "name.first", "name.last", "age")
@@ -296,17 +296,6 @@ BenchmarkFFJSONLexer-8               1500000       3111 ns/op        896 B/op   
 BenchmarkEasyJSONLexer-8             3000000        887 ns/op        613 B/op         6 allocs/op
 BenchmarkJSONParserGet-8             3000000        499 ns/op         21 B/op         0 allocs/op
 BenchmarkJSONIterator-8              3000000        812 ns/op        544 B/op         9 allocs/op
-```
-
-Benchmarks for the `GetMany` function:
-
-```
-BenchmarkGJSONGetMany4Paths-8        4000000       303 ns/op         112 B/op         0 allocs/op
-BenchmarkGJSONGetMany8Paths-8        8000000       208 ns/op          56 B/op         0 allocs/op
-BenchmarkGJSONGetMany16Paths-8      16000000       156 ns/op          56 B/op         0 allocs/op
-BenchmarkGJSONGetMany32Paths-8      32000000       127 ns/op          64 B/op         0 allocs/op
-BenchmarkGJSONGetMany64Paths-8      64000000       117 ns/op          64 B/op         0 allocs/op
-BenchmarkGJSONGetMany128Paths-8    128000000       109 ns/op          64 B/op         0 allocs/op
 ```
 
 JSON document used:
@@ -345,21 +334,6 @@ Each operation was rotated though one of the following search paths:
 widget.window.name
 widget.image.hOffset
 widget.text.onMouseUp
-```
-
-For the `GetMany` benchmarks these paths are used:
-
-```
-widget.window.name
-widget.image.hOffset
-widget.text.onMouseUp
-widget.window.title
-widget.image.alignment
-widget.text.style
-widget.window.height
-widget.image.src
-widget.text.data
-widget.text.size
 ```
 
 *These benchmarks were run on a MacBook Pro 15" 2.8 GHz Intel Core i7 using Go 1.8 and can be be found [here](https://github.com/tidwall/gjson-benchmarks).*
