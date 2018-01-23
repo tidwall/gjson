@@ -1288,3 +1288,10 @@ func TestIssue55(t *testing.T) {
 		}
 	}
 }
+func TestIssue58(t *testing.T) {
+	json := `{"data":[{"uid": 1},{"uid": 2}]}`
+	res := Get(json, `data.#[uid!=1]`).Raw
+	if res != `{"uid": 2}` {
+		t.Fatalf("expected '%v', got '%v'", `{"uid": 1}`, res)
+	}
+}

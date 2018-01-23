@@ -1077,7 +1077,7 @@ func queryMatches(rp *arrayPathResult, value Result) bool {
 		case "=":
 			return value.Num == rpvn
 		case "!=":
-			return value.Num == rpvn
+			return value.Num != rpvn
 		case "<":
 			return value.Num < rpvn
 		case "<=":
