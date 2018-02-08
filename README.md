@@ -152,6 +152,15 @@ array   >> []interface{}
 object  >> map[string]interface{}
 ```
 
+### 64-bit integers
+
+The `result.Int()` and `result.Uint()` calls are capable of reading all 64 bits, allowing for large JSON integers.
+
+```go
+result.Int() int64    // -9223372036854775808 to 9223372036854775807
+result.Uint() int64   // 0 to 18446744073709551615
+```
+
 ## Get nested array values
 
 Suppose you want all the last names from the following json:
