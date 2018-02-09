@@ -1295,3 +1295,60 @@ func TestIssue58(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", `{"uid": 1}`, res)
 	}
 }
+
+func TestObjectGrouping(t *testing.T) {
+	json := `
+[
+	true,
+	{"name":"tom"},
+	false,
+	{"name":"janet"},
+	null
+]
+`
+	res := Get(json, "#.name")
+	if res.String() != `["tom","janet"]` {
+		t.Fatalf("expected '%v', got '%v'", `["tom","janet"]`, res.String())
+	}
+}
+
+func TestJSONLines(t *testing.T) {
+	json := `
+true
+false
+{"name":"tom"}
+[1,2,3,4,5]
+{"name":"janet"}
+null
+12930.1203
+	`
+	paths := []string{"..#", "..0", "..2.name", "..#.name", "..6", "..7"}
+	ress := []string{"7", "true", "tom", `["tom","janet"]`, "12930.1203", ""}
+	for i, path := range paths {
+		res := Get(json, path)
+		if res.String() != ress[i] {
+			t.Fatalf("expected '%v', got '%v'", ress[i], res.String())
+		}
+	}
+
+	json = `
+{"name": "Gilbert", "wins": [["straight", "7♣"], ["one pair", "10♥"]]}
+{"name": "Alexa", "wins": [["two pair", "4♠"], ["two pair", "9♠"]]}
+{"name": "May", "wins": []}
+{"name": "Deloise", "wins": [["three of a kind", "5♣"]]}
+`
+
+	var i int
+	lines := strings.Split(strings.TrimSpace(json), "\n")
+	ForEachLine(json, func(line Result) bool {
+		if line.Raw != lines[i] {
+			t.Fatalf("expected '%v', got '%v'", lines[i], line.Raw)
+		}
+		i++
+		return true
+	})
+	if i != 4 {
+		t.Fatalf("expected '%v', got '%v'", 4, i)
+	}
+
+}

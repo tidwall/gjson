@@ -1128,7 +1128,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 			partidx = int(n)
 		}
 	}
-	for i < len(c.json) {
+	for i < len(c.json)+1 {
 		if !rp.arrch {
 			pmatch = partidx == h
 			hit = pmatch && !rp.more
@@ -1137,8 +1137,16 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 		if rp.alogok {
 			alog = append(alog, i)
 		}
-		for ; i < len(c.json); i++ {
-			switch c.json[i] {
+		for ; ; i++ {
+			var ch byte
+			if i > len(c.json) {
+				break
+			} else if i == len(c.json) {
+				ch = ']'
+			} else {
+				ch = c.json[i]
+			}
+			switch ch {
 			default:
 				continue
 			case '"':
@@ -1252,14 +1260,18 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 					if rp.alogok {
 						var jsons = make([]byte, 0, 64)
 						jsons = append(jsons, '[')
+
 						for j, k := 0, 0; j < len(alog); j++ {
-							res := Get(c.json[alog[j]:], rp.alogkey)
-							if res.Exists() {
-								if k > 0 {
-									jsons = append(jsons, ',')
+							_, res, ok := parseAny(c.json, alog[j], true)
+							if ok {
+								res := res.Get(rp.alogkey)
+								if res.Exists() {
+									if k > 0 {
+										jsons = append(jsons, ',')
+									}
+									jsons = append(jsons, []byte(res.Raw)...)
+									k++
 								}
-								jsons = append(jsons, []byte(res.Raw)...)
-								k++
 							}
 						}
 						jsons = append(jsons, ']')
@@ -1290,10 +1302,28 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 	return i, false
 }
 
+// ForEachLine iterates through lines of JSON as specified by the JSON Lines
+// format (http://jsonlines.org/).
+// Each line is returned as a GJSON Result.
+func ForEachLine(json string, iterator func(line Result) bool) {
+	var res Result
+	var i int
+	for {
+		i, res, _ = parseAny(json, i, true)
+		if !res.Exists() {
+			break
+		}
+		if !iterator(res) {
+			return
+		}
+	}
+}
+
 type parseContext struct {
 	json  string
 	value Result
 	calcd bool
+	lines bool
 }
 
 // Get searches json for the specified path.
@@ -1329,16 +1359,21 @@ type parseContext struct {
 func Get(json, path string) Result {
 	var i int
 	var c = &parseContext{json: json}
-	for ; i < len(c.json); i++ {
-		if c.json[i] == '{' {
-			i++
-			parseObject(c, i, path)
-			break
-		}
-		if c.json[i] == '[' {
-			i++
-			parseArray(c, i, path)
-			break
+	if len(path) >= 2 && path[0] == '.' && path[1] == '.' {
+		c.lines = true
+		parseArray(c, 0, path[2:])
+	} else {
+		for ; i < len(c.json); i++ {
+			if c.json[i] == '{' {
+				i++
+				parseObject(c, i, path)
+				break
+			}
+			if c.json[i] == '[' {
+				i++
+				parseArray(c, i, path)
+				break
+			}
 		}
 	}
 	if len(c.value.Raw) > 0 && !c.calcd {
