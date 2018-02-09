@@ -98,8 +98,8 @@ friends.#[first%"D*"].last         >> "Murphy"
 
 ## JSON Lines
 
-There also support for [JSON Lines](http://jsonlines.org/) using the `..` prefix.
-Which when specified, treats the multi-lined document as an array. 
+There's support for [JSON Lines](http://jsonlines.org/) using the `..` prefix.
+Which when specified treats the multilined document as an array. 
 
 For example:
 
