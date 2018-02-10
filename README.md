@@ -14,7 +14,8 @@
 
 GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a json document.
 It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array).
-For a command-line tool that uses the GJSON syntax check out [JJ](https://github.com/tidwall/jj).
+
+Other related projects: [SJSON](https://github.com/tidwall/sjson) (set json values quickly), [JJ](https://github.com/tidwall/jj) (command line tool), and [JD](https://github.com/tidwall/jd) (interactive json editor)
 
 Getting Started
 ===============
@@ -98,8 +99,7 @@ friends.#[first%"D*"].last         >> "Murphy"
 
 ## JSON Lines
 
-There's support for [JSON Lines](http://jsonlines.org/) using the `..` prefix.
-Which when used treats the multilined document as an array. 
+There's support for [JSON Lines](http://jsonlines.org/) using the `..` prefix, which treats a multilined document as an array. 
 
 For example:
 
@@ -125,12 +125,6 @@ gjson.ForEachLine(json, func(line gjson.Result) bool{
     println(line.String())
     return true
 })
-
-// Outputs:
-// {"name": "Gilbert", "age": 61}
-// {"name": "Alexa", "age": 34}
-// {"name": "May", "age": 57}
-// {"name": "Deloise", "age": 44}
 ```
 
 ## Result Type
