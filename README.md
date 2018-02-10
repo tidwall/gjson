@@ -99,7 +99,7 @@ friends.#[first%"D*"].last         >> "Murphy"
 ## JSON Lines
 
 There's support for [JSON Lines](http://jsonlines.org/) using the `..` prefix.
-Which when specified treats the multilined document as an array. 
+Which when used treats the multilined document as an array. 
 
 For example:
 
@@ -118,7 +118,7 @@ For example:
 ..#[name="May"].age   >> 57
 ```
 
-The `ForEachLines` function will iterate through lines.
+The `ForEachLines` function will iterate through JSON lines.
 
 ```go
 gjson.ForEachLine(json, func(line gjson.Result) bool{
