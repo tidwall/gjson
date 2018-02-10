@@ -13,9 +13,9 @@
 <p align="center">get json values quickly</a></p>
 
 GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a json document.
-It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array).
+It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array), and [parsing json lines](#json-lines).
 
-Other related projects: [SJSON](https://github.com/tidwall/sjson) (set json values quickly), [JJ](https://github.com/tidwall/jj) (command line tool), and [JD](https://github.com/tidwall/jd) (interactive json editor)
+Also check out [SJSON](https://github.com/tidwall/sjson) for modifying json, and the [JJ](https://github.com/tidwall/jj) command line tool.
 
 Getting Started
 ===============
