@@ -971,7 +971,7 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func testvalid(json string, expect bool) {
-	_, ok := validpayload([]byte(json), 0)
+	_, ok := validPayload([]byte(json), 0)
 	if ok != expect {
 		panic("mismatch")
 	}
@@ -1062,14 +1062,14 @@ func TestValidRandom(t *testing.T) {
 	for time.Since(start) < time.Second*3 {
 		n := rand.Int() % len(b)
 		rand.Read(b[:n])
-		validpayload(b[:n], 0)
+		validPayload(b[:n], 0)
 	}
 
 	start = time.Now()
 	for time.Since(start) < time.Second*3 {
 		n := rand.Int() % len(b)
 		makeRandomJSONChars(b[:n])
-		validpayload(b[:n], 0)
+		validPayload(b[:n], 0)
 	}
 }
 
