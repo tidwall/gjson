@@ -31,7 +31,7 @@ $ go get -u github.com/tidwall/gjson
 This will retrieve the library.
 
 ## Get a value
-Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". This function expects that the json is well-formed. Bad json will not panic, but it may return back unexpected results. When the value is found it's returned immediately. 
+Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". When the value is found it's returned immediately. 
 
 ```go
 package main
@@ -273,6 +273,19 @@ if !value.Exists() {
 if gjson.Get(json, "name.last").Exists() {
 	println("has a last name")
 }
+```
+
+## Validate JSON
+
+The `Get*` and `Parse*` functions expects that the json is well-formed. Bad json will not panic, but it may return back unexpected results.
+
+If you are consuming JSON from an unpredictable source then you may want to validate prior to using GJSON.
+
+```go
+if !gjson.Valid(json) {
+	return errors.New("invalid json")
+}
+value := gjson.Get(json, "name.last")
 ```
 
 ## Unmarshal to a map
