@@ -390,6 +390,11 @@ end:
 }
 
 // Parse parses the json and returns a result.
+//
+// This function expects that the json is well-formed, and does not validate.
+// Invalid json will not panic, but it may return back unexpected results.
+// If you are consuming JSON from an unpredictable source then you may want to
+// use the Valid function first.
 func Parse(json string) Result {
 	var value Result
 	for i := 0; i < len(json); i++ {
@@ -1328,8 +1333,6 @@ type parseContext struct {
 
 // Get searches json for the specified path.
 // A path is in dot syntax, such as "name.last" or "age".
-// This function expects that the json is well-formed, and does not validate.
-// Invalid json will not panic, but it may return back unexpected results.
 // When the value is found it's returned immediately.
 //
 // A path is a series of keys searated by a dot.
@@ -1356,6 +1359,10 @@ type parseContext struct {
 //  "c?ildren.0"         >> "Sara"
 //  "friends.#.first"    >> ["James","Roger"]
 //
+// This function expects that the json is well-formed, and does not validate.
+// Invalid json will not panic, but it may return back unexpected results.
+// If you are consuming JSON from an unpredictable source then you may want to
+// use the Valid function first.
 func Get(json, path string) Result {
 	var i int
 	var c = &parseContext{json: json}
@@ -2038,11 +2045,15 @@ func validnull(data []byte, i int) (outi int, ok bool) {
 }
 
 // Valid returns true if the input is valid json.
-func Valid(json string) bool {
-	_, ok := validpayload([]byte(json), 0)
-	return ok
-}
-
+//
+//  if !gjson.Valid(json) {
+//  	return errors.New("invalid json")
+//  }
+//  value := gjson.Get(json, "name.last")
+//  func Valid(json string) bool {
+//  	_, ok := validpayload([]byte(json), 0)
+//  	return ok
+//  }
 func parseUint(s string) (n uint64, ok bool) {
 	var i int
 	if i == len(s) {
