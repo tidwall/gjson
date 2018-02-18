@@ -2050,10 +2050,12 @@ func validnull(data []byte, i int) (outi int, ok bool) {
 //  	return errors.New("invalid json")
 //  }
 //  value := gjson.Get(json, "name.last")
-//  func Valid(json string) bool {
-//  	_, ok := validpayload([]byte(json), 0)
-//  	return ok
-//  }
+//
+func Valid(json string) bool {
+	_, ok := validpayload([]byte(json), 0)
+	return ok
+}
+
 func parseUint(s string) (n uint64, ok bool) {
 	var i int
 	if i == len(s) {
