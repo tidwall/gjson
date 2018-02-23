@@ -148,7 +148,7 @@ func TestTimeResult(t *testing.T) {
 func TestParseAny(t *testing.T) {
 	assert(t, Parse("100").Float() == 100)
 	assert(t, Parse("true").Bool())
-	assert(t, Parse("valse").Bool() == false)
+	assert(t, Parse("false").Bool() == false)
 }
 
 func TestManyVariousPathCounts(t *testing.T) {
