@@ -96,7 +96,7 @@ func (t Result) Bool() bool {
 	case True:
 		return true
 	case String:
-		return t.Str != "" && t.Str != "0"
+		return t.Str != "" && t.Str != "0" && t.Str != "false"
 	case Number:
 		return t.Num != 0
 	}
