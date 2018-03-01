@@ -583,6 +583,8 @@ func (t Result) Exists() bool {
 //	Number, for JSON numbers
 //	string, for JSON string literals
 //	nil, for JSON null
+//	map[string]interface{}, for JSON objects
+//	[]interface{}, for JSON arrays
 //
 func (t Result) Value() interface{} {
 	if t.Type == String {
