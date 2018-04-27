@@ -2058,6 +2058,20 @@ func Valid(json string) bool {
 	return ok
 }
 
+// ValidBytes returns true if the input is valid json.
+//
+//  if !gjson.Valid(json) {
+//  	return errors.New("invalid json")
+//  }
+//  value := gjson.Get(json, "name.last")
+//
+// If working with bytes, this method preferred over Valid(string(data))
+//
+func ValidBytes(json []byte) bool {
+	_, ok := validpayload(json, 0)
+	return ok
+}
+
 func parseUint(s string) (n uint64, ok bool) {
 	var i int
 	if i == len(s) {
