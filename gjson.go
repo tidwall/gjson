@@ -13,7 +13,6 @@ import (
 	"time"
 	"unicode/utf16"
 	"unicode/utf8"
-	"unsafe"
 
 	"github.com/tidwall/match"
 )
@@ -1292,7 +1291,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 					c.value.Raw = val
 					c.value.Type = Number
 					c.value.Num = float64(h - 1)
-					c.calcd = true
+					// c.calcd = true
 					return i + 1, true
 				}
 				if len(multires) > 0 && !c.value.Exists() {
@@ -1329,7 +1328,7 @@ func ForEachLine(json string, iterator func(line Result) bool) {
 type parseContext struct {
 	json  string
 	value Result
-	calcd bool
+	// calcd bool
 	lines bool
 }
 
@@ -1385,16 +1384,20 @@ func Get(json, path string) Result {
 			}
 		}
 	}
-	if len(c.value.Raw) > 0 && !c.calcd {
-		jhdr := *(*reflect.StringHeader)(unsafe.Pointer(&json))
-		rhdr := *(*reflect.StringHeader)(unsafe.Pointer(&(c.value.Raw)))
-		c.value.Index = int(rhdr.Data - jhdr.Data)
-		if c.value.Index < 0 || c.value.Index >= len(json) {
-			c.value.Index = 0
+	/*
+		if len(c.value.Raw) > 0 && !c.calcd {
+			jhdr := *(*reflect.StringHeader)(unsafe.Pointer(&json))
+			rhdr := *(*reflect.StringHeader)(unsafe.Pointer(&(c.value.Raw)))
+			c.value.Index = int(rhdr.Data - jhdr.Data)
+			if c.value.Index < 0 || c.value.Index >= len(json) {
+				c.value.Index = 0
+			}
 		}
-	}
+	*/
 	return c.value
 }
+
+/*
 func fromBytesGet(result Result) Result {
 	// safely get the string headers
 	rawhi := *(*reflect.StringHeader)(unsafe.Pointer(&result.Raw))
@@ -1432,17 +1435,21 @@ func fromBytesGet(result Result) Result {
 	}
 	return result
 }
+*/
 
 // GetBytes searches json for the specified path.
 // If working with bytes, this method preferred over Get(string(data), path)
 func GetBytes(json []byte, path string) Result {
-	var result Result
-	if json != nil {
-		// unsafe cast to string
-		result = Get(*(*string)(unsafe.Pointer(&json)), path)
-		result = fromBytesGet(result)
-	}
-	return result
+	return Get(string(json), path)
+	/*
+		var result Result
+		if json != nil {
+			// unsafe cast to string
+			result = Get(*(*string)(unsafe.Pointer(&json)), path)
+			result = fromBytesGet(result)
+		}
+		return result
+	*/
 }
 
 // runeit returns the rune from the the \uXXXX
