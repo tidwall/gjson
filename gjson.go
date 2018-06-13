@@ -1865,8 +1865,14 @@ func validobject(data []byte, i int) (outi int, ok bool) {
 			if data[i] == '}' {
 				return i + 1, true
 			}
+			i++
 			for ; i < len(data); i++ {
-				if data[i] == '"' {
+				switch data[i] {
+				default:
+					return i, false
+				case ' ', '\t', '\n', '\r':
+					continue
+				case '"':
 					goto key
 				}
 			}
