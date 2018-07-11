@@ -77,7 +77,20 @@ func (t Result) String() string {
 	case False:
 		return "false"
 	case Number:
-		return strconv.FormatFloat(t.Num, 'f', -1, 64)
+		if len(t.Raw) == 0 {
+			// calculated result
+			return strconv.FormatFloat(t.Num, 'f', -1, 64)
+		}
+		var i int
+		if t.Raw[0] == '-' {
+			i++
+		}
+		for ; i < len(t.Raw); i++ {
+			if t.Raw[i] < '0' || t.Raw[i] > '9' {
+				return strconv.FormatFloat(t.Num, 'f', -1, 64)
+			}
+		}
+		return t.Raw
 	case String:
 		return t.Str
 	case JSON:
@@ -1288,7 +1301,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 					if rp.alogok {
 						break
 					}
-					c.value.Raw = val
+					c.value.Raw = ""
 					c.value.Type = Number
 					c.value.Num = float64(h - 1)
 					c.calcd = true

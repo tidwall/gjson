@@ -479,7 +479,8 @@ func TestBasic4(t *testing.T) {
 	}
 	token = get(basicJSON, "arr.#")
 	if token.String() != "6" {
-		t.Fatal("expecting '6'", "got", token.String())
+		fmt.Printf("%#v\n", token)
+		t.Fatal("expecting 6", "got", token.String())
 	}
 	token = get(basicJSON, "arr.3.hello")
 	if token.String() != "world" {
@@ -1353,4 +1354,40 @@ null
 		t.Fatalf("expected '%v', got '%v'", 4, i)
 	}
 
+}
+
+func TestNumUint64String(t *testing.T) {
+	i := 9007199254740993 //2^53 + 1
+	j := fmt.Sprintf(`{"data":  [  %d, "hello" ] }`, i)
+	res := Get(j, "data.0")
+	if res.String() != "9007199254740993" {
+		t.Fatalf("expected '%v', got '%v'", "9007199254740993", res.String())
+	}
+}
+
+func TestNumInt64String(t *testing.T) {
+	i := -9007199254740993
+	j := fmt.Sprintf(`{"data":[ "hello", %d ]}`, i)
+	res := Get(j, "data.1")
+	if res.String() != "-9007199254740993" {
+		t.Fatalf("expected '%v', got '%v'", "-9007199254740993", res.String())
+	}
+}
+
+func TestNumBigString(t *testing.T) {
+	i := "900719925474099301239109123101" // very big
+	j := fmt.Sprintf(`{"data":[ "hello", "%s" ]}`, i)
+	res := Get(j, "data.1")
+	if res.String() != "900719925474099301239109123101" {
+		t.Fatalf("expected '%v', got '%v'", "900719925474099301239109123101", res.String())
+	}
+}
+
+func TestNumFloatString(t *testing.T) {
+	i := -9007199254740993
+	j := fmt.Sprintf(`{"data":[ "hello", %d ]}`, i) //No quotes around value!!
+	res := Get(j, "data.1")
+	if res.String() != "-9007199254740993" {
+		t.Fatalf("expected '%v', got '%v'", "-9007199254740993", res.String())
+	}
 }
