@@ -308,6 +308,7 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
 	var value Result
 	var count int
 	var key Result
+	var index = 0
 	if vc == 0 {
 		for ; i < len(json); i++ {
 			if json[i] == '{' || json[i] == '[' {
@@ -385,7 +386,9 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
 				if valueize {
 					r.oi[key.Str] = value.Value()
 				} else {
+					value.Index = index
 					r.o[key.Str] = value
+					index++
 				}
 			}
 			count++
@@ -393,7 +396,9 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
 			if valueize {
 				r.ai = append(r.ai, value.Value())
 			} else {
+				value.Index = index
 				r.a = append(r.a, value)
+				index++
 			}
 		}
 	}
