@@ -383,9 +383,13 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
 				key = value
 			} else {
 				if valueize {
-					r.oi[key.Str] = value.Value()
+					if _, ok := r.oi[key.Str]; !ok {
+						r.oi[key.Str] = value.Value()
+					}
 				} else {
-					r.o[key.Str] = value
+					if _, ok := r.o[key.Str]; !ok {
+						r.o[key.Str] = value
+					}
 				}
 			}
 			count++

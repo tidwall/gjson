@@ -1391,3 +1391,18 @@ func TestNumFloatString(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", "-9007199254740993", res.String())
 	}
 }
+
+func TestDuplicateKeys(t *testing.T) {
+	// this is vaild json according to the JSON spec
+	var json = `{"name": "Alex","name": "Peter"}`
+	if Parse(json).Get("name").String() !=
+		Parse(json).Map()["name"].String() {
+		t.Fatalf("expected '%v', got '%v'",
+			Parse(json).Get("name").String(),
+			Parse(json).Map()["name"].String(),
+		)
+	}
+	if !Valid(json) {
+		t.Fatal("should be valid")
+	}
+}
