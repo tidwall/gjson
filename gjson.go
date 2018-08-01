@@ -2,9 +2,11 @@
 package gjson
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"io"
 	"reflect"
 	"strconv"
 	"strings"
@@ -1403,6 +1405,15 @@ func Get(json, path string) Result {
 	}
 	fillIndex(json, c)
 	return c.value
+}
+
+// GetReader searches json for the specified path.
+// If working with io.Reader, this method preferred over Get(string(data), path)
+
+func GetReader(json io.Reader, path string) Result {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(json)
+	return Get(buf.String(), path)
 }
 
 // GetBytes searches json for the specified path.
