@@ -1406,3 +1406,24 @@ func TestDuplicateKeys(t *testing.T) {
 		t.Fatal("should be valid")
 	}
 }
+
+func TestArrayValues(t *testing.T) {
+	var json = `{"array": ["PERSON1","PERSON2",0],}`
+	values := Get(json, "array").Array()
+	var output string
+	for i, val := range values {
+		if i > 0 {
+			output += "\n"
+		}
+		output += fmt.Sprintf("%#v", val)
+	}
+	expect := strings.Join([]string{
+		`gjson.Result{Type:3, Raw:"\"PERSON1\"", Str:"PERSON1", Num:0, Index:0}`,
+		`gjson.Result{Type:3, Raw:"\"PERSON2\"", Str:"PERSON2", Num:0, Index:0}`,
+		`gjson.Result{Type:2, Raw:"0", Str:"", Num:0, Index:0}`,
+	}, "\n")
+	if output != expect {
+		t.Fatalf("expected '%v', got '%v'", expect, output)
+	}
+
+}

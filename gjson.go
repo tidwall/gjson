@@ -357,24 +357,30 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
 			if (json[i] >= '0' && json[i] <= '9') || json[i] == '-' {
 				value.Type = Number
 				value.Raw, value.Num = tonum(json[i:])
+				value.Str = ""
 			} else {
 				continue
 			}
 		case '{', '[':
 			value.Type = JSON
 			value.Raw = squash(json[i:])
+			value.Str, value.Num = "", 0
 		case 'n':
 			value.Type = Null
 			value.Raw = tolit(json[i:])
+			value.Str, value.Num = "", 0
 		case 't':
 			value.Type = True
 			value.Raw = tolit(json[i:])
+			value.Str, value.Num = "", 0
 		case 'f':
 			value.Type = False
 			value.Raw = tolit(json[i:])
+			value.Str, value.Num = "", 0
 		case '"':
 			value.Type = String
 			value.Raw, value.Str = tostr(json[i:])
+			value.Num = 0
 		}
 		i += len(value.Raw) - 1
 
