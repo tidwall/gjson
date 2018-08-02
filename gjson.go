@@ -2102,3 +2102,41 @@ func floatToInt(f float64) (n int64, ok bool) {
 	}
 	return 0, false
 }
+
+func buildItem(paths []string, value interface{}) interface{} {
+	if len(paths) == 0 {
+		return value
+	}
+	resultMap := map[string]interface{}{}
+	resultMap[paths[0]] = buildItem(paths[1:], value)
+	return &resultMap
+}
+
+func updateItem(input Result, paths []string, value interface{}) interface{} {
+	if len(paths) == 0 {
+		return value
+	}
+	inputMap := input.Map()
+	nextResult := inputMap[paths[0]]
+	var result interface{}
+	if nextResult.Exists() {
+		result = updateItem(nextResult, paths[1:], value)
+	} else {
+		result = buildItem(paths[1:], value)
+	}
+	resultMap := map[string]interface{}{}
+	// build new map
+	for k, v := range inputMap {
+		resultMap[k] = v.Value()
+	}
+	resultMap[paths[0]] = result
+	return &resultMap
+}
+
+func Set(input string, path string, value interface{}) Result {
+	paths := strings.Split(path, ".")
+	result := Parse(input)
+	resultInterface := updateItem(result, paths, value)
+	data, _ := json.Marshal(resultInterface)
+	return ParseBytes(data)
+}
