@@ -1406,3 +1406,9 @@ func TestDuplicateKeys(t *testing.T) {
 		t.Fatal("should be valid")
 	}
 }
+
+func TestSet(t *testing.T) {
+	var json = `{"name": "Peter","data":{"address":"some where"}}`
+	result := Set(json, "data.address", "no where")
+	t.Logf("%v", result.String())
+}
