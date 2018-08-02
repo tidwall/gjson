@@ -37,6 +37,28 @@ func TestRandomData(t *testing.T) {
 	}
 }
 
+func TestRandomValidReader(t *testing.T) {
+	var lstr string
+	defer func() {
+		if v := recover(); v != nil {
+			println("'" + hex.EncodeToString([]byte(lstr)) + "'")
+			println("'" + lstr + "'")
+			panic(v)
+		}
+	}()
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, 200)
+	for i := 0; i < 2000000; i++ {
+		n, err := rand.Read(b[:rand.Int()%len(b)])
+		if err != nil {
+			t.Fatal(err)
+		}
+		lstr = string(b[:n])
+		GetReader(bytes.NewReader([]byte(lstr)), "reader")
+		Parse(lstr)
+	}
+}
+
 func TestRandomValidStrings(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, 200)
