@@ -115,7 +115,7 @@ For example:
 ..1                   >> {"name": "Alexa", "age": 34}
 ..3                   >> {"name": "Deloise", "age": 44}
 ..#.name              >> ["Gilbert","Alexa","May","Deloise"]
-..#[name="May"].age   >> 57
+..#[name=="May"].age   >> 57
 ```
 
 The `ForEachLines` function will iterate through JSON lines.
