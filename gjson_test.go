@@ -813,9 +813,9 @@ func TestIssue20(t *testing.T) {
 }
 
 func TestIssue21(t *testing.T) {
-	json := `{ "Level1Field1":3, 
-	           "Level1Field4":4, 
-			   "Level1Field2":{ "Level2Field1":[ "value1", "value2" ], 
+	json := `{ "Level1Field1":3,
+	           "Level1Field4":4,
+			   "Level1Field2":{ "Level2Field1":[ "value1", "value2" ],
 			   "Level2Field2":{ "Level3Field1":[ { "key1":"value1" } ] } } }`
 	paths := []string{"Level1Field1", "Level1Field2.Level2Field1", "Level1Field2.Level2Field2.Level3Field1", "Level1Field4"}
 	expected := []string{"3", `[ "value1", "value2" ]`, `[ { "key1":"value1" } ]`, "4"}
@@ -914,7 +914,7 @@ var complicatedJSON = `
 	"nestedTagged": {
 		"Green": "Green",
 		"Map": {
-			"this": "that", 
+			"this": "that",
 			"and": "the other thing"
 		},
 		"Ints": {
@@ -1313,6 +1313,90 @@ func TestObjectGrouping(t *testing.T) {
 	if res.String() != `["tom","janet"]` {
 		t.Fatalf("expected '%v', got '%v'", `["tom","janet"]`, res.String())
 	}
+}
+
+func TestMultiObjectsExtraction(t *testing.T) {
+	var res Result
+
+	carsJson := `
+{
+  "paths": {
+    "/cars": {
+      "get": {
+        "description": "Get cars"
+      },
+      "post": {
+        "description": "Create a car"
+      }
+    },
+    "/owners": {
+      "get": {
+        "description": "Get owners"
+      },
+      "post": {
+        "desc": "Create a owner"
+      }
+    },
+    "/models": {
+      "get": {
+        "desc": "Get a model",
+        "param": [
+          {
+            "name": "per_page",
+            "default": 10
+          },
+          {
+            "name": "page",
+            "default": 1
+          },
+          {
+            "name": "application",
+            "type": "string"
+          }
+		]
+      },
+      "post": {
+        "description": "Create a model"
+      }
+    }
+  }
+}
+`
+	res = Get(carsJson, "paths.*.get.description")
+	if res.String() != `["Get cars","Get owners"]` {
+		t.Fatalf("expected '%v', got '%v'", `["Get cars","Get owners"]`, res.String())
+	}
+
+	res = Get(carsJson, "paths./mod*.post.description")
+	if res.String() != `["Create a model"]` {
+		t.Fatalf("expected '%v', got '%v'", `["tom","janet"]`, res.String())
+	}
+
+	res = Get(carsJson, "paths./md*.post.description")
+	if res.String() != `` {
+		t.Fatalf("expected '%v', got '%v'", ``, res.String())
+	}
+
+	res = Get(carsJson, "paths.*.*.desc")
+	if res.String() != `["Create a owner"],["Get a model"]` {
+		t.Fatalf("expected '%v', got '%v'", `["Create a owner"],["Get a model"]`, res.String())
+	}
+
+	res = Get(carsJson, "paths.*.get.param.#[name=page].default")
+	if res.String() != `[1]` {
+		t.Fatalf("expected '%v', got '%v'", `[1]`, res.String())
+	}
+
+	res = Get(carsJson, "paths.*.get.param.#[name%\"pag*\"].default")
+	if res.String() != `[1]` {
+		t.Fatalf("expected '%v', got '%v'", `[1]`, res.String())
+	}
+
+	res = Get(carsJson, "paths.*.get.param.#[name=pages].default")
+	if res.String() != `` {
+		t.Fatalf("expected '%v', got '%v'", ``, res.String())
+	}
+
 }
 
 func TestJSONLines(t *testing.T) {

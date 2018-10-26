@@ -1002,12 +1002,10 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 							if ok {
 								res := res.Get(rp.alogkey)
 								if res.Exists() {
-									if k > 0 && len(res.String()) > 0 {
+									if k > 0 && len(res.String()) > 0 && len(jsons) > 0 {
 										jsons = append(jsons, ',')
 									}
-									if res.Type == JSON {
-										jsons = append(jsons, []byte(res.Raw)...)
-									} else if res.Type == String {
+									if res.Type == JSON || res.Type == String {
 										jsons = append(jsons, []byte(res.Raw)...)
 									} else if res.Type == Number {
 										jsons = append(jsons, []byte(res.String())...)
@@ -1021,9 +1019,6 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 						c.value.Raw = stringArray(jsons)
 						return i + 1, true
 					}
-					//if rp.alogok {
-					//	break
-					//}
 					c.value.Raw = ""
 					c.value.Type = Number
 					c.value.Num = float64(h - 1)
@@ -1084,9 +1079,6 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 				} else {
 					i, val = parseSquash(c.json, i)
 					if hit {
-						//if rp.alogok {
-						//	break
-						//}
 						if len(c.value.Raw) > 1 {
 							c.value.Raw = c.value.Raw + "," + val
 						} else {
