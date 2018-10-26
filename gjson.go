@@ -1,4 +1,4 @@
-// Package gjson provides searching for json strings.
+// Package gjson provides searching for json strings
 package gjson
 
 import (
@@ -829,10 +829,12 @@ func parseArrayPath(path string) (r arrayPathResult) {
 }
 
 type objectPathResult struct {
-	part string
-	path string
-	wild bool
-	more bool
+	part    string
+	path    string
+	wild    bool
+	more    bool
+	alogok  bool
+	alogkey string
 }
 
 func parseObjectPath(path string) (r objectPathResult) {
@@ -845,6 +847,13 @@ func parseObjectPath(path string) (r objectPathResult) {
 		}
 		if path[i] == '*' || path[i] == '?' {
 			r.wild = true
+			if (i + 1) < len(path) {
+				if path[i+1] == '.' {
+					r.alogok = true
+					r.alogkey = path[i+2:]
+					r.path = path[:i+1]
+				}
+			}
 			continue
 		}
 		if path[i] == '\\' {
@@ -933,6 +942,8 @@ func parseSquash(json string, i int) (int, string) {
 func parseObject(c *parseContext, i int, path string) (int, bool) {
 	var pmatch, kesc, vesc, ok, hit bool
 	var key, val string
+	var h int
+	var alog []int
 	rp := parseObjectPath(path)
 	for i < len(c.json) {
 		for ; i < len(c.json); i++ {
@@ -982,6 +993,43 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 				break
 			}
 			if c.json[i] == '}' {
+				if rp.wild && strings.Contains(rp.part, "*") {
+					if rp.alogok {
+						var jsons = make([]byte, 0, 64)
+
+						for j, k := 0, 0; j < len(alog); j++ {
+							_, res, ok := parseAny(c.json, alog[j], true)
+							if ok {
+								res := res.Get(rp.alogkey)
+								if res.Exists() {
+									if k > 0 && len(res.String()) > 0 {
+										jsons = append(jsons, ',')
+									}
+									if res.Type == JSON {
+										jsons = append(jsons, []byte(res.Raw)...)
+									} else if res.Type == String {
+										jsons = append(jsons, []byte(res.Raw)...)
+									} else if res.Type == Number {
+										jsons = append(jsons, []byte(res.String())...)
+									}
+									c.value.Type = res.Type
+									k++
+								}
+							}
+						}
+						c.value.Type = JSON
+						c.value.Raw = stringArray(jsons)
+						return i + 1, true
+					}
+					//if rp.alogok {
+					//	break
+					//}
+					c.value.Raw = ""
+					c.value.Type = Number
+					c.value.Num = float64(h - 1)
+					c.calcd = true
+					return i + 1, true
+				}
 				return i + 1, false
 			}
 		}
@@ -1002,6 +1050,11 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 			}
 		}
 		hit = pmatch && !rp.more
+
+		h++
+		if rp.alogok && pmatch {
+			alog = append(alog, i)
+		}
 		for ; i < len(c.json); i++ {
 			switch c.json[i] {
 			default:
@@ -1023,7 +1076,7 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 					return i, true
 				}
 			case '{':
-				if pmatch && !hit {
+				if pmatch && !hit && !rp.wild {
 					i, hit = parseObject(c, i+1, rp.path)
 					if hit {
 						return i, true
@@ -1031,9 +1084,19 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 				} else {
 					i, val = parseSquash(c.json, i)
 					if hit {
-						c.value.Raw = val
+						//if rp.alogok {
+						//	break
+						//}
+						if len(c.value.Raw) > 1 {
+							c.value.Raw = c.value.Raw + "," + val
+						} else {
+							c.value.Raw = val
+						}
+
 						c.value.Type = JSON
-						return i, true
+						if !rp.wild {
+							return i, true
+						}
 					}
 				}
 			case '[':
@@ -2107,4 +2170,11 @@ func floatToInt(f float64) (n int64, ok bool) {
 		return n, true
 	}
 	return 0, false
+}
+
+func stringArray(json []byte) string {
+	if len(json) > 0 && json[0] != '[' {
+		return "[" + string(json) + "]"
+	}
+	return string(json)
 }
