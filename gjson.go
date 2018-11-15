@@ -845,7 +845,7 @@ func parseObjectPath(path string) (r objectPathResult) {
 			r.more = true
 			return
 		}
-		if path[i] == '*' || path[i] == '?' {
+		if path[i] == '*' || path[i] == '?' || r.wild == true {
 			r.wild = true
 			if (i + 1) < len(path) {
 				if path[i+1] == '.' {
@@ -993,7 +993,7 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 				break
 			}
 			if c.json[i] == '}' {
-				if rp.wild && strings.Contains(rp.part, "*") {
+				if rp.wild && (strings.Contains(rp.part, "*") || strings.Contains(rp.part, "?")) {
 					if rp.alogok {
 						var jsons = make([]byte, 0, 64)
 
