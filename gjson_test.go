@@ -551,7 +551,7 @@ func TestUnicode(t *testing.T) {
 	if Get(json, "的情况下解.*?况").Num != 2 {
 		t.Fatal("fail")
 	}
-	if Get(json, "的情?下解.*?况").Num != 2 {
+	if Get(json, "的情?下解.*?况").Raw != "[2]" {
 		t.Fatal("fail")
 	}
 	if Get(json, "的情下解.*?况").Num != 0 {
