@@ -1361,7 +1361,7 @@ null
 }
 
 func TestNumUint64String(t *testing.T) {
-	i := 9007199254740993 //2^53 + 1
+	var i int64 = 9007199254740993 //2^53 + 1
 	j := fmt.Sprintf(`{"data":  [  %d, "hello" ] }`, i)
 	res := Get(j, "data.0")
 	if res.String() != "9007199254740993" {
@@ -1370,7 +1370,7 @@ func TestNumUint64String(t *testing.T) {
 }
 
 func TestNumInt64String(t *testing.T) {
-	i := -9007199254740993
+	var i int64 = -9007199254740993
 	j := fmt.Sprintf(`{"data":[ "hello", %d ]}`, i)
 	res := Get(j, "data.1")
 	if res.String() != "-9007199254740993" {
@@ -1388,7 +1388,7 @@ func TestNumBigString(t *testing.T) {
 }
 
 func TestNumFloatString(t *testing.T) {
-	i := -9007199254740993
+	var i int64 = -9007199254740993
 	j := fmt.Sprintf(`{"data":[ "hello", %d ]}`, i) //No quotes around value!!
 	res := Get(j, "data.1")
 	if res.String() != "-9007199254740993" {

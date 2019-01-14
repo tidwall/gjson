@@ -1,4 +1,5 @@
 //+build !appengine
+//+build !js
 
 package gjson
 
@@ -15,45 +16,40 @@ func getBytes(json []byte, path string) Result {
 	if json != nil {
 		// unsafe cast to string
 		result = Get(*(*string)(unsafe.Pointer(&json)), path)
-		result = fromBytesGet(result)
-	}
-	return result
-}
-
-func fromBytesGet(result Result) Result {
-	// safely get the string headers
-	rawhi := *(*reflect.StringHeader)(unsafe.Pointer(&result.Raw))
-	strhi := *(*reflect.StringHeader)(unsafe.Pointer(&result.Str))
-	// create byte slice headers
-	rawh := reflect.SliceHeader{Data: rawhi.Data, Len: rawhi.Len}
-	strh := reflect.SliceHeader{Data: strhi.Data, Len: strhi.Len}
-	if strh.Data == 0 {
-		// str is nil
-		if rawh.Data == 0 {
+		// safely get the string headers
+		rawhi := *(*reflect.StringHeader)(unsafe.Pointer(&result.Raw))
+		strhi := *(*reflect.StringHeader)(unsafe.Pointer(&result.Str))
+		// create byte slice headers
+		rawh := reflect.SliceHeader{Data: rawhi.Data, Len: rawhi.Len}
+		strh := reflect.SliceHeader{Data: strhi.Data, Len: strhi.Len}
+		if strh.Data == 0 {
+			// str is nil
+			if rawh.Data == 0 {
+				// raw is nil
+				result.Raw = ""
+			} else {
+				// raw has data, safely copy the slice header to a string
+				result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
+			}
+			result.Str = ""
+		} else if rawh.Data == 0 {
 			// raw is nil
 			result.Raw = ""
-		} else {
-			// raw has data, safely copy the slice header to a string
+			// str has data, safely copy the slice header to a string
+			result.Str = string(*(*[]byte)(unsafe.Pointer(&strh)))
+		} else if strh.Data >= rawh.Data &&
+			int(strh.Data)+strh.Len <= int(rawh.Data)+rawh.Len {
+			// Str is a substring of Raw.
+			start := int(strh.Data - rawh.Data)
+			// safely copy the raw slice header
 			result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
+			// substring the raw
+			result.Str = result.Raw[start : start+strh.Len]
+		} else {
+			// safely copy both the raw and str slice headers to strings
+			result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
+			result.Str = string(*(*[]byte)(unsafe.Pointer(&strh)))
 		}
-		result.Str = ""
-	} else if rawh.Data == 0 {
-		// raw is nil
-		result.Raw = ""
-		// str has data, safely copy the slice header to a string
-		result.Str = string(*(*[]byte)(unsafe.Pointer(&strh)))
-	} else if strh.Data >= rawh.Data &&
-		int(strh.Data)+strh.Len <= int(rawh.Data)+rawh.Len {
-		// Str is a substring of Raw.
-		start := int(strh.Data - rawh.Data)
-		// safely copy the raw slice header
-		result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
-		// substring the raw
-		result.Str = result.Raw[start : start+strh.Len]
-	} else {
-		// safely copy both the raw and str slice headers to strings
-		result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
-		result.Str = string(*(*[]byte)(unsafe.Pointer(&strh)))
 	}
 	return result
 }
