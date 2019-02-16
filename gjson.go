@@ -2038,7 +2038,7 @@ func validnull(data []byte, i int) (outi int, ok bool) {
 //  value := gjson.Get(json, "name.last")
 //
 func Valid(json string) bool {
-	_, ok := validpayload([]byte(json), 0)
+	_, ok := validpayload(stringBytes(json), 0)
 	return ok
 }
 

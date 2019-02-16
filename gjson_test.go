@@ -1431,3 +1431,23 @@ func TestArrayValues(t *testing.T) {
 	}
 
 }
+
+func BenchmarkValid(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		Valid(complicatedJSON)
+	}
+}
+
+func BenchmarkValidBytes(b *testing.B) {
+	complicatedJSON := []byte(complicatedJSON)
+	for i := 0; i < b.N; i++ {
+		ValidBytes(complicatedJSON)
+	}
+}
+
+func BenchmarkGoStdlibValidBytes(b *testing.B) {
+	complicatedJSON := []byte(complicatedJSON)
+	for i := 0; i < b.N; i++ {
+		json.Valid(complicatedJSON)
+	}
+}
