@@ -179,7 +179,7 @@ we'll get `children` array and reverse the order:
 
 ```
 "children|@reverse"           >> ["Jack","Alex","Sara"]
-"children|@reverse|#"         >> "Jack"
+"children|@reverse|0"         >> "Jack"
 ```
 
 There are currently three built-in modifiers:
