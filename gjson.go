@@ -15,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/tidwall/match"
+	"github.com/tidwall/pretty"
 )
 
 // Type is Result type
@@ -695,6 +696,8 @@ func parseLiteral(json string, i int) (int, string) {
 type arrayPathResult struct {
 	part    string
 	path    string
+	pipe    string
+	piped   bool
 	more    bool
 	alogok  bool
 	arrch   bool
@@ -710,6 +713,13 @@ type arrayPathResult struct {
 
 func parseArrayPath(path string) (r arrayPathResult) {
 	for i := 0; i < len(path); i++ {
+		if !DisableChaining {
+			if path[i] == '|' {
+				r.part = path[:i]
+				r.pipe = path[i+1:]
+				return
+			}
+		}
 		if path[i] == '.' {
 			r.part = path[:i]
 			r.path = path[i+1:]
@@ -828,15 +838,28 @@ func parseArrayPath(path string) (r arrayPathResult) {
 	return
 }
 
+// DisableChaining will disable the chaining (pipe) syntax
+var DisableChaining = false
+
 type objectPathResult struct {
-	part string
-	path string
-	wild bool
-	more bool
+	part  string
+	path  string
+	pipe  string
+	piped bool
+	wild  bool
+	more  bool
 }
 
 func parseObjectPath(path string) (r objectPathResult) {
 	for i := 0; i < len(path); i++ {
+		if !DisableChaining {
+			if path[i] == '|' {
+				r.part = path[:i]
+				r.pipe = path[i+1:]
+				r.piped = true
+				return
+			}
+		}
 		if path[i] == '.' {
 			r.part = path[:i]
 			r.path = path[i+1:]
@@ -934,6 +957,10 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 	var pmatch, kesc, vesc, ok, hit bool
 	var key, val string
 	rp := parseObjectPath(path)
+	if !rp.more && rp.piped {
+		c.pipe = rp.pipe
+		c.piped = true
+	}
 	for i < len(c.json) {
 		for ; i < len(c.json); i++ {
 			if c.json[i] == '"' {
@@ -1159,6 +1186,10 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 			partidx = int(n)
 		}
 	}
+	if !rp.more && rp.piped {
+		c.pipe = rp.pipe
+		c.piped = true
+	}
 	for i < len(c.json)+1 {
 		if !rp.arrch {
 			pmatch = partidx == h
@@ -1353,6 +1384,8 @@ func ForEachLine(json string, iterator func(line Result) bool) {
 type parseContext struct {
 	json  string
 	value Result
+	pipe  string
+	piped bool
 	calcd bool
 	lines bool
 }
@@ -1390,6 +1423,22 @@ type parseContext struct {
 // If you are consuming JSON from an unpredictable source then you may want to
 // use the Valid function first.
 func Get(json, path string) Result {
+	if !DisableModifiers {
+		if len(path) > 1 && path[0] == '@' {
+			// possible modifier
+			var ok bool
+			var rjson string
+			path, rjson, ok = execModifier(json, path)
+			if ok {
+				if len(path) > 0 && path[0] == '|' {
+					res := Get(rjson, path[1:])
+					res.Index = 0
+					return res
+				}
+				return Parse(rjson)
+			}
+		}
+	}
 	var i int
 	var c = &parseContext{json: json}
 	if len(path) >= 2 && path[0] == '.' && path[1] == '.' {
@@ -1408,6 +1457,11 @@ func Get(json, path string) Result {
 				break
 			}
 		}
+	}
+	if c.piped {
+		res := c.value.Get(c.pipe)
+		res.Index = 0
+		return res
 	}
 	fillIndex(json, c)
 	return c.value
@@ -2113,4 +2167,147 @@ func floatToInt(f float64) (n int64, ok bool) {
 		return n, true
 	}
 	return 0, false
+}
+
+// execModifier parses the path to find a matching modifier function.
+// then input expects that the path already starts with a '@'
+func execModifier(json, path string) (pathOut, res string, ok bool) {
+	name := path[1:]
+	var hasArgs bool
+	for i := 1; i < len(path); i++ {
+		if path[i] == ':' {
+			pathOut = path[i+1:]
+			name = path[1:i]
+			hasArgs = len(pathOut) > 0
+			break
+		}
+		if !DisableChaining {
+			if path[i] == '|' {
+				pathOut = path[i:]
+				name = path[1:i]
+				break
+			}
+		}
+	}
+	if fn, ok := modifiers[name]; ok {
+		var args string
+		if hasArgs {
+			var parsedArgs bool
+			switch pathOut[0] {
+			case '{', '[', '"':
+				res := Parse(pathOut)
+				if res.Exists() {
+					_, args = parseSquash(pathOut, 0)
+					pathOut = pathOut[len(args):]
+					parsedArgs = true
+				}
+			}
+			if !parsedArgs {
+				idx := -1
+				if !DisableChaining {
+					idx = strings.IndexByte(pathOut, '|')
+				}
+				if idx == -1 {
+					args = pathOut
+					pathOut = ""
+				} else {
+					args = pathOut[:idx]
+					pathOut = pathOut[idx:]
+				}
+			}
+		}
+		return pathOut, fn(json, args), true
+	}
+	return pathOut, res, false
+}
+
+// DisableModifiers will disable the modifier syntax
+var DisableModifiers = false
+
+var modifiers = map[string]func(json, arg string) string{
+	"pretty":  modPretty,
+	"ugly":    modUgly,
+	"reverse": modReverse,
+}
+
+// AddModifier binds a custom modifier command to the GJSON syntax.
+// This operation is not thread safe and should be executed prior to
+// using all other gjson function.
+func AddModifier(name string, fn func(json, arg string) string) {
+	modifiers[name] = fn
+}
+
+// ModifierExists returns true when the specified modifier exists.
+func ModifierExists(name string, fn func(json, arg string) string) bool {
+	_, ok := modifiers[name]
+	return ok
+}
+
+// @pretty modifier makes the json look nice.
+func modPretty(json, arg string) string {
+	if len(arg) > 0 {
+		opts := *pretty.DefaultOptions
+		Parse(arg).ForEach(func(key, value Result) bool {
+			switch key.String() {
+			case "sortKeys":
+				opts.SortKeys = value.Bool()
+			case "indent":
+				opts.Indent = value.String()
+			case "prefix":
+				opts.Prefix = value.String()
+			case "width":
+				opts.Width = int(value.Int())
+			}
+			return true
+		})
+		return bytesString(pretty.PrettyOptions(stringBytes(json), &opts))
+	}
+	return bytesString(pretty.Pretty(stringBytes(json)))
+}
+
+// @ugly modifier removes all whitespace.
+func modUgly(json, arg string) string {
+	return bytesString(pretty.Ugly(stringBytes(json)))
+}
+
+// @reverse reverses array elements or root object members.
+func modReverse(json, arg string) string {
+	res := Parse(json)
+	if res.IsArray() {
+		var values []Result
+		res.ForEach(func(_, value Result) bool {
+			values = append(values, value)
+			return true
+		})
+		out := make([]byte, 0, len(json))
+		out = append(out, '[')
+		for i, j := len(values)-1, 0; i >= 0; i, j = i-1, j+1 {
+			if j > 0 {
+				out = append(out, ',')
+			}
+			out = append(out, values[i].Raw...)
+		}
+		out = append(out, ']')
+		return bytesString(out)
+	}
+	if res.IsObject() {
+		var keyValues []Result
+		res.ForEach(func(key, value Result) bool {
+			keyValues = append(keyValues, key, value)
+			return true
+		})
+		out := make([]byte, 0, len(json))
+		out = append(out, '{')
+		for i, j := len(keyValues)-2, 0; i >= 0; i, j = i-2, j+1 {
+			if j > 0 {
+				out = append(out, ',')
+			}
+			out = append(out, keyValues[i+0].Raw...)
+			out = append(out, ':')
+			out = append(out, keyValues[i+1].Raw...)
+		}
+		out = append(out, '}')
+		return bytesString(out)
+	}
+	return json
 }

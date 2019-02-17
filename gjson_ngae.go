@@ -75,3 +75,7 @@ func stringBytes(s string) []byte {
 		Cap:  len(s),
 	}))
 }
+
+func bytesString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
+}
