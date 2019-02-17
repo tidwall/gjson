@@ -717,6 +717,7 @@ func parseArrayPath(path string) (r arrayPathResult) {
 			if path[i] == '|' {
 				r.part = path[:i]
 				r.pipe = path[i+1:]
+				r.piped = true
 				return
 			}
 		}

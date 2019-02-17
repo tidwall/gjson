@@ -1485,3 +1485,22 @@ func TestModifier(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", `{"HELLO":"WORLD"}`, res)
 	}
 }
+
+func TestChaining(t *testing.T) {
+	json := `{
+		"friends": [
+		  {"first": "Dale", "last": "Murphy", "age": 44},
+		  {"first": "Roger", "last": "Craig", "age": 68},
+		  {"first": "Jane", "last": "Murphy", "age": 47}
+		]
+	  }`
+	res := Get(json, "friends|0|first").String()
+	if res != "Dale" {
+		t.Fatalf("expected '%v', got '%v'", "Dale", res)
+	}
+	res = Get(json, "friends|@reverse|0|age").String()
+	if res != "47" {
+		t.Fatalf("expected '%v', got '%v'", "47", res)
+	}
+
+}
