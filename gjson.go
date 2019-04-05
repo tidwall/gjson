@@ -2104,7 +2104,7 @@ func Valid(json string) bool {
 //  }
 //  value := gjson.Get(json, "name.last")
 //
-// If working with bytes, this method preferred over Valid(string(data))
+// If working with bytes, this method preferred over ValidBytes(string(data))
 //
 func ValidBytes(json []byte) bool {
 	_, ok := validpayload(json, 0)
