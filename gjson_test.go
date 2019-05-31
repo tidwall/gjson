@@ -1112,6 +1112,27 @@ func TestGetMany48(t *testing.T) {
 	}
 }
 
+func TestGetManyToMap(t *testing.T) {
+	json := `{"bar": {"id": 99, "xyz": "my xyz"}, "foo": {"myfoo": [605]}}`
+	paths := []string{"foo.myfoo", "bar.id", "bar.xyz", "bar.abc"}
+	expected := []string{"[605]", "99", "my xyz", ""}
+
+	results := GetManyToMap(json, paths...)
+
+	if len(expected) != len(results) {
+		t.Fatalf("expected %v, got %v", len(expected), len(results))
+	}
+	for i, path := range paths {
+		if val, ok := results[path]; ok {
+			if val.String() != expected[i] {
+				t.Fatalf("expected '%v', got '%v' for path '%v'", expected[i], val.String(), path)
+			}
+		} else {
+			t.Fatalf("expected result map has path '%v' as its key, but not exist", expected[i])
+		}
+	}
+}
+
 func TestResultRawForLiteral(t *testing.T) {
 	for _, lit := range []string{"null", "true", "false"} {
 		result := Parse(lit)

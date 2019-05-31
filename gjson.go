@@ -1690,6 +1690,22 @@ func GetManyBytes(json []byte, path ...string) []Result {
 	return res
 }
 
+// GetManyToMap searches json for the multiple paths.
+// The return value is a map[string]*Result where the number of items
+// will be equal to the number of input paths.
+// And each path is the key of this map.
+func GetManyToMap(jsonStr string, args ...string) map[string]*Result {
+	results := GetMany(jsonStr, args...)
+
+	var resultMap = make(map[string]*Result)
+	for i := 0; i < len(results); i++ {
+		key := args[i]
+		value := &results[i]
+		resultMap[key] = value
+	}
+	return resultMap
+}
+
 var fieldsmu sync.RWMutex
 var fields = make(map[string]map[string]int)
 
