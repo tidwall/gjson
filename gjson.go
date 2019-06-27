@@ -1323,7 +1323,6 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 					if rp.alogok {
 						var jsons = make([]byte, 0, 64)
 						jsons = append(jsons, '[')
-
 						for j, k := 0, 0; j < len(alog); j++ {
 							_, res, ok := parseAny(c.json, alog[j], true)
 							if ok {
@@ -1332,7 +1331,11 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 									if k > 0 {
 										jsons = append(jsons, ',')
 									}
-									jsons = append(jsons, []byte(res.Raw)...)
+									raw := res.Raw
+									if len(raw) == 0 {
+										raw = res.String()
+									}
+									jsons = append(jsons, []byte(raw)...)
 									k++
 								}
 							}
