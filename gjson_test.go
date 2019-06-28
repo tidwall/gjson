@@ -1850,5 +1850,6 @@ func TestQueryArrayValues(t *testing.T) {
 	assert(t, Get(json, `a*.#[0="Bob Dylan"]#|#`).String() == "1")
 	assert(t, Get(json, `a*.#[0="Bob Dylan 2"]#|#`).String() == "0")
 	assert(t, Get(json, `a*.#[%"John*"]#|#`).String() == "2")
+	assert(t, Get(json, `a*.#[_%"John*"]#|#`).String() == "0")
 	assert(t, Get(json, `a*.#[="123"]#|#`).String() == "1")
 }

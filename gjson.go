@@ -1226,7 +1226,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 		if qval.Type == JSON {
 			res = qval.Get(rp.query.path)
 		} else {
-			if rp.query.path != "" && rp.query.path != "_" {
+			if rp.query.path != "" {
 				return false
 			}
 			res = qval
