@@ -1654,3 +1654,53 @@ func TestPipeDotMixing(t *testing.T) {
 		t.Fatalf("expected '%v', got '%v'", "Murphy", res)
 	}
 }
+
+func TestDeepSelectors(t *testing.T) {
+	json := `{
+		"info": {
+			"friends": [
+				{
+					"first": "Dale", "last": "Murphy",
+					"extra": [10,20,30],
+					"details": {
+						"city": "Tempe",
+						"state": "Arizona"
+					}
+				},
+				{
+					"first": "Roger", "last": "Craig", 
+					"extra": [40,50,60],
+					"details": {
+						"city": "Phoenix",
+						"state": "Arizona"
+					}
+				}
+			]
+		}
+	  }`
+	var res string
+	res = Get(json, `info.friends.#[first="Dale"].extra.0`).String()
+	if res != "10" {
+		t.Fatalf("expected '%v', got '%v'", "10", res)
+	}
+	res = Get(json, `info.friends.#[first="Dale"].extra|0`).String()
+	if res != "10" {
+		t.Fatalf("expected '%v', got '%v'", "10", res)
+	}
+	res = Get(json, `info.friends.#[first="Dale"]|extra|0`).String()
+	if res != "10" {
+		t.Fatalf("expected '%v', got '%v'", "10", res)
+	}
+	res = Get(json, `info.friends.#[details.city="Tempe"].last`).String()
+	if res != "Murphy" {
+		t.Fatalf("expected '%v', got '%v'", "Murphy", res)
+	}
+	res = Get(json, `info.friends.#[details.city="Phoenix"].last`).String()
+	if res != "Craig" {
+		t.Fatalf("expected '%v', got '%v'", "Craig", res)
+	}
+	res = Get(json, `info.friends.#[details.state="Arizona"].last`).String()
+	if res != "Murphy" {
+		t.Fatalf("expected '%v', got '%v'", "Murphy", res)
+	}
+}
