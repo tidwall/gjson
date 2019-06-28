@@ -1215,6 +1215,53 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 		c.pipe = rp.pipe
 		c.piped = true
 	}
+
+	procQuery := func(qval Result) bool {
+		if rp.query.all {
+			if len(multires) == 0 {
+				multires = append(multires, '[')
+			}
+		}
+		var res Result
+		if qval.Type == JSON {
+			res = qval.Get(rp.query.path)
+		} else {
+			if rp.query.path != "" && rp.query.path != "_" {
+				return false
+			}
+			res = qval
+		}
+		if queryMatches(&rp, res) {
+			if rp.more {
+				left, right, ok := splitPossiblePipe(rp.path)
+				if ok {
+					rp.path = left
+					c.pipe = right
+					c.piped = true
+				}
+				res = qval.Get(rp.path)
+			} else {
+				res = qval
+			}
+			if rp.query.all {
+				raw := res.Raw
+				if len(raw) == 0 {
+					raw = res.String()
+				}
+				if raw != "" {
+					if len(multires) > 1 {
+						multires = append(multires, ',')
+					}
+					multires = append(multires, raw...)
+				}
+			} else {
+				c.value = res
+				return true
+			}
+		}
+		return false
+	}
+
 	for i < len(c.json)+1 {
 		if !rp.arrch {
 			pmatch = partidx == h
@@ -1242,7 +1289,19 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				if !ok {
 					return i, false
 				}
-				if hit {
+				if rp.query.on {
+					var qval Result
+					if vesc {
+						qval.Str = unescape(val[1 : len(val)-1])
+					} else {
+						qval.Str = val[1 : len(val)-1]
+					}
+					qval.Raw = val
+					qval.Type = String
+					if procQuery(qval) {
+						return i, true
+					}
+				} else if hit {
 					if rp.alogok {
 						break
 					}
@@ -1267,39 +1326,8 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				} else {
 					i, val = parseSquash(c.json, i)
 					if rp.query.on {
-						if rp.query.all {
-							if len(multires) == 0 {
-								multires = append(multires, '[')
-							}
-						}
-						res := Get(val, rp.query.path)
-						if queryMatches(&rp, res) {
-							if rp.more {
-								left, right, ok := splitPossiblePipe(rp.path)
-								if ok {
-									rp.path = left
-									c.pipe = right
-									c.piped = true
-								}
-								res = Get(val, rp.path)
-							} else {
-								res = Result{Raw: val, Type: JSON}
-							}
-							if rp.query.all {
-								raw := res.Raw
-								if len(raw) == 0 {
-									raw = res.String()
-								}
-								if raw != "" {
-									if len(multires) > 1 {
-										multires = append(multires, ',')
-									}
-									multires = append(multires, raw...)
-								}
-							} else {
-								c.value = res
-								return i, true
-							}
+						if procQuery(Result{Raw: val, Type: JSON}) {
+							return i, true
 						}
 					} else if hit {
 						if rp.alogok {
@@ -1321,7 +1349,11 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 					}
 				} else {
 					i, val = parseSquash(c.json, i)
-					if hit {
+					if rp.query.on {
+						if procQuery(Result{Raw: val, Type: JSON}) {
+							return i, true
+						}
+					} else if hit {
 						if rp.alogok {
 							break
 						}
@@ -1332,7 +1364,15 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				}
 			case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				i, val = parseNumber(c.json, i)
-				if hit {
+				if rp.query.on {
+					var qval Result
+					qval.Raw = val
+					qval.Type = Number
+					qval.Num, _ = strconv.ParseFloat(val, 64)
+					if procQuery(qval) {
+						return i, true
+					}
+				} else if hit {
 					if rp.alogok {
 						break
 					}
@@ -1344,7 +1384,19 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 			case 't', 'f', 'n':
 				vc := c.json[i]
 				i, val = parseLiteral(c.json, i)
-				if hit {
+				if rp.query.on {
+					var qval Result
+					qval.Raw = val
+					switch vc {
+					case 't':
+						qval.Type = True
+					case 'f':
+						qval.Type = False
+					}
+					if procQuery(qval) {
+						return i, true
+					}
+				} else if hit {
 					if rp.alogok {
 						break
 					}
