@@ -1267,6 +1267,11 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				} else {
 					i, val = parseSquash(c.json, i)
 					if rp.query.on {
+						if rp.query.all {
+							if len(multires) == 0 {
+								multires = append(multires, '[')
+							}
+						}
 						res := Get(val, rp.query.path)
 						if queryMatches(&rp, res) {
 							if rp.more {
@@ -1281,10 +1286,6 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 								res = Result{Raw: val, Type: JSON}
 							}
 							if rp.query.all {
-								if len(multires) == 0 {
-									multires = append(multires, '[')
-								}
-
 								raw := res.Raw
 								if len(raw) == 0 {
 									raw = res.String()

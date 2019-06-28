@@ -154,6 +154,7 @@ func TestParseAny(t *testing.T) {
 	assert(t, Parse("100").Float() == 100)
 	assert(t, Parse("true").Bool())
 	assert(t, Parse("false").Bool() == false)
+	assert(t, Parse("yikes").Exists() == false)
 }
 
 func TestManyVariousPathCounts(t *testing.T) {
@@ -1104,6 +1105,7 @@ func makeRandomJSONChars(b []byte) {
 	}
 	copy(b, bb[:len(b)])
 }
+
 func TestValidRandom(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, 100000)
@@ -1183,12 +1185,12 @@ func TestNullArray(t *testing.T) {
 	}
 }
 
-func TestRandomGetMany(t *testing.T) {
-	start := time.Now()
-	for time.Since(start) < time.Second*3 {
-		testRandomGetMany(t)
-	}
-}
+// func TestRandomGetMany(t *testing.T) {
+// 	start := time.Now()
+// 	for time.Since(start) < time.Second*3 {
+// 		testRandomGetMany(t)
+// 	}
+// }
 func testRandomGetMany(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 	json, keys := randomJSON()
@@ -1759,5 +1761,72 @@ func TestMultiArrayEx(t *testing.T) {
 	if res != `` {
 		t.Fatalf("expected '%v', got '%v'", ``, res)
 	}
+
+	res = Get(json, `i*.f*.#[kind="Other"]#`).String()
+	if res != `[]` {
+		t.Fatalf("expected '%v', got '%v'", `[]`, res)
+	}
+}
+
+func TestQueries(t *testing.T) {
+	json := `{
+		"info": {
+			"friends": [
+				{
+					"first": "Dale", "last": "Murphy", "kind": "Person",
+					"cust1": true,
+					"extra": [10,20,30],
+					"details": {
+						"city": "Tempe",
+						"state": "Arizona"
+					}
+				},
+				{
+					"first": "Roger", "last": "Craig", "kind": "Person",
+					"cust2": false,
+					"extra": [40,50,60],
+					"details": {
+						"city": "Phoenix",
+						"state": "Arizona"
+					}
+				}
+			]
+		}
+	  }`
+
+	// numbers
+	assert(t, Get(json, "i*.f*.#[extra.0<11].first").Exists())
+	assert(t, Get(json, "i*.f*.#[extra.0<=11].first").Exists())
+	assert(t, !Get(json, "i*.f*.#[extra.0<10].first").Exists())
+	assert(t, Get(json, "i*.f*.#[extra.0<=10].first").Exists())
+	assert(t, Get(json, "i*.f*.#[extra.0=10].first").Exists())
+	assert(t, !Get(json, "i*.f*.#[extra.0=11].first").Exists())
+	assert(t, Get(json, "i*.f*.#[extra.0!=10].first").String() == "Roger")
+	assert(t, Get(json, "i*.f*.#[extra.0>10].first").String() == "Roger")
+	assert(t, Get(json, "i*.f*.#[extra.0>=10].first").String() == "Dale")
+
+	// strings
+	assert(t, Get(json, `i*.f*.#[extra.0<"11"].first`).Exists())
+	assert(t, Get(json, `i*.f*.#[first>"Dale"].last`).String() == "Craig")
+	assert(t, Get(json, `i*.f*.#[first>="Dale"].last`).String() == "Murphy")
+	assert(t, Get(json, `i*.f*.#[first="Dale"].last`).String() == "Murphy")
+	assert(t, Get(json, `i*.f*.#[first!="Dale"].last`).String() == "Craig")
+	assert(t, !Get(json, `i*.f*.#[first<"Dale"].last`).Exists())
+	assert(t, Get(json, `i*.f*.#[first<="Dale"].last`).Exists())
+	assert(t, Get(json, `i*.f*.#[first%"Da*"].last`).Exists())
+	assert(t, Get(json, `i*.f*.#[first%"Dale"].last`).Exists())
+	assert(t, Get(json, `i*.f*.#[first%"*a*"]#|#`).String() == "1")
+	assert(t, Get(json, `i*.f*.#[first%"*e*"]#|#`).String() == "2")
+	assert(t, Get(json, `i*.f*.#[first!%"*e*"]#|#`).String() == "0")
+
+	// trues
+	assert(t, Get(json, `i*.f*.#[cust1=true].first`).String() == "Dale")
+	assert(t, Get(json, `i*.f*.#[cust2=false].first`).String() == "Roger")
+	assert(t, Get(json, `i*.f*.#[cust1!=false].first`).String() == "Dale")
+	assert(t, Get(json, `i*.f*.#[cust2!=true].first`).String() == "Roger")
+	assert(t, !Get(json, `i*.f*.#[cust1>true].first`).Exists())
+	assert(t, Get(json, `i*.f*.#[cust1>=true].first`).Exists())
+	assert(t, !Get(json, `i*.f*.#[cust2<false].first`).Exists())
+	assert(t, Get(json, `i*.f*.#[cust2<=false].first`).Exists())
 
 }
