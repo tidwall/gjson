@@ -1270,6 +1270,12 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						res := Get(val, rp.query.path)
 						if queryMatches(&rp, res) {
 							if rp.more {
+								left, right, ok := splitPossiblePipe(rp.path)
+								if ok {
+									rp.path = left
+									c.pipe = right
+									c.piped = true
+								}
 								res = Get(val, rp.path)
 							} else {
 								res = Result{Raw: val, Type: JSON}
@@ -1277,10 +1283,18 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 							if rp.query.all {
 								if len(multires) == 0 {
 									multires = append(multires, '[')
-								} else {
-									multires = append(multires, ',')
 								}
-								multires = append(multires, res.Raw...)
+
+								raw := res.Raw
+								if len(raw) == 0 {
+									raw = res.String()
+								}
+								if raw != "" {
+									if len(multires) > 1 {
+										multires = append(multires, ',')
+									}
+									multires = append(multires, raw...)
+								}
 							} else {
 								c.value = res
 								return i, true
