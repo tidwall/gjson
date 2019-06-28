@@ -1488,25 +1488,53 @@ func TestModifier(t *testing.T) {
 
 func TestChaining(t *testing.T) {
 	json := `{
-		"friends": [
-		  {"first": "Dale", "last": "Murphy", "age": 44},
-		  {"first": "Roger", "last": "Craig", "age": 68},
-		  {"first": "Jane", "last": "Murphy", "age": 47}
-		]
+		"info": {
+			"friends": [
+				{"first": "Dale", "last": "Murphy", "age": 44},
+				{"first": "Roger", "last": "Craig", "age": 68},
+				{"first": "Jane", "last": "Murphy", "age": 47}
+			]
+		}
 	  }`
-	res := Get(json, "friends|0|first").String()
+	res := Get(json, "info.friends|0|first").String()
 	if res != "Dale" {
 		t.Fatalf("expected '%v', got '%v'", "Dale", res)
 	}
-	res = Get(json, "friends|@reverse|0|age").String()
+	res = Get(json, "info.friends|@reverse|0|age").String()
 	if res != "47" {
 		t.Fatalf("expected '%v', got '%v'", "47", res)
 	}
+	res = Get(json, "@ugly|i\\nfo|friends.0.first").String()
+	if res != "Dale" {
+		t.Fatalf("expected '%v', got '%v'", "Dale", res)
+	}
+}
+
+func TestSplitPipe(t *testing.T) {
+	split := func(t *testing.T, path, el, er string, eo bool) {
+		t.Helper()
+		left, right, ok := splitPossiblePipe(path)
+		// fmt.Printf("%-40s [%v] [%v] [%v]\n", path, left, right, ok)
+		if left != el || right != er || ok != eo {
+			t.Fatalf("expected '%v/%v/%v', got '%v/%v/%v",
+				el, er, eo, left, right, ok)
+		}
+	}
+
+	split(t, "hello", "", "", false)
+	split(t, "hello.world", "", "", false)
+	split(t, "hello|world", "hello", "world", true)
+	split(t, "hello\\|world", "", "", false)
+	split(t, "hello.#", "", "", false)
+	split(t, `hello.#[a|1="asdf\"|1324"]#\|that`, "", "", false)
+	split(t, `hello.#[a|1="asdf\"|1324"]#|that.more|yikes`,
+		`hello.#[a|1="asdf\"|1324"]#`, "that.more|yikes", true)
+	split(t, `a.#[]#\|b`, "", "", false)
 
 }
 
 func TestArrayEx(t *testing.T) {
-	s := `
+	json := `
 	[
 		{
 			"c":[
@@ -1518,12 +1546,20 @@ func TestArrayEx(t *testing.T) {
 			]
 		}
 	]`
-	res := Get(s, "@ugly|#.c.#[a=10.11]").String()
+	res := Get(json, "@ugly|#.c.#[a=10.11]").String()
 	if res != `[{"a":10.11}]` {
 		t.Fatalf("expected '%v', got '%v'", `[{"a":10.11}]`, res)
 	}
-	res = Get(s, "@ugly|#.c.#").String()
+	res = Get(json, "@ugly|#.c.#").String()
 	if res != `[1,1]` {
 		t.Fatalf("expected '%v', got '%v'", `[1,1]`, res)
+	}
+	res = Get(json, "@reverse|0|c|0|a").String()
+	if res != "11.11" {
+		t.Fatalf("expected '%v', got '%v'", "11.11", res)
+	}
+	res = Get(json, "#.c|#").String()
+	if res != "2" {
+		t.Fatalf("expected '%v', got '%v'", "2", res)
 	}
 }

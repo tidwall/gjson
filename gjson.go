@@ -891,6 +891,11 @@ func parseObjectPath(path string) (r objectPathResult) {
 						r.path = path[i+1:]
 						r.more = true
 						return
+					} else if path[i] == '|' {
+						r.part = string(epart)
+						r.pipe = path[i+1:]
+						r.piped = true
+						return
 					} else if path[i] == '*' || path[i] == '?' {
 						r.wild = true
 					}
@@ -1321,6 +1326,12 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 			case ']':
 				if rp.arrch && rp.part == "#" {
 					if rp.alogok {
+						left, right, ok := splitPossiblePipe(rp.alogkey)
+						if ok {
+							rp.alogkey = left
+							c.pipe = right
+							c.piped = true
+						}
 						var jsons = make([]byte, 0, 64)
 						jsons = append(jsons, '[')
 						for j, k := 0, 0; j < len(alog); j++ {
@@ -1366,6 +1377,71 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 		}
 	}
 	return i, false
+}
+
+func splitPossiblePipe(path string) (left, right string, ok bool) {
+	// take a quick peek for the pipe character. If found we'll split the piped
+	// part of the path into the c.pipe field and shorten the rp.
+	var possible bool
+	for i := 0; i < len(path); i++ {
+		if path[i] == '|' {
+			possible = true
+			break
+		}
+	}
+	if !possible {
+		return
+	}
+
+	// split the left and right side of the path with the pipe character as
+	// the delimiter. This is a little tricky because we'll need to basically
+	// parse the entire path.
+
+	for i := 0; i < len(path); i++ {
+		if path[i] == '\\' {
+			i++
+		} else if path[i] == '.' {
+			if i == len(path)-1 {
+				return
+			}
+			if path[i+1] == '#' {
+				i += 2
+				if i == len(path) {
+					return
+				}
+				if path[i] == '[' {
+					// inside selector, balance brackets
+					i++
+					depth := 1
+					for ; i < len(path); i++ {
+						if path[i] == '\\' {
+							i++
+						} else if path[i] == '[' {
+							depth++
+						} else if path[i] == ']' {
+							depth--
+							if depth == 0 {
+								break
+							}
+						} else if path[i] == '"' {
+							// inside selector string, balance quotes
+							i++
+							for ; i < len(path); i++ {
+								if path[i] == '\\' {
+									i++
+								} else if path[i] == '"' {
+									break
+								}
+							}
+						}
+					}
+				}
+			}
+		} else if path[i] == '|' {
+			return path[:i], path[i+1:], true
+		}
+	}
+	return
 }
 
 // ForEachLine iterates through lines of JSON as specified by the JSON Lines
