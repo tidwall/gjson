@@ -57,14 +57,16 @@ func TestRandomValidStrings(t *testing.T) {
 		}
 		token := Get(`{"str":`+string(sm)+`}`, "str")
 		if token.Type != String || token.Str != su {
-			println("["+token.Raw+"]", "["+token.Str+"]", "["+su+"]", "["+string(sm)+"]")
+			println("["+token.Raw+"]", "["+token.Str+"]", "["+su+"]",
+				"["+string(sm)+"]")
 			t.Fatal("string mismatch")
 		}
 	}
 }
 
 func TestEmoji(t *testing.T) {
-	const input = `{"utf8":"Example emoji, KO: \ud83d\udd13, \ud83c\udfc3 OK: \u2764\ufe0f "}`
+	const input = `{"utf8":"Example emoji, KO: \ud83d\udd13, \ud83c\udfc3 ` +
+		`OK: \u2764\ufe0f "}`
 	value := Get(input, "utf8")
 	var s string
 	json.Unmarshal([]byte(value.Raw), &s)
@@ -144,7 +146,8 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 var basicJSONB = []byte(basicJSON)
 
 func TestTimeResult(t *testing.T) {
-	assert(t, Get(basicJSON, "created").String() == Get(basicJSON, "created").Time().Format(time.RFC3339Nano))
+	assert(t, Get(basicJSON, "created").String() ==
+		Get(basicJSON, "created").Time().Format(time.RFC3339Nano))
 }
 
 func TestParseAny(t *testing.T) {
@@ -155,7 +158,8 @@ func TestParseAny(t *testing.T) {
 
 func TestManyVariousPathCounts(t *testing.T) {
 	json := `{"a":"a","b":"b","c":"c"}`
-	counts := []int{3, 4, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 128, 129, 255, 256, 257, 511, 512, 513}
+	counts := []int{3, 4, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127,
+		128, 129, 255, 256, 257, 511, 512, 513}
 	paths := []string{"a", "b", "c"}
 	expects := []string{"a", "b", "c"}
 	for _, count := range counts {
@@ -173,7 +177,8 @@ func TestManyVariousPathCounts(t *testing.T) {
 		results := GetMany(json, gpaths...)
 		for i := 0; i < len(paths); i++ {
 			if results[i].String() != expects[i] {
-				t.Fatalf("expected '%v', got '%v'", expects[i], results[i].String())
+				t.Fatalf("expected '%v', got '%v'", expects[i],
+					results[i].String())
 			}
 		}
 	}
@@ -349,7 +354,8 @@ func TestForEach(t *testing.T) {
 }
 func TestMap(t *testing.T) {
 	assert(t, len(ParseBytes([]byte(`"asdf"`)).Map()) == 0)
-	assert(t, ParseBytes([]byte(`{"asdf":"ghjk"`)).Map()["asdf"].String() == "ghjk")
+	assert(t, ParseBytes([]byte(`{"asdf":"ghjk"`)).Map()["asdf"].String() ==
+		"ghjk")
 	assert(t, len(Result{Type: JSON, Raw: "**invalid**"}.Map()) == 0)
 	assert(t, Result{Type: JSON, Raw: "**invalid**"}.Value() == nil)
 	assert(t, Result{Type: JSON, Raw: "{"}.Map() != nil)
@@ -370,16 +376,21 @@ func TestBasic1(t *testing.T) {
 			value.ForEach(func(key, value Result) bool {
 				switch i {
 				case 0:
-					if key.String() != "firstName" || value.String() != "Brett" {
-						t.Fatalf("expected %v/%v got %v/%v", "firstName", "Brett", key.String(), value.String())
+					if key.String() != "firstName" ||
+						value.String() != "Brett" {
+						t.Fatalf("expected %v/%v got %v/%v", "firstName",
+							"Brett", key.String(), value.String())
 					}
 				case 1:
-					if key.String() != "lastName" || value.String() != "McLaughlin" {
-						t.Fatalf("expected %v/%v got %v/%v", "lastName", "McLaughlin", key.String(), value.String())
+					if key.String() != "lastName" ||
+						value.String() != "McLaughlin" {
+						t.Fatalf("expected %v/%v got %v/%v", "lastName",
+							"McLaughlin", key.String(), value.String())
 					}
 				case 2:
 					if key.String() != "email" || value.String() != "aaaa" {
-						t.Fatalf("expected %v/%v got %v/%v", "email", "aaaa", key.String(), value.String())
+						t.Fatalf("expected %v/%v got %v/%v", "email", "aaaa",
+							key.String(), value.String())
 					}
 				}
 				i++
@@ -397,7 +408,8 @@ func TestBasic2(t *testing.T) {
 	if mtok.String() != "1002.3" {
 		t.Fatalf("expected %v, got %v", "1002.3", mtok.String())
 	}
-	mtok = get(basicJSON, `loggy.programmers.#[firstName != "Brett"].firstName`)
+	mtok = get(basicJSON,
+		`loggy.programmers.#[firstName != "Brett"].firstName`)
 	if mtok.String() != "Jason" {
 		t.Fatalf("expected %v, got %v", "Jason", mtok.String())
 	}
@@ -422,13 +434,16 @@ func TestBasic2(t *testing.T) {
 	}
 	programmers := mtok.Map()["programmers"]
 	if programmers.Array()[1].Map()["firstName"].Str != "Jason" {
-		t.Fatalf("expected %v, got %v", "Jason", mtok.Map()["programmers"].Array()[1].Map()["firstName"].Str)
+		t.Fatalf("expected %v, got %v", "Jason",
+			mtok.Map()["programmers"].Array()[1].Map()["firstName"].Str)
 	}
 }
 func TestBasic3(t *testing.T) {
 	var mtok Result
-	if Parse(basicJSON).Get("loggy.programmers").Get("1").Get("firstName").Str != "Jason" {
-		t.Fatalf("expected %v, got %v", "Jason", Parse(basicJSON).Get("loggy.programmers").Get("1").Get("firstName").Str)
+	if Parse(basicJSON).Get("loggy.programmers").Get("1").
+		Get("firstName").Str != "Jason" {
+		t.Fatalf("expected %v, got %v", "Jason", Parse(basicJSON).
+			Get("loggy.programmers").Get("1").Get("firstName").Str)
 	}
 	var token Result
 	if token = Parse("-102"); token.Num != -102 {
@@ -468,7 +483,8 @@ func TestBasic4(t *testing.T) {
 		t.Fatalf("expected 3, got %v", get(basicJSON, "items.3.tags.#").Num)
 	}
 	if get(basicJSON, "items.3.points.1.#").Num != 2 {
-		t.Fatalf("expected 2, got %v", get(basicJSON, "items.3.points.1.#").Num)
+		t.Fatalf("expected 2, got %v",
+			get(basicJSON, "items.3.points.1.#").Num)
 	}
 	if get(basicJSON, "items.#").Num != 8 {
 		t.Fatalf("expected 6, got %v", get(basicJSON, "items.#").Num)
@@ -524,7 +540,8 @@ func TestBasic5(t *testing.T) {
 	_ = token.Value().(bool)
 	token = get(basicJSON, "noop")
 	if token.String() != `{"what is a wren?":"a bird"}` {
-		t.Fatal("expecting '"+`{"what is a wren?":"a bird"}`+"'", "got", token.String())
+		t.Fatal("expecting '"+`{"what is a wren?":"a bird"}`+"'", "got",
+			token.String())
 	}
 	_ = token.Value().(map[string]interface{})
 
@@ -534,8 +551,10 @@ func TestBasic5(t *testing.T) {
 
 	get(basicJSON, "vals.hello")
 
-	mm := Parse(basicJSON).Value().(map[string]interface{})
-	fn := mm["loggy"].(map[string]interface{})["programmers"].([]interface{})[1].(map[string]interface{})["firstName"].(string)
+	type msi = map[string]interface{}
+	type fi = []interface{}
+	mm := Parse(basicJSON).Value().(msi)
+	fn := mm["loggy"].(msi)["programmers"].(fi)[1].(msi)["firstName"].(string)
 	if fn != "Jason" {
 		t.Fatalf("expecting %v, got %v", "Jason", fn)
 	}
@@ -583,12 +602,18 @@ func TestLess(t *testing.T) {
 	assert(t, Result{Type: Null}.Less(Result{Type: String}, true))
 	assert(t, !Result{Type: False}.Less(Result{Type: Null}, true))
 	assert(t, Result{Type: False}.Less(Result{Type: True}, true))
-	assert(t, Result{Type: String, Str: "abc"}.Less(Result{Type: String, Str: "bcd"}, true))
-	assert(t, Result{Type: String, Str: "ABC"}.Less(Result{Type: String, Str: "abc"}, true))
-	assert(t, !Result{Type: String, Str: "ABC"}.Less(Result{Type: String, Str: "abc"}, false))
-	assert(t, Result{Type: Number, Num: 123}.Less(Result{Type: Number, Num: 456}, true))
-	assert(t, !Result{Type: Number, Num: 456}.Less(Result{Type: Number, Num: 123}, true))
-	assert(t, !Result{Type: Number, Num: 456}.Less(Result{Type: Number, Num: 456}, true))
+	assert(t, Result{Type: String, Str: "abc"}.Less(Result{Type: String,
+		Str: "bcd"}, true))
+	assert(t, Result{Type: String, Str: "ABC"}.Less(Result{Type: String,
+		Str: "abc"}, true))
+	assert(t, !Result{Type: String, Str: "ABC"}.Less(Result{Type: String,
+		Str: "abc"}, false))
+	assert(t, Result{Type: Number, Num: 123}.Less(Result{Type: Number,
+		Num: 456}, true))
+	assert(t, !Result{Type: Number, Num: 456}.Less(Result{Type: Number,
+		Num: 123}, true))
+	assert(t, !Result{Type: Number, Num: 456}.Less(Result{Type: Number,
+		Num: 456}, true))
 	assert(t, stringLessInsensitive("abcde", "BBCDE"))
 	assert(t, stringLessInsensitive("abcde", "bBCDE"))
 	assert(t, stringLessInsensitive("Abcde", "BBCDE"))
@@ -770,7 +795,8 @@ func TestManyBasic(t *testing.T) {
 	testMany(false, "[Point]", "position.type")
 	testMany(false, `[emptya ["world peace"] 31]`, ".a", "loves", "age")
 	testMany(false, `[["world peace"]]`, "loves")
-	testMany(false, `[{"last":"Anderson","first":"Nancy"} Nancy]`, "name", "name.first")
+	testMany(false, `[{"last":"Anderson","first":"Nancy"} Nancy]`, "name",
+		"name.first")
 	testMany(true, `[]`, strings.Repeat("a.", 40)+"hello")
 	res := Get(manyJSON, strings.Repeat("a.", 48)+"a")
 	testMany(true, `[`+res.String()+`]`, strings.Repeat("a.", 48)+"a")
@@ -782,7 +808,8 @@ func testMany(t *testing.T, json string, paths, expected []string) {
 	testManyAny(t, json, paths, expected, true)
 	testManyAny(t, json, paths, expected, false)
 }
-func testManyAny(t *testing.T, json string, paths, expected []string, bytes bool) {
+func testManyAny(t *testing.T, json string, paths, expected []string,
+	bytes bool) {
 	var result []Result
 	for i := 0; i < 2; i++ {
 		var which string
@@ -806,16 +833,21 @@ func testManyAny(t *testing.T, json string, paths, expected []string, bytes bool
 		}
 		for j := 0; j < len(expected); j++ {
 			if result[j].String() != expected[j] {
-				t.Fatalf("Using key '%s' for '%s'\nexpected '%v', got '%v'", paths[j], which, expected[j], result[j].String())
+				t.Fatalf("Using key '%s' for '%s'\nexpected '%v', got '%v'",
+					paths[j], which, expected[j], result[j].String())
 			}
 		}
 	}
 }
 func TestIssue20(t *testing.T) {
-	json := `{ "name": "FirstName", "name1": "FirstName1", "address": "address1", "addressDetails": "address2", }`
+	json := `{ "name": "FirstName", "name1": "FirstName1", ` +
+		`"address": "address1", "addressDetails": "address2", }`
 	paths := []string{"name", "name1", "address", "addressDetails"}
 	expected := []string{"FirstName", "FirstName1", "address1", "address2"}
-	t.Run("SingleMany", func(t *testing.T) { testMany(t, json, paths, expected) })
+	t.Run("SingleMany", func(t *testing.T) {
+		testMany(t, json, paths,
+			expected)
+	})
 }
 
 func TestIssue21(t *testing.T) {
@@ -823,9 +855,14 @@ func TestIssue21(t *testing.T) {
 	           "Level1Field4":4, 
 			   "Level1Field2":{ "Level2Field1":[ "value1", "value2" ], 
 			   "Level2Field2":{ "Level3Field1":[ { "key1":"value1" } ] } } }`
-	paths := []string{"Level1Field1", "Level1Field2.Level2Field1", "Level1Field2.Level2Field2.Level3Field1", "Level1Field4"}
-	expected := []string{"3", `[ "value1", "value2" ]`, `[ { "key1":"value1" } ]`, "4"}
-	t.Run("SingleMany", func(t *testing.T) { testMany(t, json, paths, expected) })
+	paths := []string{"Level1Field1", "Level1Field2.Level2Field1",
+		"Level1Field2.Level2Field2.Level3Field1", "Level1Field4"}
+	expected := []string{"3", `[ "value1", "value2" ]`,
+		`[ { "key1":"value1" } ]`, "4"}
+	t.Run("SingleMany", func(t *testing.T) {
+		testMany(t, json, paths,
+			expected)
+	})
 }
 
 func TestRandomMany(t *testing.T) {
@@ -971,7 +1008,8 @@ func TestUnmarshal(t *testing.T) {
 		t.Fatal("not equal")
 	}
 	var str string
-	if err := json.Unmarshal([]byte(Get(complicatedJSON, "LeftOut").Raw), &str); err != nil {
+	err := json.Unmarshal([]byte(Get(complicatedJSON, "LeftOut").Raw), &str)
+	if err != nil {
 		t.Fatal(err)
 	}
 	assert(t, str == Get(complicatedJSON, "LeftOut").String())
@@ -1040,7 +1078,8 @@ func TestValidBasic(t *testing.T) {
 	testvalid(t, `{"a":"b","a":1}`, true)
 	testvalid(t, `{"a":"b",2"1":2}`, false)
 	testvalid(t, `{"a":"b","a": 1, "c":{"hi":"there"} }`, true)
-	testvalid(t, `{"a":"b","a": 1, "c":{"hi":"there", "easy":["going",{"mixed":"bag"}]} }`, true)
+	testvalid(t, `{"a":"b","a": 1, "c":{"hi":"there", "easy":["going",`+
+		`{"mixed":"bag"}]} }`, true)
 	testvalid(t, `""`, true)
 	testvalid(t, `"`, false)
 	testvalid(t, `"\n"`, true)
@@ -1055,7 +1094,8 @@ func TestValidBasic(t *testing.T) {
 	testvalid(t, string(exampleJSON), true)
 }
 
-var jsonchars = []string{"{", "[", ",", ":", "}", "]", "1", "0", "true", "false", "null", `""`, `"\""`, `"a"`}
+var jsonchars = []string{"{", "[", ",", ":", "}", "]", "1", "0", "true",
+	"false", "null", `""`, `"\""`, `"a"`}
 
 func makeRandomJSONChars(b []byte) {
 	var bb []byte
@@ -1083,7 +1123,8 @@ func TestValidRandom(t *testing.T) {
 }
 
 func TestGetMany47(t *testing.T) {
-	json := `{"bar": {"id": 99, "mybar": "my mybar" }, "foo": {"myfoo": [605]}}`
+	json := `{"bar": {"id": 99, "mybar": "my mybar" }, "foo": ` +
+		`{"myfoo": [605]}}`
 	paths := []string{"foo.myfoo", "bar.id", "bar.mybar", "bar.mybarx"}
 	expected := []string{"[605]", "99", "my mybar", ""}
 	results := GetMany(json, paths...)
@@ -1092,7 +1133,8 @@ func TestGetMany47(t *testing.T) {
 	}
 	for i, path := range paths {
 		if results[i].String() != expected[i] {
-			t.Fatalf("expected '%v', got '%v' for path '%v'", expected[i], results[i].String(), path)
+			t.Fatalf("expected '%v', got '%v' for path '%v'", expected[i],
+				results[i].String(), path)
 		}
 	}
 }
@@ -1107,7 +1149,8 @@ func TestGetMany48(t *testing.T) {
 	}
 	for i, path := range paths {
 		if results[i].String() != expected[i] {
-			t.Fatalf("expected '%v', got '%v' for path '%v'", expected[i], results[i].String(), path)
+			t.Fatalf("expected '%v', got '%v' for path '%v'", expected[i],
+				results[i].String(), path)
 		}
 	}
 }
@@ -1189,15 +1232,18 @@ func TestIssue54(t *testing.T) {
 	json := `{"MarketName":null,"Nounce":6115}`
 	r = GetMany(json, "Nounce", "Buys", "Sells", "Fills")
 	if strings.Replace(fmt.Sprintf("%v", r), " ", "", -1) != "[6115]" {
-		t.Fatalf("expected '%v', got '%v'", "[6115]", strings.Replace(fmt.Sprintf("%v", r), " ", "", -1))
+		t.Fatalf("expected '%v', got '%v'", "[6115]",
+			strings.Replace(fmt.Sprintf("%v", r), " ", "", -1))
 	}
 	r = GetMany(json, "Nounce", "Buys", "Sells")
 	if strings.Replace(fmt.Sprintf("%v", r), " ", "", -1) != "[6115]" {
-		t.Fatalf("expected '%v', got '%v'", "[6115]", strings.Replace(fmt.Sprintf("%v", r), " ", "", -1))
+		t.Fatalf("expected '%v', got '%v'", "[6115]",
+			strings.Replace(fmt.Sprintf("%v", r), " ", "", -1))
 	}
 	r = GetMany(json, "Nounce")
 	if strings.Replace(fmt.Sprintf("%v", r), " ", "", -1) != "[6115]" {
-		t.Fatalf("expected '%v', got '%v'", "[6115]", strings.Replace(fmt.Sprintf("%v", r), " ", "", -1))
+		t.Fatalf("expected '%v', got '%v'", "[6115]",
+			strings.Replace(fmt.Sprintf("%v", r), " ", "", -1))
 	}
 }
 
@@ -1228,7 +1274,8 @@ func randomNumber() string {
 	return strconv.FormatInt(int64(rand.Int()%1000000), 10)
 }
 
-func randomObjectOrArray(keys []string, prefix string, array bool, depth int) (string, []string) {
+func randomObjectOrArray(keys []string, prefix string, array bool, depth int) (
+	string, []string) {
 	N := 5 + rand.Int()%5
 	var json string
 	if array {
@@ -1385,7 +1432,8 @@ func TestNumBigString(t *testing.T) {
 	j := fmt.Sprintf(`{"data":[ "hello", "%s" ]}`, i)
 	res := Get(j, "data.1")
 	if res.String() != "900719925474099301239109123101" {
-		t.Fatalf("expected '%v', got '%v'", "900719925474099301239109123101", res.String())
+		t.Fatalf("expected '%v', got '%v'", "900719925474099301239109123101",
+			res.String())
 	}
 }
 
@@ -1424,8 +1472,10 @@ func TestArrayValues(t *testing.T) {
 		output += fmt.Sprintf("%#v", val)
 	}
 	expect := strings.Join([]string{
-		`gjson.Result{Type:3, Raw:"\"PERSON1\"", Str:"PERSON1", Num:0, Index:0}`,
-		`gjson.Result{Type:3, Raw:"\"PERSON2\"", Str:"PERSON2", Num:0, Index:0}`,
+		`gjson.Result{Type:3, Raw:"\"PERSON1\"", Str:"PERSON1", Num:0, ` +
+			`Index:0}`,
+		`gjson.Result{Type:3, Raw:"\"PERSON2\"", Str:"PERSON2", Num:0, ` +
+			`Index:0}`,
 		`gjson.Result{Type:2, Raw:"0", Str:"", Num:0, Index:0}`,
 	}, "\n")
 	if output != expect {

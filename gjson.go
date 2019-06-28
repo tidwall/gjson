@@ -187,8 +187,9 @@ func (t Result) Time() time.Time {
 }
 
 // Array returns back an array of values.
-// If the result represents a non-existent value, then an empty array will be returned.
-// If the result is not a JSON array, the return value will be an array containing one result.
+// If the result represents a non-existent value, then an empty array will be
+// returned. If the result is not a JSON array, the return value will be an
+// array containing one result.
 func (t Result) Array() []Result {
 	if t.Type == Null {
 		return []Result{}
@@ -211,10 +212,11 @@ func (t Result) IsArray() bool {
 }
 
 // ForEach iterates through values.
-// If the result represents a non-existent value, then no values will be iterated.
-// If the result is an Object, the iterator will pass the key and value of each item.
-// If the result is an Array, the iterator will only pass the value of each item.
-// If the result is not a JSON array or object, the iterator will pass back one value equal to the result.
+// If the result represents a non-existent value, then no values will be
+// iterated. If the result is an Object, the iterator will pass the key and
+// value of each item. If the result is an Array, the iterator will only pass
+// the value of each item. If the result is not a JSON array or object, the
+// iterator will pass back one value equal to the result.
 func (t Result) ForEach(iterator func(key, value Result) bool) {
 	if !t.Exists() {
 		return
@@ -675,7 +677,8 @@ func parseNumber(json string, i int) (int, string) {
 	var s = i
 	i++
 	for ; i < len(json); i++ {
-		if json[i] <= ' ' || json[i] == ',' || json[i] == ']' || json[i] == '}' {
+		if json[i] <= ' ' || json[i] == ',' || json[i] == ']' ||
+			json[i] == '}' {
 			return i, json[s:i]
 		}
 	}
@@ -766,7 +769,8 @@ func parseArrayPath(path string) (r arrayPathResult) {
 					if i < len(path) {
 						s = i
 						if path[i] == '!' {
-							if i < len(path)-1 && (path[i+1] == '=' || path[i+1] == '%') {
+							if i < len(path)-1 && (path[i+1] == '=' ||
+								path[i+1] == '%') {
 								i++
 							}
 						} else if path[i] == '<' || path[i] == '>' {
@@ -1477,7 +1481,8 @@ type parseContext struct {
 // A path is a series of keys searated by a dot.
 // A key may contain special wildcard characters '*' and '?'.
 // To access an array value use the index as the key.
-// To get the number of elements in an array or to access a child path, use the '#' character.
+// To get the number of elements in an array or to access a child path, use
+// the '#' character.
 // The dot and wildcard character can be escaped with '\'.
 //
 //  {
@@ -1600,7 +1605,8 @@ func unescape(json string) string { //, error) {
 				i += 5
 				if utf16.IsSurrogate(r) {
 					// need another code
-					if len(json[i:]) >= 6 && json[i] == '\\' && json[i+1] == 'u' {
+					if len(json[i:]) >= 6 && json[i] == '\\' &&
+						json[i+1] == 'u' {
 						// we expect it to be correct so just consume it
 						r = utf16.DecodeRune(r, runeit(json[i+2:]))
 						i += 6
@@ -1820,7 +1826,8 @@ func assign(jsval Result, goval reflect.Value) {
 			return true
 		})
 	case reflect.Slice:
-		if goval.Type().Elem().Kind() == reflect.Uint8 && jsval.Type == String {
+		if goval.Type().Elem().Kind() == reflect.Uint8 &&
+			jsval.Type == String {
 			data, _ := base64.StdEncoding.DecodeString(jsval.String())
 			goval.Set(reflect.ValueOf(data))
 		} else {
@@ -1842,7 +1849,8 @@ func assign(jsval Result, goval reflect.Value) {
 			return true
 		})
 	case reflect.Map:
-		if goval.Type().Key().Kind() == reflect.String && goval.Type().Elem().Kind() == reflect.Interface {
+		if goval.Type().Key().Kind() == reflect.String &&
+			goval.Type().Elem().Kind() == reflect.Interface {
 			goval.Set(reflect.ValueOf(jsval.Value()))
 		}
 	case reflect.Interface:
@@ -1851,9 +1859,11 @@ func assign(jsval Result, goval reflect.Value) {
 		goval.SetBool(jsval.Bool())
 	case reflect.Float32, reflect.Float64:
 		goval.SetFloat(jsval.Float())
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32,
+		reflect.Int64:
 		goval.SetInt(jsval.Int())
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32,
+		reflect.Uint64:
 		goval.SetUint(jsval.Uint())
 	case reflect.String:
 		goval.SetString(jsval.String())
@@ -1886,8 +1896,9 @@ func UnmarshalValidationEnabled(enabled bool) {
 //
 // This function works almost identically to json.Unmarshal except  that
 // gjson.Unmarshal will automatically attempt to convert JSON values to any Go
-// type. For example, the JSON string "100" or the JSON number 100 can be equally
-// assigned to Go string, int, byte, uint64, etc. This rule applies to all types.
+// type. For example, the JSON string "100" or the JSON number 100 can be
+// equally assigned to Go string, int, byte, uint64, etc. This rule applies to
+// all types.
 //
 // Deprecated: Use encoder/json.Unmarshal instead
 func Unmarshal(data []byte, v interface{}) error {
@@ -2146,19 +2157,22 @@ func validnumber(data []byte, i int) (outi int, ok bool) {
 }
 
 func validtrue(data []byte, i int) (outi int, ok bool) {
-	if i+3 <= len(data) && data[i] == 'r' && data[i+1] == 'u' && data[i+2] == 'e' {
+	if i+3 <= len(data) && data[i] == 'r' && data[i+1] == 'u' &&
+		data[i+2] == 'e' {
 		return i + 3, true
 	}
 	return i, false
 }
 func validfalse(data []byte, i int) (outi int, ok bool) {
-	if i+4 <= len(data) && data[i] == 'a' && data[i+1] == 'l' && data[i+2] == 's' && data[i+3] == 'e' {
+	if i+4 <= len(data) && data[i] == 'a' && data[i+1] == 'l' &&
+		data[i+2] == 's' && data[i+3] == 'e' {
 		return i + 4, true
 	}
 	return i, false
 }
 func validnull(data []byte, i int) (outi int, ok bool) {
-	if i+3 <= len(data) && data[i] == 'u' && data[i+1] == 'l' && data[i+2] == 'l' {
+	if i+3 <= len(data) && data[i] == 'u' && data[i+1] == 'l' &&
+		data[i+2] == 'l' {
 		return i + 3, true
 	}
 	return i, false
