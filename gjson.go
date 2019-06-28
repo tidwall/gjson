@@ -866,9 +866,16 @@ func parseObjectPath(path string) (r objectPathResult) {
 			}
 		}
 		if path[i] == '.' {
+			// peek at the next byte and see if it's a '@' modifier.
 			r.part = path[:i]
-			r.path = path[i+1:]
-			r.more = true
+			if !DisableModifiers && !DisableChaining &&
+				i < len(path)-1 && path[i+1] == '@' {
+				r.pipe = path[i+1:]
+				r.piped = true
+			} else {
+				r.path = path[i+1:]
+				r.more = true
+			}
 			return
 		}
 		if path[i] == '*' || path[i] == '?' {
@@ -892,7 +899,15 @@ func parseObjectPath(path string) (r objectPathResult) {
 						continue
 					} else if path[i] == '.' {
 						r.part = string(epart)
-						r.path = path[i+1:]
+						// peek at the next byte and see if it's a '@' modifier
+						if !DisableModifiers && !DisableChaining &&
+							i < len(path)-1 && path[i+1] == '@' {
+							r.pipe = path[i+1:]
+							r.piped = true
+						} else {
+							r.path = path[i+1:]
+							r.more = true
+						}
 						r.more = true
 						return
 					} else if path[i] == '|' {
@@ -1515,7 +1530,7 @@ func Get(json, path string) Result {
 			var rjson string
 			path, rjson, ok = execModifier(json, path)
 			if ok {
-				if len(path) > 0 && path[0] == '|' {
+				if len(path) > 0 && (path[0] == '|' || path[0] == '.') {
 					res := Get(rjson, path[1:])
 					res.Index = 0
 					return res
@@ -2281,6 +2296,11 @@ func execModifier(json, path string) (pathOut, res string, ok bool) {
 				name = path[1:i]
 				break
 			}
+		}
+		if path[i] == '.' {
+			pathOut = path[i:]
+			name = path[1:i]
+			break
 		}
 	}
 	if fn, ok := modifiers[name]; ok {
