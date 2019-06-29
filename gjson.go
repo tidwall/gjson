@@ -865,10 +865,12 @@ func parseObjectPath(path string) (r objectPathResult) {
 			return
 		}
 		if path[i] == '.' {
-			// peek at the next byte and see if it's a '@' modifier.
+			// peek at the next byte and see if it's a '@', '[', or '{'.
 			r.part = path[:i]
 			if !DisableModifiers &&
-				i < len(path)-1 && path[i+1] == '@' {
+				i < len(path)-1 &&
+				(path[i+1] == '@' ||
+					path[i+1] == '[' || path[i+1] == '{') {
 				r.pipe = path[i+1:]
 				r.piped = true
 			} else {
@@ -1552,6 +1554,110 @@ func ForEachLine(json string, iterator func(line Result) bool) {
 	}
 }
 
+type subSelector struct {
+	name string
+	path string
+}
+
+// parseSubSelectors returns the subselectors belonging to a '[path1,path2]' or
+// '{"field1":path1,"field2":path2}' type subSelection. It's expected that the
+// first character in path is either '[' or '{', and has already been checked
+// prior to calling this function.
+func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
+	depth := 1
+	colon := 0
+	start := 1
+	i := 1
+	pushSel := func() {
+		var sel subSelector
+		if colon == 0 {
+			sel.path = path[start:i]
+		} else {
+			sel.name = path[start:colon]
+			sel.path = path[colon+1 : i]
+		}
+		sels = append(sels, sel)
+		colon = 0
+		start = i + 1
+	}
+	for ; i < len(path); i++ {
+		switch path[i] {
+		case '\\':
+			i++
+		case ':':
+			if depth == 1 {
+				colon = i
+			}
+		case ',':
+			if depth == 1 {
+				pushSel()
+			}
+		case '"':
+			i++
+		loop:
+			for ; i < len(path); i++ {
+				switch path[i] {
+				case '\\':
+					i++
+				case '"':
+					break loop
+				}
+			}
+		case '[', '(', '{':
+			depth++
+		case ']', ')', '}':
+			depth--
+			if depth == 0 {
+				pushSel()
+				path = path[i+1:]
+				return sels, path, true
+			}
+		}
+	}
+	return
+}
+
+// nameOfLast returns the name of the last component
+func nameOfLast(path string) string {
+	for i := len(path) - 1; i >= 0; i-- {
+		if path[i] == '|' || path[i] == '.' {
+			if i > 0 {
+				if path[i-1] == '\\' {
+					continue
+				}
+			}
+			return path[i+1:]
+		}
+	}
+	return path
+}
+
+func isSimpleName(component string) bool {
+	for i := 0; i < len(component); i++ {
+		if component[i] < ' ' {
+			return false
+		}
+		switch component[i] {
+		case '[', ']', '{', '}', '(', ')', '#', '|':
+			return false
+		}
+	}
+	return true
+}
+
+func appendJSONString(dst []byte, s string) []byte {
+	for i := 0; i < len(s); i++ {
+		if s[i] < ' ' || s[i] == '\\' || s[i] == '"' || s[i] > 126 {
+			d, _ := json.Marshal(s)
+			return append(dst, string(d)...)
+		}
+	}
+	dst = append(dst, '"')
+	dst = append(dst, s...)
+	dst = append(dst, '"')
+	return dst
+}
+
 type parseContext struct {
 	json  string
 	value Result
@@ -1595,22 +1701,84 @@ type parseContext struct {
 // If you are consuming JSON from an unpredictable source then you may want to
 // use the Valid function first.
 func Get(json, path string) Result {
-	if !DisableModifiers {
-		if len(path) > 1 && path[0] == '@' {
-			// possible modifier
+	if len(path) > 1 {
+		if !DisableModifiers {
+			if path[0] == '@' {
+				// possible modifier
+				var ok bool
+				var rjson string
+				path, rjson, ok = execModifier(json, path)
+				if ok {
+					if len(path) > 0 && (path[0] == '|' || path[0] == '.') {
+						res := Get(rjson, path[1:])
+						res.Index = 0
+						return res
+					}
+					return Parse(rjson)
+				}
+			}
+		}
+		if path[0] == '[' || path[0] == '{' {
+			// using a subselector path
+			kind := path[0]
 			var ok bool
-			var rjson string
-			path, rjson, ok = execModifier(json, path)
+			var subs []subSelector
+			subs, path, ok = parseSubSelectors(path)
 			if ok {
-				if len(path) > 0 && (path[0] == '|' || path[0] == '.') {
-					res := Get(rjson, path[1:])
+				if len(path) == 0 || (path[0] == '|' || path[0] == '.') {
+					var b []byte
+					b = append(b, kind)
+					var i int
+					for _, sub := range subs {
+						res := Get(json, sub.path)
+						if res.Exists() {
+							if i > 0 {
+								b = append(b, ',')
+							}
+							if kind == '{' {
+								if len(sub.name) > 0 {
+									if sub.name[0] == '"' && Valid(sub.name) {
+										b = append(b, sub.name...)
+									} else {
+										b = appendJSONString(b, sub.name)
+									}
+								} else {
+									last := nameOfLast(sub.path)
+									if isSimpleName(last) {
+										b = appendJSONString(b, last)
+									} else {
+										b = appendJSONString(b, "_")
+									}
+								}
+								b = append(b, ':')
+							}
+							var raw string
+							if len(res.Raw) == 0 {
+								raw = res.String()
+								if len(raw) == 0 {
+									raw = "null"
+								}
+							} else {
+								raw = res.Raw
+							}
+							b = append(b, raw...)
+							i++
+						}
+					}
+					b = append(b, kind+2)
+					var res Result
+					res.Raw = string(b)
+					res.Type = JSON
+					if len(path) > 0 {
+						res = res.Get(path[1:])
+					}
 					res.Index = 0
 					return res
 				}
-				return Parse(rjson)
 			}
 		}
 	}
+
 	var i int
 	var c = &parseContext{json: json}
 	if len(path) >= 2 && path[0] == '.' && path[1] == '.' {
