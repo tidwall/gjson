@@ -56,7 +56,7 @@ Prichard
 ## Path Syntax
 
 Below is a quick overview of the path syntax, for more complete information please
-check out [GJSON Path Syntax](PATH-SYNTAX.md).
+check out [GJSON Syntax](SYNTAX.md).
 
 A path is a series of keys separated by a dot.
 A key may contain special wildcard characters '\*' and '?'.
