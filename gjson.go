@@ -716,13 +716,11 @@ type arrayPathResult struct {
 
 func parseArrayPath(path string) (r arrayPathResult) {
 	for i := 0; i < len(path); i++ {
-		if !DisableChaining {
-			if path[i] == '|' {
-				r.part = path[:i]
-				r.pipe = path[i+1:]
-				r.piped = true
-				return
-			}
+		if path[i] == '|' {
+			r.part = path[:i]
+			r.pipe = path[i+1:]
+			r.piped = true
+			return
 		}
 		if path[i] == '.' {
 			r.part = path[:i]
@@ -849,9 +847,6 @@ func parseArrayPath(path string) (r arrayPathResult) {
 	return
 }
 
-// DisableChaining will disable the chaining (pipe) syntax
-var DisableChaining = false
-
 type objectPathResult struct {
 	part  string
 	path  string
@@ -863,18 +858,16 @@ type objectPathResult struct {
 
 func parseObjectPath(path string) (r objectPathResult) {
 	for i := 0; i < len(path); i++ {
-		if !DisableChaining {
-			if path[i] == '|' {
-				r.part = path[:i]
-				r.pipe = path[i+1:]
-				r.piped = true
-				return
-			}
+		if path[i] == '|' {
+			r.part = path[:i]
+			r.pipe = path[i+1:]
+			r.piped = true
+			return
 		}
 		if path[i] == '.' {
 			// peek at the next byte and see if it's a '@' modifier.
 			r.part = path[:i]
-			if !DisableModifiers && !DisableChaining &&
+			if !DisableModifiers &&
 				i < len(path)-1 && path[i+1] == '@' {
 				r.pipe = path[i+1:]
 				r.piped = true
@@ -906,7 +899,7 @@ func parseObjectPath(path string) (r objectPathResult) {
 					} else if path[i] == '.' {
 						r.part = string(epart)
 						// peek at the next byte and see if it's a '@' modifier
-						if !DisableModifiers && !DisableChaining &&
+						if !DisableModifiers &&
 							i < len(path)-1 && path[i+1] == '@' {
 							r.pipe = path[i+1:]
 							r.piped = true
@@ -2369,12 +2362,10 @@ func execModifier(json, path string) (pathOut, res string, ok bool) {
 			hasArgs = len(pathOut) > 0
 			break
 		}
-		if !DisableChaining {
-			if path[i] == '|' {
-				pathOut = path[i:]
-				name = path[1:i]
-				break
-			}
+		if path[i] == '|' {
+			pathOut = path[i:]
+			name = path[1:i]
+			break
 		}
 		if path[i] == '.' {
 			pathOut = path[i:]
@@ -2396,10 +2387,7 @@ func execModifier(json, path string) (pathOut, res string, ok bool) {
 				}
 			}
 			if !parsedArgs {
-				idx := -1
-				if !DisableChaining {
-					idx = strings.IndexByte(pathOut, '|')
-				}
+				idx := strings.IndexByte(pathOut, '|')
 				if idx == -1 {
 					args = pathOut
 					pathOut = ""
