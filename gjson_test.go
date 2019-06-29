@@ -1853,3 +1853,12 @@ func TestQueryArrayValues(t *testing.T) {
 	assert(t, Get(json, `a*.#[_%"John*"]#|#`).String() == "0")
 	assert(t, Get(json, `a*.#[="123"]#|#`).String() == "1")
 }
+
+func TestParenQueries(t *testing.T) {
+	json := `{
+		"friends": [{"a":10},{"a":20},{"a":30},{"a":40}]
+	}`
+	assert(t, Get(json, "friends.#(a>9)#|#").Int() == 4)
+	assert(t, Get(json, "friends.#(a>10)#|#").Int() == 3)
+	assert(t, Get(json, "friends.#(a>40)#|#").Int() == 0)
+}
