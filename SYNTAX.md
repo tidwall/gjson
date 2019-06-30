@@ -89,25 +89,29 @@ friends.#.age         [44,68,47]
 
 ### Queries
 
-You can also query an array for the first match by  using `#[...]`, or find all matches with `#[...]#`. 
+You can also query an array for the first match by  using `#(...)`, or find all matches with `#(...)#`. 
 Queries support the `==`, `!=`, `<`, `<=`, `>`, `>=` comparison operators, 
 and the simple pattern matching `%` (like) and `!%` (not like) operators.
 
 ```go
-friends.#[last=="Murphy"].first     "Dale"
-friends.#[last=="Murphy"]#.first    ["Dale","Jane"]
-friends.#[age>45]#.last             ["Craig","Murphy"]
-friends.#[first%"D*"].last          "Murphy"
-friends.#[first!%"D*"].last         "Craig"
+friends.#(last=="Murphy").first     "Dale"
+friends.#(last=="Murphy")#.first    ["Dale","Jane"]
+friends.#(age>45)#.last             ["Craig","Murphy"]
+friends.#(first%"D*").last          "Murphy"
+friends.#(first!%"D*").last         "Craig"
 ```
 
 To query for a non-object value in an array, you can forgo the string to the right of the operator.
+
 ```go
-children.#[!%"*a*"]                 "Alex"
-children.#[%"*a*"]#                 ["Sara","Jack"]
+children.#(!%"*a*")                 "Alex"
+children.#(%"*a*")#                 ["Sara","Jack"]
 ```
 
-
+*Please note that prior to v1.3.0, queries used the `#[...]` brackets. This was
+changed in v1.3.0 as to avoid confusion with the new [multipath](#multipaths) 
+syntax. For backwards compatibility, `#[...]` will continue to work until the
+next major release.*
 
 ### Dot vs Pipe
 
@@ -124,18 +128,18 @@ friends.0|first                     "Dale"
 friends|0|first                     "Dale"
 friends|#                           3
 friends.#                           3
-friends.#[last="Murphy"]#           [{"first": "Dale", "last": "Murphy", "age": 44},{"first": "Jane", "last": "Murphy", "age": 47}]
-friends.#[last="Murphy"]#.first     ["Dale","Jane"]
-friends.#[last="Murphy"]#|first     <non-existent>
-friends.#[last="Murphy"]#.0         []
-friends.#[last="Murphy"]#|0         {"first": "Dale", "last": "Murphy", "age": 44}
-friends.#[last="Murphy"]#.#         []
-friends.#[last="Murphy"]#|#         2
+friends.#(last="Murphy")#           [{"first": "Dale", "last": "Murphy", "age": 44},{"first": "Jane", "last": "Murphy", "age": 47}]
+friends.#(last="Murphy")#.first     ["Dale","Jane"]
+friends.#(last="Murphy")#|first     <non-existent>
+friends.#(last="Murphy")#.0         []
+friends.#(last="Murphy")#|0         {"first": "Dale", "last": "Murphy", "age": 44}
+friends.#(last="Murphy")#.#         []
+friends.#(last="Murphy")#|#         2
 ```
 
 Let's break down a few of these.
 
-The path `friends.#[last="Murphy"]#` all by itself results in
+The path `friends.#(last="Murphy")#` all by itself results in
 
 ```json
 [{"first": "Dale", "last": "Murphy", "age": 44},{"first": "Jane", "last": "Murphy", "age": 47}]
@@ -224,4 +228,31 @@ gjson.AddModifier("case", func(json, arg string) string {
 "children.@case:upper"             ["SARA","ALEX","JACK"]
 "children.@case:lower.@reverse"    ["jack","alex","sara"]
 ```
+
+#### Multipaths
+
+Starting with v1.3.0, GJSON added the ability to join multiple paths together
+to form new documents. Wrapping comma-separated paths between `{...}` or 
+`[...]` will result in a new array or object, respectively.
+
+For example, using the given multipath 
+
+```
+{name.first,age,"the_murphys":friends.#(last="Murphy")#.first}
+```
+
+Here we selected the first name, age, and the first name for friends with the 
+last name "Murphy".
+
+You'll notice that an optional key can be provided, in this case 
+"the_murphys", to force assign a key to a value. Otherwise, the name of the 
+actual field will be used, in this case "first". If a name cannot be
+determined, then "_" is used.
+
+This results in
+
+```
+{"first":"Tom","age":37,"the_murphys":["Dale","Jane"]}
+```
+
 
