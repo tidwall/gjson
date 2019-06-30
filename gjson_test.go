@@ -1911,3 +1911,7 @@ func TestSubSelectors(t *testing.T) {
 	assert(t, Get(json, "info.friends.#.[first,extra.0]").String() ==
 		`[["Dale",10],["Roger",40]]`)
 }
+
+func TestArrayCountRawOutput(t *testing.T) {
+	assert(t, Get(`[1,2,3,4]`, "#").Raw == "4")
+}

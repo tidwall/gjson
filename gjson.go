@@ -1446,9 +1446,10 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 					if rp.alogok {
 						break
 					}
-					c.value.Raw = ""
+
 					c.value.Type = Number
 					c.value.Num = float64(h - 1)
+					c.value.Raw = strconv.Itoa(h - 1)
 					c.calcd = true
 					return i + 1, true
 				}
