@@ -13,7 +13,8 @@ This document is designed to explain the structure of a GJSON Path through examp
 - [Dot vs Pipe](#dot-vs-pipe)
 - [Modifiers](#modifiers)
 
-The definitive implemenation is [github.com/tidwall/gjson](https://github.com/tidwall/gjson).
+The definitive implemenation is [github.com/tidwall/gjson](https://github.com/tidwall/gjson).  
+Use the [GJSON Playground](https://gjson.dev) to experiment with the syntax online.
 
 
 ## Path structure
