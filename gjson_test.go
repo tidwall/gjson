@@ -1915,3 +1915,72 @@ func TestSubSelectors(t *testing.T) {
 func TestArrayCountRawOutput(t *testing.T) {
 	assert(t, Get(`[1,2,3,4]`, "#").Raw == "4")
 }
+
+func TestParseQuery(t *testing.T) {
+	var path, op, value, remain string
+	var ok bool
+
+	path, op, value, remain, _, ok =
+		parseQuery(`#(service_roles.#(=="one").()==asdf).cap`)
+	assert(t, ok &&
+		path == `service_roles.#(=="one").()` &&
+		op == "=" &&
+		value == `asdf` &&
+		remain == `.cap`)
+
+	path, op, value, remain, _, ok = parseQuery(`#(first_name%"Murphy").last`)
+	assert(t, ok &&
+		path == `first_name` &&
+		op == `%` &&
+		value == `"Murphy"` &&
+		remain == `.last`)
+
+	path, op, value, remain, _, ok = parseQuery(`#( first_name !% "Murphy" ).last`)
+	assert(t, ok &&
+		path == `first_name` &&
+		op == `!%` &&
+		value == `"Murphy"` &&
+		remain == `.last`)
+
+	path, op, value, remain, _, ok = parseQuery(`#(service_roles.#(=="one"))`)
+	assert(t, ok &&
+		path == `service_roles.#(=="one")` &&
+		op == `` &&
+		value == `` &&
+		remain == ``)
+
+	path, op, value, remain, _, ok =
+		parseQuery(`#(a\("\"(".#(=="o\"(ne")%"ab\")").remain`)
+	assert(t, ok &&
+		path == `a\("\"(".#(=="o\"(ne")` &&
+		op == "%" &&
+		value == `"ab\")"` &&
+		remain == `.remain`)
+}
+
+func TestParentSubQuery(t *testing.T) {
+	var json = `{
+		"topology": {
+		  "instances": [
+			{
+			  "service_version": "1.2.3",
+			  "service_locale": {"lang": "en"},
+			  "service_roles": ["one", "two"]
+			},
+			{
+			  "service_version": "1.2.4",
+			  "service_locale": {"lang": "th"},
+			  "service_roles": ["three", "four"]
+			},
+			{
+			  "service_version": "1.2.2",
+			  "service_locale": {"lang": "en"},
+			  "service_roles": ["one"]
+			}
+		  ]
+		}
+	  }`
+	res := Get(json, `topology.instances.#( service_roles.#(=="one"))#.service_version`)
+	// should return two instances
+	assert(t, res.String() == `["1.2.3","1.2.2"]`)
+}

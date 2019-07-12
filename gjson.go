@@ -736,106 +736,121 @@ func parseArrayPath(path string) (r arrayPathResult) {
 					r.alogkey = path[2:]
 					r.path = path[:1]
 				} else if path[1] == '[' || path[1] == '(' {
-					var end byte
-					if path[1] == '[' {
-						end = ']'
-					} else {
-						end = ')'
-					}
-					r.query.on = true
 					// query
-					i += 2
-					// whitespace
-					for ; i < len(path); i++ {
-						if path[i] > ' ' {
+					r.query.on = true
+					if true {
+						qpath, op, value, _, fi, ok := parseQuery(path[i:])
+						if !ok {
+							// bad query, end now
 							break
 						}
-					}
-					s := i
-					for ; i < len(path); i++ {
-						if path[i] <= ' ' ||
-							path[i] == '!' ||
-							path[i] == '=' ||
-							path[i] == '<' ||
-							path[i] == '>' ||
-							path[i] == '%' ||
-							path[i] == end {
-							break
+						r.query.path = qpath
+						r.query.op = op
+						r.query.value = value
+						i = fi - 1
+						if i+1 < len(path) && path[i+1] == '#' {
+							r.query.all = true
 						}
-					}
-					r.query.path = path[s:i]
-					// whitespace
-					for ; i < len(path); i++ {
-						if path[i] > ' ' {
-							break
+					} else {
+						var end byte
+						if path[1] == '[' {
+							end = ']'
+						} else {
+							end = ')'
 						}
-					}
-					if i < len(path) {
-						s = i
-						if path[i] == '!' {
-							if i < len(path)-1 && (path[i+1] == '=' ||
-								path[i+1] == '%') {
-								i++
-							}
-						} else if path[i] == '<' || path[i] == '>' {
-							if i < len(path)-1 && path[i+1] == '=' {
-								i++
-							}
-						} else if path[i] == '=' {
-							if i < len(path)-1 && path[i+1] == '=' {
-								s++
-								i++
-							}
-						}
-						i++
-						r.query.op = path[s:i]
+						i += 2
 						// whitespace
 						for ; i < len(path); i++ {
 							if path[i] > ' ' {
 								break
 							}
 						}
-						s = i
+						s := i
 						for ; i < len(path); i++ {
-							if path[i] == '"' {
-								i++
-								s2 := i
-								for ; i < len(path); i++ {
-									if path[i] > '\\' {
-										continue
-									}
-									if path[i] == '"' {
-										// look for an escaped slash
-										if path[i-1] == '\\' {
-											n := 0
-											for j := i - 2; j > s2-1; j-- {
-												if path[j] != '\\' {
-													break
-												}
-												n++
-											}
-											if n%2 == 0 {
-												continue
-											}
-										}
-										break
-									}
-								}
-							} else if path[i] == end {
-								if i+1 < len(path) && path[i+1] == '#' {
-									r.query.all = true
-								}
+							if path[i] <= ' ' ||
+								path[i] == '!' ||
+								path[i] == '=' ||
+								path[i] == '<' ||
+								path[i] == '>' ||
+								path[i] == '%' ||
+								path[i] == end {
 								break
 							}
 						}
-						if i > len(path) {
-							i = len(path)
+						r.query.path = path[s:i]
+						// whitespace
+						for ; i < len(path); i++ {
+							if path[i] > ' ' {
+								break
+							}
 						}
-						v := path[s:i]
-						for len(v) > 0 && v[len(v)-1] <= ' ' {
-							v = v[:len(v)-1]
+						if i < len(path) {
+							s = i
+							if path[i] == '!' {
+								if i < len(path)-1 && (path[i+1] == '=' ||
+									path[i+1] == '%') {
+									i++
+								}
+							} else if path[i] == '<' || path[i] == '>' {
+								if i < len(path)-1 && path[i+1] == '=' {
+									i++
+								}
+							} else if path[i] == '=' {
+								if i < len(path)-1 && path[i+1] == '=' {
+									s++
+									i++
+								}
+							}
+							i++
+							r.query.op = path[s:i]
+							// whitespace
+							for ; i < len(path); i++ {
+								if path[i] > ' ' {
+									break
+								}
+							}
+							s = i
+							for ; i < len(path); i++ {
+								if path[i] == '"' {
+									i++
+									s2 := i
+									for ; i < len(path); i++ {
+										if path[i] > '\\' {
+											continue
+										}
+										if path[i] == '"' {
+											// look for an escaped slash
+											if path[i-1] == '\\' {
+												n := 0
+												for j := i - 2; j > s2-1; j-- {
+													if path[j] != '\\' {
+														break
+													}
+													n++
+												}
+												if n%2 == 0 {
+													continue
+												}
+											}
+											break
+										}
+									}
+								} else if path[i] == end {
+									if i+1 < len(path) && path[i+1] == '#' {
+										r.query.all = true
+									}
+									break
+								}
+							}
+							if i > len(path) {
+								i = len(path)
+							}
+							v := path[s:i]
+							for len(v) > 0 && v[len(v)-1] <= ' ' {
+								v = v[:len(v)-1]
+							}
+							r.query.value = v
 						}
-						r.query.value = v
 					}
 				}
 			}
@@ -845,6 +860,115 @@ func parseArrayPath(path string) (r arrayPathResult) {
 	r.part = path
 	r.path = ""
 	return
+}
+
+// splitQuery takes a query and splits it into three parts:
+//   path, op, middle, and right.
+// So for this query:
+//   #(first_name=="Murphy").last
+// Becomes
+//   first_name   # path
+//   =="Murphy"   # middle
+//   .last        # right
+// Or,
+//   #(service_roles.#(=="one")).cap
+// Becomes
+//   service_roles.#(=="one")   # path
+//                              # middle
+//   .cap                       # right
+func parseQuery(query string) (
+	path, op, value, remain string, i int, ok bool,
+) {
+	if len(query) < 2 || query[0] != '#' ||
+		(query[1] != '(' && query[1] != '[') {
+		return "", "", "", "", i, false
+	}
+	i = 2
+	j := 0 // start of value part
+	depth := 1
+	for ; i < len(query); i++ {
+		if depth == 1 && j == 0 {
+			switch query[i] {
+			case '!', '=', '<', '>', '%':
+				// start of the value part
+				j = i
+				continue
+			}
+		}
+		if query[i] == '\\' {
+			i++
+		} else if query[i] == '[' || query[i] == '(' {
+			depth++
+		} else if query[i] == ']' || query[i] == ')' {
+			depth--
+			if depth == 0 {
+				break
+			}
+		} else if query[i] == '"' {
+			// inside selector string, balance quotes
+			i++
+			for ; i < len(query); i++ {
+				if query[i] == '\\' {
+					i++
+				} else if query[i] == '"' {
+					break
+				}
+			}
+		}
+	}
+	if depth > 0 {
+		return "", "", "", "", i, false
+	}
+	if j > 0 {
+		path = trim(query[2:j])
+		value = trim(query[j:i])
+		remain = query[i+1:]
+		// parse the compare op from the value
+		var opsz int
+		switch {
+		case len(value) == 1:
+			opsz = 1
+		case value[0] == '!' && value[1] == '=':
+			opsz = 2
+		case value[0] == '!' && value[1] == '%':
+			opsz = 2
+		case value[0] == '<' && value[1] == '=':
+			opsz = 2
+		case value[0] == '>' && value[1] == '=':
+			opsz = 2
+		case value[0] == '=' && value[1] == '=':
+			value = value[1:]
+			opsz = 1
+		case value[0] == '<':
+			opsz = 1
+		case value[0] == '>':
+			opsz = 1
+		case value[0] == '=':
+			opsz = 1
+		case value[0] == '%':
+			opsz = 1
+		}
+		op = value[:opsz]
+		value = trim(value[opsz:])
+	} else {
+		path = trim(query[2:i])
+		remain = query[i+1:]
+	}
+	return path, op, value, remain, i + 1, true
+}
+
+func trim(s string) string {
+left:
+	if len(s) > 0 && s[0] <= ' ' {
+		s = s[1:]
+		goto left
+	}
+right:
+	if len(s) > 0 && s[len(s)-1] <= ' ' {
+		s = s[:len(s)-1]
+		goto right
+	}
+	return s
 }
 
 type objectPathResult struct {
@@ -1134,6 +1258,16 @@ func queryMatches(rp *arrayPathResult, value Result) bool {
 	rpv := rp.query.value
 	if len(rpv) > 2 && rpv[0] == '"' && rpv[len(rpv)-1] == '"' {
 		rpv = rpv[1 : len(rpv)-1]
+	}
+	if !value.Exists() {
+		return false
+	}
+	if rp.query.op == "" {
+		// the query is only looking for existence, such as:
+		//   friends.#(name)
+		// which makes sure that the array "friends" has an element of
+		// "name" that exists
+		return true
 	}
 	switch value.Type {
 	case String:
