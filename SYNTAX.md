@@ -34,9 +34,9 @@ Given this JSON
   "children": ["Sara","Alex","Jack"],
   "fav.movie": "Deer Hunter",
   "friends": [
-    {"first": "Dale", "last": "Murphy", "age": 44},
-    {"first": "Roger", "last": "Craig", "age": 68},
-    {"first": "Jane", "last": "Murphy", "age": 47}
+    {"first": "Dale", "last": "Murphy", "age": 44, "nets": ["ig", "fb", "tw"]},
+    {"first": "Roger", "last": "Craig", "age": 68, "nets": ["fb", "tw"]},
+    {"first": "Jane", "last": "Murphy", "age": 47, "nets": ["ig", "tw"]}
   ]
 }
 ```
@@ -76,7 +76,6 @@ Special purpose characters, such as `.`, `*`, and `?` can be escaped with `\`.
 fav\.movie             "Deer Hunter"
 ```
 
-
 ### Arrays
 
 The `#` character allows for digging into JSON Arrays.
@@ -107,6 +106,12 @@ To query for a non-object value in an array, you can forgo the string to the rig
 ```go
 children.#(!%"*a*")                 "Alex"
 children.#(%"*a*")#                 ["Sara","Jack"]
+```
+
+Nested queries are allowed.
+
+```go
+friends.#(nets.#(=="fb"))#.first  >> ["Dale","Roger"]
 ```
 
 *Please note that prior to v1.3.0, queries used the `#[...]` brackets. This was
