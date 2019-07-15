@@ -1984,3 +1984,9 @@ func TestParentSubQuery(t *testing.T) {
 	// should return two instances
 	assert(t, res.String() == `["1.2.3","1.2.2"]`)
 }
+
+func TestSingleModifier(t *testing.T) {
+	var data = `{"@key": "value"}`
+	assert(t, Get(data, "@key").String() == "value")
+	assert(t, Get(data, "\\@key").String() == "value")
+}

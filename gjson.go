@@ -1841,9 +1841,11 @@ func Get(json, path string) Result {
 			if path[0] == '@' {
 				// possible modifier
 				var ok bool
+				var npath string
 				var rjson string
-				path, rjson, ok = execModifier(json, path)
+				npath, rjson, ok = execModifier(json, path)
 				if ok {
+					path = npath
 					if len(path) > 0 && (path[0] == '|' || path[0] == '.') {
 						res := Get(rjson, path[1:])
 						res.Index = 0
