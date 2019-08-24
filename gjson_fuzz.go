@@ -21,7 +21,7 @@ func FuzzPath(fuzz []byte) int {
 	if length == 0 {
 		return -1
 	}
-	if len(fuzz) < int(length+2) {
+	if len(fuzz) < int(length)+2 {
 		return -1
 	}
 	path := string(fuzz[1 : length+1])
