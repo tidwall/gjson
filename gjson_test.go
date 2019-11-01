@@ -1991,7 +1991,7 @@ func TestSingleModifier(t *testing.T) {
 	assert(t, Get(data, "\\@key").String() == "value")
 }
 
-func TestModifierInSubSelector(t *testing.T) {
+func TestModifiersInMultipaths(t *testing.T) {
 	AddModifier("case", func(json, arg string) string {
 		if arg == "upper" {
 			return strings.ToUpper(json)
