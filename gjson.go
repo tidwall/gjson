@@ -464,9 +464,9 @@ func ParseBytes(json []byte) Result {
 }
 
 func squash(json string) string {
-	// expects that the lead character is a '[' or '{'
+	// expects that the lead character is a '[' or '{' or '('
 	// squash the value, ignoring all nested arrays and objects.
-	// the first '[' or '{' has already been read
+	// the first '[' or '{' or '(', has already been read
 	depth := 1
 	for i := 1; i < len(json); i++ {
 		if json[i] >= '"' && json[i] <= '}' {
@@ -495,9 +495,9 @@ func squash(json string) string {
 						break
 					}
 				}
-			case '{', '[':
+			case '{', '[', '(':
 				depth++
-			case '}', ']':
+			case '}', ']', ')':
 				depth--
 				if depth == 0 {
 					return json[:i+1]
@@ -1056,9 +1056,9 @@ func parseObjectPath(path string) (r objectPathResult) {
 }
 
 func parseSquash(json string, i int) (int, string) {
-	// expects that the lead character is a '[' or '{'
+	// expects that the lead character is a '[' or '{' or '('
 	// squash the value, ignoring all nested arrays and objects.
-	// the first '[' or '{' has already been read
+	// the first '[' or '{' or '(' has already been read
 	s := i
 	i++
 	depth := 1
@@ -1089,9 +1089,9 @@ func parseSquash(json string, i int) (int, string) {
 						break
 					}
 				}
-			case '{', '[':
+			case '{', '[', '(':
 				depth++
-			case '}', ']':
+			case '}', ']', ')':
 				depth--
 				if depth == 0 {
 					i++
@@ -1615,10 +1615,21 @@ func splitPossiblePipe(path string) (left, right string, ok bool) {
 		return
 	}
 
+	if len(path) > 0 && path[0] == '{' {
+		squashed := squash(path[1:])
+		if len(squashed) < len(path)-1 {
+			squashed = path[:len(squashed)+1]
+			remain := path[len(squashed):]
+			if remain[0] == '|' {
+				return squashed, remain[1:], true
+			}
+		}
+		return
+	}
+
 	// split the left and right side of the path with the pipe character as
 	// the delimiter. This is a little tricky because we'll need to basically
 	// parse the entire path.
-
 	for i := 0; i < len(path); i++ {
 		if path[i] == '\\' {
 			i++
@@ -1699,6 +1710,7 @@ type subSelector struct {
 // first character in path is either '[' or '{', and has already been checked
 // prior to calling this function.
 func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
+	modifer := 0
 	depth := 1
 	colon := 0
 	start := 1
@@ -1719,8 +1731,12 @@ func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 		switch path[i] {
 		case '\\':
 			i++
+		case '@':
+			if modifer == 0 && i > 0 && (path[i-1] == '.' || path[i-1] == '|') {
+				modifer = i
+			}
 		case ':':
-			if depth == 1 {
+			if modifer == 0 && colon == 0 && depth == 1 {
 				colon = i
 			}
 		case ',':
