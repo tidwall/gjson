@@ -12,6 +12,7 @@ This document is designed to explain the structure of a GJSON Path through examp
 - [Queries](#queries)
 - [Dot vs Pipe](#dot-vs-pipe)
 - [Modifiers](#modifiers)
+- [Multipaths](#multipaths)
 
 The definitive implemenation is [github.com/tidwall/gjson](https://github.com/tidwall/gjson).  
 Use the [GJSON Playground](https://gjson.dev) to experiment with the syntax online.
@@ -235,7 +236,7 @@ gjson.AddModifier("case", func(json, arg string) string {
 "children.@case:lower.@reverse"    ["jack","alex","sara"]
 ```
 
-#### Multipaths
+### Multipaths
 
 Starting with v1.3.0, GJSON added the ability to join multiple paths together
 to form new documents. Wrapping comma-separated paths between `{...}` or 
