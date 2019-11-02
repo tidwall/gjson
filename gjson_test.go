@@ -2016,3 +2016,10 @@ func TestModifiersInMultipaths(t *testing.T) {
 	assert(t, res.Raw == exp)
 
 }
+
+func TestIssue141(t *testing.T) {
+	json := `{"data": [{"q": 11, "w": 12}, {"q": 21, "w": 22}, {"q": 31, "w": 32} ], "sql": "some stuff here"}`
+	assert(t, Get(json, "data.#").Int() == 3)
+	assert(t, Get(json, "data.#.{q}|@ugly").Raw == `[{"q":11},{"q":21},{"q":31}]`)
+	assert(t, Get(json, "data.#.q|@ugly").Raw == `[11,21,31]`)
+}

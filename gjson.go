@@ -1556,19 +1556,30 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						var jsons = make([]byte, 0, 64)
 						jsons = append(jsons, '[')
 						for j, k := 0, 0; j < len(alog); j++ {
-							_, res, ok := parseAny(c.json, alog[j], true)
-							if ok {
-								res := res.Get(rp.alogkey)
-								if res.Exists() {
-									if k > 0 {
-										jsons = append(jsons, ',')
+							idx := alog[j]
+							for idx < len(c.json) {
+								switch c.json[idx] {
+								case ' ', '\t', '\r', '\n':
+									idx++
+									continue
+								}
+								break
+							}
+							if idx < len(c.json) && c.json[idx] != ']' {
+								_, res, ok := parseAny(c.json, idx, true)
+								if ok {
+									res := res.Get(rp.alogkey)
+									if res.Exists() {
+										if k > 0 {
+											jsons = append(jsons, ',')
+										}
+										raw := res.Raw
+										if len(raw) == 0 {
+											raw = res.String()
+										}
+										jsons = append(jsons, []byte(raw)...)
+										k++
 									}
-									raw := res.Raw
-									if len(raw) == 0 {
-										raw = res.String()
-									}
-									jsons = append(jsons, []byte(raw)...)
-									k++
 								}
 							}
 						}
