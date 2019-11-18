@@ -2023,3 +2023,20 @@ func TestIssue141(t *testing.T) {
 	assert(t, Get(json, "data.#.{q}|@ugly").Raw == `[{"q":11},{"q":21},{"q":31}]`)
 	assert(t, Get(json, "data.#.q|@ugly").Raw == `[11,21,31]`)
 }
+
+func TestChainedModifierStringArgs(t *testing.T) {
+	// issue #143
+	AddModifier("push", func(json, arg string) string {
+		json = strings.TrimSpace(json)
+		if len(json) < 2 || !Parse(json).IsArray() {
+			return json
+		}
+		json = strings.TrimSpace(json[1 : len(json)-1])
+		if len(json) == 0 {
+			return "[" + arg + "]"
+		}
+		return "[" + json + "," + arg + "]"
+	})
+	res := Get("[]", `@push:"2"|@push:"3"|@push:{"a":"b","c":["e","f"]}|@push:true|@push:10.23`)
+	assert(t, res.String() == `["2","3",{"a":"b","c":["e","f"]},true,10.23]`)
+}
