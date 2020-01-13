@@ -1989,7 +1989,7 @@ func runeit(json string) rune {
 }
 
 // unescape unescapes a string
-func unescape(json string) string { //, error) {
+func unescape(json string) string { // , error) {
 	var str = make([]byte, 0, len(json))
 	for i := 0; i < len(json); i++ {
 		switch {
@@ -2746,6 +2746,7 @@ var modifiers = map[string]func(json, arg string) string{
 	"pretty":  modPretty,
 	"ugly":    modUgly,
 	"reverse": modReverse,
+	"this":    modThis,
 }
 
 // AddModifier binds a custom modifier command to the GJSON syntax.
@@ -2781,6 +2782,11 @@ func modPretty(json, arg string) string {
 		return bytesString(pretty.PrettyOptions(stringBytes(json), &opts))
 	}
 	return bytesString(pretty.Pretty(stringBytes(json)))
+}
+
+// @this returns the current element. Can be used to retrieve the root element.
+func modThis(json, arg string) string {
+	return json
 }
 
 // @ugly modifier removes all whitespace.

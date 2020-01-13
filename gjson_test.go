@@ -1519,6 +1519,12 @@ func TestModifier(t *testing.T) {
 	if res != json {
 		t.Fatalf("expected '%v', got '%v'", json, res)
 	}
+	if res := Get(res, "@this").String(); res != json {
+		t.Fatalf("expected '%v', got '%v'", json, res)
+	}
+	if res := Get(res, "other.@this").String(); res != `{"hello":"world"}` {
+		t.Fatalf("expected '%v', got '%v'", json, res)
+	}
 	res = Get(res, "@pretty|@reverse|arr|@reverse|2").String()
 	if res != "4" {
 		t.Fatalf("expected '%v', got '%v'", "4", res)
