@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -995,26 +994,6 @@ var complicatedJSON = `
 	"NonBinary": [9,3,100,115]
 }
 `
-
-func TestUnmarshal(t *testing.T) {
-	var s1 ComplicatedType
-	var s2 ComplicatedType
-	if err := json.Unmarshal([]byte(complicatedJSON), &s1); err != nil {
-		t.Fatal(err)
-	}
-	if err := Unmarshal([]byte(complicatedJSON), &s2); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(&s1, &s2) {
-		t.Fatal("not equal")
-	}
-	var str string
-	err := json.Unmarshal([]byte(Get(complicatedJSON, "LeftOut").Raw), &str)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert(t, str == Get(complicatedJSON, "LeftOut").String())
-}
 
 func testvalid(t *testing.T, json string, expect bool) {
 	t.Helper()
