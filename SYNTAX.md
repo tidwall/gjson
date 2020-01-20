@@ -186,6 +186,7 @@ There are currently three built-in modifiers:
 - `@reverse`: Reverse an array or the members of an object.
 - `@ugly`: Remove all whitespace from JSON.
 - `@pretty`: Make the JSON more human readable.
+- `@this`: Returns the current element. Can be used to retrieve the root element.
 
 #### Modifier arguments
 
