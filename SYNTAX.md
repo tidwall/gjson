@@ -181,12 +181,15 @@ children.@reverse                   ["Jack","Alex","Sara"]
 children.@reverse.0                 "Jack"
 ```
 
-There are currently three built-in modifiers:
+There are currently the following built-in modifiers:
 
 - `@reverse`: Reverse an array or the members of an object.
 - `@ugly`: Remove all whitespace from JSON.
 - `@pretty`: Make the JSON more human readable.
-- `@this`: Returns the current element. Can be used to retrieve the root element.
+- `@this`: Returns the current element. It can be used to retrieve the root element.
+- `@valid`: Ensure the json document is valid.
+- `@flatten`: Flattens an array.
+- `@join`: Joins multiple objects into a single object.
 
 #### Modifier arguments
 

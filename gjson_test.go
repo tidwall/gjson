@@ -2025,3 +2025,140 @@ func TestChainedModifierStringArgs(t *testing.T) {
 	res := Get("[]", `@push:"2"|@push:"3"|@push:{"a":"b","c":["e","f"]}|@push:true|@push:10.23`)
 	assert(t, res.String() == `["2","3",{"a":"b","c":["e","f"]},true,10.23]`)
 }
+
+func TestFlatten(t *testing.T) {
+	json := `[1,[2],[3,4],[5,[6,[7]]],{"hi":"there"},8,[9]]`
+	assert(t, Get(json, "@flatten").String() == `[1,2,3,4,5,[6,[7]],{"hi":"there"},8,9]`)
+	assert(t, Get(json, `@flatten:{"deep":true}`).String() == `[1,2,3,4,5,6,7,{"hi":"there"},8,9]`)
+	assert(t, Get(`{"9999":1234}`, "@flatten").String() == `{"9999":1234}`)
+}
+
+func TestJoin(t *testing.T) {
+	assert(t, Get(`[{},{}]`, "@join").String() == `{}`)
+	assert(t, Get(`[{"a":1},{"b":2}]`, "@join").String() == `{"a":1,"b":2}`)
+	assert(t, Get(`[{"a":1,"b":1},{"b":2}]`, "@join").String() == `{"a":1,"b":2}`)
+	assert(t, Get(`[{"a":1,"b":1},{"b":2},5,{"c":3}]`, "@join").String() == `{"a":1,"b":2,"c":3}`)
+	assert(t, Get(`[{"a":1,"b":1},{"b":2},5,{"c":3}]`, `@join:{"preserve":true}`).String() == `{"a":1,"b":1,"b":2,"c":3}`)
+	assert(t, Get(`[{"a":1,"b":1},{"b":2},5,{"c":3}]`, `@join:{"preserve":true}.b`).String() == `1`)
+	assert(t, Get(`{"9999":1234}`, "@join").String() == `{"9999":1234}`)
+}
+
+func TestValid(t *testing.T) {
+	assert(t, Get("[{}", "@valid").Exists() == false)
+	assert(t, Get("[{}]", "@valid").Exists() == true)
+}
+
+// https://github.com/tidwall/gjson/issues/152
+func TestJoin152(t *testing.T) {
+	var json = `{
+		"distance": 1374.0,
+		"validFrom": "2005-11-14",
+		"historical": {
+		  "type": "Day",
+		  "name": "last25Hours",
+		  "summary": {
+			"units": {
+			  "temperature": "C",
+			  "wind": "m/s",
+			  "snow": "cm",
+			  "precipitation": "mm"
+			},
+			"days": [
+			  {
+				"time": "2020-02-08",
+				"hours": [
+				  {
+					"temperature": {
+					  "min": -2.0,
+					  "max": -1.6,
+					  "value": -1.6
+					},
+					"wind": {},
+					"precipitation": {},
+					"humidity": {
+					  "value": 92.0
+					},
+					"snow": {
+					  "depth": 49.0
+					},
+					"time": "2020-02-08T16:00:00+01:00"
+				  },
+				  {
+					"temperature": {
+					  "min": -1.7,
+					  "max": -1.3,
+					  "value": -1.3
+					},
+					"wind": {},
+					"precipitation": {},
+					"humidity": {
+					  "value": 92.0
+					},
+					"snow": {
+					  "depth": 49.0
+					},
+					"time": "2020-02-08T17:00:00+01:00"
+				  },
+				  {
+					"temperature": {
+					  "min": -1.3,
+					  "max": -0.9,
+					  "value": -1.2
+					},
+					"wind": {},
+					"precipitation": {},
+					"humidity": {
+					  "value": 91.0
+					},
+					"snow": {
+					  "depth": 49.0
+					},
+					"time": "2020-02-08T18:00:00+01:00"
+				  }
+				]
+			  },
+			  {
+				"time": "2020-02-09",
+				"hours": [
+				  {
+					"temperature": {
+					  "min": -1.7,
+					  "max": -0.9,
+					  "value": -1.5
+					},
+					"wind": {},
+					"precipitation": {},
+					"humidity": {
+					  "value": 91.0
+					},
+					"snow": {
+					  "depth": 49.0
+					},
+					"time": "2020-02-09T00:00:00+01:00"
+				  },
+				  {
+					"temperature": {
+					  "min": -1.5,
+					  "max": 0.9,
+					  "value": 0.2
+					},
+					"wind": {},
+					"precipitation": {},
+					"humidity": {
+					  "value": 67.0
+					},
+					"snow": {
+					  "depth": 49.0
+					},
+					"time": "2020-02-09T01:00:00+01:00"
+				  }
+				]
+			  }
+			]
+		  }
+		}
+	  }`
+
+	res := Get(json, "historical.summary.days.#.hours|@flatten|#.humidity.value")
+	assert(t, res.Raw == `[92.0,92.0,91.0,91.0,67.0]`)
+}
