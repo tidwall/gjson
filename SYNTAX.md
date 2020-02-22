@@ -74,7 +74,15 @@ c?ildren.0             "Sara"
 Special purpose characters, such as `.`, `*`, and `?` can be escaped with `\`. 
 
 ```go
-fav\\.movie             "Deer Hunter"
+fav\.movie             "Deer Hunter"
+```
+
+You'll also need to make sure that the `\` character is correctly escaped when hardcoding a path in source code.
+
+```go
+res := gjson.Get(json, "fav\\.movie")  // must escape the slash
+res := gjson.Get(json, `fav\.movie`)   // no need to escape the slash 
+
 ```
 
 ### Arrays
