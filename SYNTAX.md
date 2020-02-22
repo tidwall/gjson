@@ -74,7 +74,7 @@ c?ildren.0             "Sara"
 Special purpose characters, such as `.`, `*`, and `?` can be escaped with `\`. 
 
 ```go
-fav\.movie             "Deer Hunter"
+fav\\.movie             "Deer Hunter"
 ```
 
 ### Arrays
