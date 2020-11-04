@@ -106,8 +106,8 @@ func (t Result) Bool() bool {
 	case True:
 		return true
 	case String:
-		b, err := strconv.ParseBool(t.Str)
-		return !(!b || err != nil)
+		b, _ := strconv.ParseBool(strings.ToLower(t.Str))
+		return b
 	case Number:
 		return t.Num != 0
 	}
