@@ -2178,3 +2178,21 @@ func TestJoin152(t *testing.T) {
 	res := Get(json, "historical.summary.days.#.hours|@flatten|#.humidity.value")
 	assert(t, res.Raw == `[92.0,92.0,91.0,91.0,67.0]`)
 }
+
+func TestIssue192(t *testing.T) {
+
+	assert(t, squash(`"000"hello`) == `"000"`)
+	assert(t, squash(`"000"`) == `"000"`)
+	assert(t, squash(`"000`) == `"000`)
+	assert(t, squash(`"`) == `"`)
+
+	assert(t, squash(`[000]hello`) == `[000]`)
+	assert(t, squash(`[000]`) == `[000]`)
+	assert(t, squash(`[000`) == `[000`)
+	assert(t, squash(`[`) == `[`)
+	assert(t, squash(`]`) == `]`)
+
+	testJSON := `0.#[[{}]].@valid:"000`
+	Get(testJSON, testJSON)
+
+}

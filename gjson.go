@@ -498,6 +498,9 @@ func squash(json string) string {
 					}
 				}
 				if depth == 0 {
+					if i >= len(json) {
+						return json
+					}
 					return json[:i+1]
 				}
 			case '{', '[', '(':
