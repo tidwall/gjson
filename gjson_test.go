@@ -2180,7 +2180,6 @@ func TestJoin152(t *testing.T) {
 }
 
 func TestIssue192(t *testing.T) {
-
 	assert(t, squash(`"000"hello`) == `"000"`)
 	assert(t, squash(`"000"`) == `"000"`)
 	assert(t, squash(`"000`) == `"000`)
@@ -2194,5 +2193,10 @@ func TestIssue192(t *testing.T) {
 
 	testJSON := `0.#[[{}]].@valid:"000`
 	Get(testJSON, testJSON)
+}
 
+func TestIssue195(t *testing.T) {
+	testJSON := `\************************************` +
+		`**********{**",**,,**,**,**,**,"",**,**,**,**,**,**,**,**,**,**]`
+	Get(testJSON, testJSON)
 }
