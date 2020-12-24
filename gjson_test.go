@@ -2200,3 +2200,8 @@ func TestIssue195(t *testing.T) {
 		`**********{**",**,,**,**,**,**,"",**,**,**,**,**,**,**,**,**,**]`
 	Get(testJSON, testJSON)
 }
+
+func TestIssue196(t *testing.T) {
+	testJSON := `[#.@pretty.@join:{""[]""preserve"3,"][{]]]`
+	Get(testJSON, testJSON)
+}
