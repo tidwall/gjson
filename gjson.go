@@ -1950,7 +1950,6 @@ func Get(json, path string) Result {
 			}
 		}
 	}
-
 	var i int
 	var c = &parseContext{json: json}
 	if len(path) >= 2 && path[0] == '.' && path[1] == '.' {
@@ -2624,6 +2623,26 @@ func ModifierExists(name string, fn func(json, arg string) string) bool {
 	return ok
 }
 
+// cleanWS remove any non-whitespace from string
+func cleanWS(s string) string {
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case ' ', '\t', '\n', '\r':
+			continue
+		default:
+			var s2 []byte
+			for i := 0; i < len(s); i++ {
+				switch s[i] {
+				case ' ', '\t', '\n', '\r':
+					s2 = append(s2, s[i])
+				}
+			}
+			return string(s2)
+		}
+	}
+	return s
+}
+
 // @pretty modifier makes the json look nice.
 func modPretty(json, arg string) string {
 	if len(arg) > 0 {
@@ -2633,9 +2652,9 @@ func modPretty(json, arg string) string {
 			case "sortKeys":
 				opts.SortKeys = value.Bool()
 			case "indent":
-				opts.Indent = value.String()
+				opts.Indent = cleanWS(value.String())
 			case "prefix":
-				opts.Prefix = value.String()
+				opts.Prefix = cleanWS(value.String())
 			case "width":
 				opts.Width = int(value.Int())
 			}

@@ -2179,8 +2179,8 @@ func TestJoin152(t *testing.T) {
 	assert(t, res.Raw == `[92.0,92.0,91.0,91.0,67.0]`)
 }
 
-func TestIssue192(t *testing.T) {
-	assert(t, squash(`"000"hello`) == `"000"`)
+func TestVariousFuzz(t *testing.T) {
+	// Issue #192	assert(t, squash(`"000"hello`) == `"000"`)
 	assert(t, squash(`"000"`) == `"000"`)
 	assert(t, squash(`"000`) == `"000`)
 	assert(t, squash(`"`) == `"`)
@@ -2193,15 +2193,14 @@ func TestIssue192(t *testing.T) {
 
 	testJSON := `0.#[[{}]].@valid:"000`
 	Get(testJSON, testJSON)
-}
 
-func TestIssue195(t *testing.T) {
-	testJSON := `\************************************` +
+	// Issue #195
+	testJSON = `\************************************` +
 		`**********{**",**,,**,**,**,**,"",**,**,**,**,**,**,**,**,**,**]`
 	Get(testJSON, testJSON)
-}
 
-func TestIssue196(t *testing.T) {
-	testJSON := `[#.@pretty.@join:{""[]""preserve"3,"][{]]]`
+	// Issue #196
+	testJSON = `[#.@pretty.@join:{""[]""preserve"3,"][{]]]`
 	Get(testJSON, testJSON)
+
 }
