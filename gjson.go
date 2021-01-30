@@ -3,7 +3,6 @@ package gjson
 
 import (
 	"encoding/json"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -2836,6 +2835,19 @@ func modValid(json, arg string) string {
 	return json
 }
 
+// stringHeader instead of reflect.StringHeader
+type stringHeader struct {
+	data unsafe.Pointer
+	len  int
+}
+
+// sliceHeader instead of reflect.SliceHeader
+type sliceHeader struct {
+	data unsafe.Pointer
+	len  int
+	cap  int
+}
+
 // getBytes casts the input json bytes to a string and safely returns the
 // results as uniquely allocated data. This operation is intended to minimize
 // copies and allocations for the large json string->[]byte.
@@ -2845,14 +2857,14 @@ func getBytes(json []byte, path string) Result {
 		// unsafe cast to string
 		result = Get(*(*string)(unsafe.Pointer(&json)), path)
 		// safely get the string headers
-		rawhi := *(*reflect.StringHeader)(unsafe.Pointer(&result.Raw))
-		strhi := *(*reflect.StringHeader)(unsafe.Pointer(&result.Str))
+		rawhi := *(*stringHeader)(unsafe.Pointer(&result.Raw))
+		strhi := *(*stringHeader)(unsafe.Pointer(&result.Str))
 		// create byte slice headers
-		rawh := reflect.SliceHeader{Data: rawhi.Data, Len: rawhi.Len}
-		strh := reflect.SliceHeader{Data: strhi.Data, Len: strhi.Len}
-		if strh.Data == 0 {
+		rawh := sliceHeader{data: rawhi.data, len: rawhi.len, cap: rawhi.len}
+		strh := sliceHeader{data: strhi.data, len: strhi.len, cap: rawhi.len}
+		if strh.data == nil {
 			// str is nil
-			if rawh.Data == 0 {
+			if rawh.data == nil {
 				// raw is nil
 				result.Raw = ""
 			} else {
@@ -2860,19 +2872,20 @@ func getBytes(json []byte, path string) Result {
 				result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
 			}
 			result.Str = ""
-		} else if rawh.Data == 0 {
+		} else if rawh.data == nil {
 			// raw is nil
 			result.Raw = ""
 			// str has data, safely copy the slice header to a string
 			result.Str = string(*(*[]byte)(unsafe.Pointer(&strh)))
-		} else if strh.Data >= rawh.Data &&
-			int(strh.Data)+strh.Len <= int(rawh.Data)+rawh.Len {
+		} else if uintptr(strh.data) >= uintptr(rawh.data) &&
+			uintptr(strh.data)+uintptr(strh.len) <=
+				uintptr(rawh.data)+uintptr(rawh.len) {
 			// Str is a substring of Raw.
-			start := int(strh.Data - rawh.Data)
+			start := uintptr(strh.data) - uintptr(rawh.data)
 			// safely copy the raw slice header
 			result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
 			// substring the raw
-			result.Str = result.Raw[start : start+strh.Len]
+			result.Str = result.Raw[start : start+uintptr(strh.len)]
 		} else {
 			// safely copy both the raw and str slice headers to strings
 			result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
@@ -2887,9 +2900,9 @@ func getBytes(json []byte, path string) Result {
 // used instead.
 func fillIndex(json string, c *parseContext) {
 	if len(c.value.Raw) > 0 && !c.calcd {
-		jhdr := *(*reflect.StringHeader)(unsafe.Pointer(&json))
-		rhdr := *(*reflect.StringHeader)(unsafe.Pointer(&(c.value.Raw)))
-		c.value.Index = int(rhdr.Data - jhdr.Data)
+		jhdr := *(*stringHeader)(unsafe.Pointer(&json))
+		rhdr := *(*stringHeader)(unsafe.Pointer(&(c.value.Raw)))
+		c.value.Index = int(uintptr(rhdr.data) - uintptr(jhdr.data))
 		if c.value.Index < 0 || c.value.Index >= len(json) {
 			c.value.Index = 0
 		}
@@ -2897,10 +2910,10 @@ func fillIndex(json string, c *parseContext) {
 }
 
 func stringBytes(s string) []byte {
-	return *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader{
-		Data: (*reflect.StringHeader)(unsafe.Pointer(&s)).Data,
-		Len:  len(s),
-		Cap:  len(s),
+	return *(*[]byte)(unsafe.Pointer(&sliceHeader{
+		data: (*stringHeader)(unsafe.Pointer(&s)).data,
+		len:  len(s),
+		cap:  len(s),
 	}))
 }
 
