@@ -2528,7 +2528,10 @@ func parseInt(s string) (n int64, ok bool) {
 	return n, true
 }
 
+// safeInt validates a given JSON number
+// ensures it lies within the minimum and maximum representable JSON numbers
 func safeInt(f float64) (n int64, ok bool) {
+	//  https://tc39.es/ecma262/#sec-number.min_safe_integer || https://tc39.es/ecma262/#sec-number.max_safe_integer
 	if f < -9007199254740991 || f > 9007199254740991 {
 		return 0, false
 	}
