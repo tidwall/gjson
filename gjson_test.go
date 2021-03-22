@@ -2204,3 +2204,21 @@ func TestVariousFuzz(t *testing.T) {
 	Get(testJSON, testJSON)
 
 }
+
+func TestSubpathsWithMultipaths(t *testing.T) {
+	const json = `
+[
+  {"a": 1},
+  {"a": 2, "values": ["a", "b", "c", "d", "e"]},
+  true,
+  ["a", "b", "c", "d", "e"],
+  4
+]
+`
+	assert(t, Get(json, `1.values.@ugly`).Raw == `["a","b","c","d","e"]`)
+	assert(t, Get(json, `1.values.[0,3]`).Raw == `["a","d"]`)
+	assert(t, Get(json, `3.@ugly`).Raw == `["a","b","c","d","e"]`)
+	assert(t, Get(json, `3.[0,3]`).Raw == `["a","d"]`)
+	assert(t, Get(json, `#.@ugly`).Raw == `[{"a":1},{"a":2,"values":["a","b","c","d","e"]},true,["a","b","c","d","e"],4]`)
+	assert(t, Get(json, `#.[0,3]`).Raw == `[[],[],[],["a","d"],[]]`)
+}
