@@ -787,6 +787,12 @@ var manyJSON = `  {
 func combine(results []Result) string {
 	return fmt.Sprintf("%v", results)
 }
+
+var ( // used for testing
+	testWatchForFallback bool
+	testLastWasFallback  bool
+)
+
 func TestManyBasic(t *testing.T) {
 	testWatchForFallback = true
 	defer func() {
@@ -2221,4 +2227,9 @@ func TestSubpathsWithMultipaths(t *testing.T) {
 	assert(t, Get(json, `3.[0,3]`).Raw == `["a","d"]`)
 	assert(t, Get(json, `#.@ugly`).Raw == `[{"a":1},{"a":2,"values":["a","b","c","d","e"]},true,["a","b","c","d","e"],4]`)
 	assert(t, Get(json, `#.[0,3]`).Raw == `[[],[],[],["a","d"],[]]`)
+}
+
+func TestFlattenRemoveNonExist(t *testing.T) {
+	raw := Get("[[1],[2,[[],[3]],[4,[5],[],[[[6]]]]]]", `@flatten:{"deep":true}`).Raw
+	assert(t, raw == "[1,2,3,4,5,6]")
 }

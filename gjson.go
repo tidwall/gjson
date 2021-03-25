@@ -2176,11 +2176,6 @@ func parseAny(json string, i int, hit bool) (int, Result, bool) {
 	return i, res, false
 }
 
-var ( // used for testing
-	testWatchForFallback bool
-	testLastWasFallback  bool
-)
-
 // GetMany searches json for the multiple paths.
 // The return value is a Result array where the number of items
 // will be equal to the number of input paths.
@@ -2745,19 +2740,24 @@ func modFlatten(json, arg string) string {
 	out = append(out, '[')
 	var idx int
 	res.ForEach(func(_, value Result) bool {
-		if idx > 0 {
-			out = append(out, ',')
-		}
+		var raw string
 		if value.IsArray() {
 			if deep {
-				out = append(out, unwrap(modFlatten(value.Raw, arg))...)
+				raw = unwrap(modFlatten(value.Raw, arg))
 			} else {
-				out = append(out, unwrap(value.Raw)...)
+				raw = unwrap(value.Raw)
 			}
 		} else {
-			out = append(out, value.Raw...)
+			raw = value.Raw
 		}
-		idx++
+		raw = strings.TrimSpace(raw)
+		if len(raw) > 0 {
+			if idx > 0 {
+				out = append(out, ',')
+			}
+			out = append(out, raw...)
+			idx++
+		}
 		return true
 	})
 	out = append(out, ']')
