@@ -2233,3 +2233,8 @@ func TestFlattenRemoveNonExist(t *testing.T) {
 	raw := Get("[[1],[2,[[],[3]],[4,[5],[],[[[6]]]]]]", `@flatten:{"deep":true}`).Raw
 	assert(t, raw == "[1,2,3,4,5,6]")
 }
+
+func TestPipeEmptyArray(t *testing.T) {
+	raw := Get("[]", `#(hello)#`).Raw
+	assert(t, raw == "[]")
+}
