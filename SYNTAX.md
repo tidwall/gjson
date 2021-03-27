@@ -255,6 +255,8 @@ gjson.AddModifier("case", func(json, arg string) string {
 "children.@case:lower.@reverse"    ["jack","alex","sara"]
 ```
 
+*Note: Custom modifiers are not yet available in the Rust version*
+
 ### Multipaths
 
 Starting with v1.3.0, GJSON added the ability to join multiple paths together
