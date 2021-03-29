@@ -2382,6 +2382,12 @@ func validnumber(data []byte, i int) (outi int, ok bool) {
 	// sign
 	if data[i] == '-' {
 		i++
+		if i == len(data) {
+			return i, false
+		}
+		if data[i] < '0' || data[i] > '9' {
+			return i, false
+		}
 	}
 	// int
 	if i == len(data) {

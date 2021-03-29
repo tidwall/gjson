@@ -1030,6 +1030,7 @@ func TestValidBasic(t *testing.T) {
 	testvalid(t, "00", false)
 	testvalid(t, "-00", false)
 	testvalid(t, "-.", false)
+	testvalid(t, "-.123", false)
 	testvalid(t, "0.0", true)
 	testvalid(t, "10.0", true)
 	testvalid(t, "10e1", true)
@@ -1094,6 +1095,8 @@ func TestValidBasic(t *testing.T) {
 	testvalid(t, `"a\\b\\\uFFA"`, false)
 	testvalid(t, string(complicatedJSON), true)
 	testvalid(t, string(exampleJSON), true)
+	testvalid(t, "[-]", false)
+	testvalid(t, "[-.123]", false)
 }
 
 var jsonchars = []string{"{", "[", ",", ":", "}", "]", "1", "0", "true",
