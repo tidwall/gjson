@@ -714,10 +714,10 @@ type arrayPathResult struct {
 	alogkey string
 	query   struct {
 		on    bool
+		all   bool
 		path  string
 		op    string
 		value string
-		all   bool
 	}
 }
 
@@ -750,14 +750,23 @@ func parseArrayPath(path string) (r arrayPathResult) {
 				} else if path[1] == '[' || path[1] == '(' {
 					// query
 					r.query.on = true
-					qpath, op, value, _, fi, ok := parseQuery(path[i:])
+					qpath, op, value, _, fi, vesc, ok :=
+						parseQuery(path[i:])
 					if !ok {
 						// bad query, end now
 						break
 					}
+					if len(value) > 2 && value[0] == '"' &&
+						value[len(value)-1] == '"' {
+						value = value[1 : len(value)-1]
+						if vesc {
+							value = unescape(value)
+						}
+					}
 					r.query.path = qpath
 					r.query.op = op
 					r.query.value = value
+
 					i = fi - 1
 					if i+1 < len(path) && path[i+1] == '#' {
 						r.query.all = true
@@ -787,11 +796,11 @@ func parseArrayPath(path string) (r arrayPathResult) {
 //                              # middle
 //   .cap                       # right
 func parseQuery(query string) (
-	path, op, value, remain string, i int, ok bool,
+	path, op, value, remain string, i int, vesc, ok bool,
 ) {
 	if len(query) < 2 || query[0] != '#' ||
 		(query[1] != '(' && query[1] != '[') {
-		return "", "", "", "", i, false
+		return "", "", "", "", i, false, false
 	}
 	i = 2
 	j := 0 // start of value part
@@ -819,6 +828,7 @@ func parseQuery(query string) (
 			i++
 			for ; i < len(query); i++ {
 				if query[i] == '\\' {
+					vesc = true
 					i++
 				} else if query[i] == '"' {
 					break
@@ -827,7 +837,7 @@ func parseQuery(query string) (
 		}
 	}
 	if depth > 0 {
-		return "", "", "", "", i, false
+		return "", "", "", "", i, false, false
 	}
 	if j > 0 {
 		path = trim(query[2:j])
@@ -864,7 +874,7 @@ func parseQuery(query string) (
 		path = trim(query[2:i])
 		remain = query[i+1:]
 	}
-	return path, op, value, remain, i + 1, true
+	return path, op, value, remain, i + 1, vesc, true
 }
 
 func trim(s string) string {
@@ -1164,9 +1174,6 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 }
 func queryMatches(rp *arrayPathResult, value Result) bool {
 	rpv := rp.query.value
-	if len(rpv) > 2 && rpv[0] == '"' && rpv[len(rpv)-1] == '"' {
-		rpv = rpv[1 : len(rpv)-1]
-	}
 	if !value.Exists() {
 		return false
 	}

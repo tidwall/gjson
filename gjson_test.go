@@ -1741,7 +1741,7 @@ func TestParseQuery(t *testing.T) {
 	var path, op, value, remain string
 	var ok bool
 
-	path, op, value, remain, _, ok =
+	path, op, value, remain, _, _, ok =
 		parseQuery(`#(service_roles.#(=="one").()==asdf).cap`)
 	assert(t, ok &&
 		path == `service_roles.#(=="one").()` &&
@@ -1749,28 +1749,28 @@ func TestParseQuery(t *testing.T) {
 		value == `asdf` &&
 		remain == `.cap`)
 
-	path, op, value, remain, _, ok = parseQuery(`#(first_name%"Murphy").last`)
+	path, op, value, remain, _, _, ok = parseQuery(`#(first_name%"Murphy").last`)
 	assert(t, ok &&
 		path == `first_name` &&
 		op == `%` &&
 		value == `"Murphy"` &&
 		remain == `.last`)
 
-	path, op, value, remain, _, ok = parseQuery(`#( first_name !% "Murphy" ).last`)
+	path, op, value, remain, _, _, ok = parseQuery(`#( first_name !% "Murphy" ).last`)
 	assert(t, ok &&
 		path == `first_name` &&
 		op == `!%` &&
 		value == `"Murphy"` &&
 		remain == `.last`)
 
-	path, op, value, remain, _, ok = parseQuery(`#(service_roles.#(=="one"))`)
+	path, op, value, remain, _, _, ok = parseQuery(`#(service_roles.#(=="one"))`)
 	assert(t, ok &&
 		path == `service_roles.#(=="one")` &&
 		op == `` &&
 		value == `` &&
 		remain == ``)
 
-	path, op, value, remain, _, ok =
+	path, op, value, remain, _, _, ok =
 		parseQuery(`#(a\("\"(".#(=="o\"(ne")%"ab\")").remain`)
 	assert(t, ok &&
 		path == `a\("\"(".#(=="o\"(ne")` &&
@@ -2051,4 +2051,16 @@ func TestFlattenRemoveNonExist(t *testing.T) {
 func TestPipeEmptyArray(t *testing.T) {
 	raw := Get("[]", `#(hello)#`).Raw
 	assert(t, raw == "[]")
+}
+
+func TestEncodedQueryString(t *testing.T) {
+	json := `{
+		"friends": [
+			{"first": "Dale", "last": "Mur\nphy", "age": 44},
+			{"first": "Roger", "last": "Craig", "age": 68},
+			{"first": "Jane", "last": "Murphy", "age": 47}
+		]
+	}`
+	assert(t, Get(json, `friends.#(last=="Mur\nphy").age`).Int() == 44)
+	assert(t, Get(json, `friends.#(last=="Murphy").age`).Int() == 47)
 }
