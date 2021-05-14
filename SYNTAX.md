@@ -161,7 +161,7 @@ You can now query for all true(ish) or false(ish) values:
 
 ```
 vals.#(b==~true)#.a    >> [1,2,6,7,8]
-vals.#(b==~false)#.b   >> [3,4,5,9,10,11]
+vals.#(b==~false)#.a   >> [3,4,5,9,10,11]
 ```
 
 The last value which was non-existent is treated as `false`
