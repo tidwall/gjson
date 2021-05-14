@@ -2074,10 +2074,10 @@ func TestBoolConvertQuery(t *testing.T) {
 			{ "a": 4, "b": "0" },
 			{ "a": 5, "b": 0 },
 			{ "a": 6, "b": "1" },
-			{ "a": 7, "b": 1 }
+			{ "a": 7, "b": 1 },
 			{ "a": 8, "b": "true" },
-			{ "a": 9, "b": false }
-			{ "a": 10, "b": null }
+			{ "a": 9, "b": false },
+			{ "a": 10, "b": null },
 			{ "a": 11 }
 		]
 	}`
