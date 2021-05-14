@@ -2064,3 +2064,25 @@ func TestEncodedQueryString(t *testing.T) {
 	assert(t, Get(json, `friends.#(last=="Mur\nphy").age`).Int() == 44)
 	assert(t, Get(json, `friends.#(last=="Murphy").age`).Int() == 47)
 }
+
+func TestBoolConvertQuery(t *testing.T) {
+	json := `{
+		"vals": [
+			{ "a": 1, "b": true },
+			{ "a": 2, "b": true },
+			{ "a": 3, "b": false },
+			{ "a": 4, "b": "0" },
+			{ "a": 5, "b": 0 },
+			{ "a": 6, "b": "1" },
+			{ "a": 7, "b": 1 }
+			{ "a": 8, "b": "true" },
+			{ "a": 9, "b": false }
+			{ "a": 10, "b": null }
+			{ "a": 11 }
+		]
+	}`
+	trues := Get(json, `vals.#(b==~true)#.a`).Raw
+	falses := Get(json, `vals.#(b==~false)#.a`).Raw
+	assert(t, trues == "[1,2,6,7,8]")
+	assert(t, falses == "[3,4,5,9,10,11]")
+}

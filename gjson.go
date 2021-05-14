@@ -1174,6 +1174,15 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 }
 func queryMatches(rp *arrayPathResult, value Result) bool {
 	rpv := rp.query.value
+	if len(rpv) > 0 && rpv[0] == '~' {
+		// convert to bool
+		rpv = rpv[1:]
+		if value.Bool() {
+			value = Result{Type: True}
+		} else {
+			value = Result{Type: False}
+		}
+	}
 	if !value.Exists() {
 		return false
 	}
