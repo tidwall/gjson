@@ -1794,22 +1794,20 @@ type parseContext struct {
 // use the Valid function first.
 func Get(json, path string) Result {
 	if len(path) > 1 {
-		if !DisableModifiers {
-			if path[0] == '@' {
-				// possible modifier
-				var ok bool
-				var npath string
-				var rjson string
-				npath, rjson, ok = execModifier(json, path)
-				if ok {
-					path = npath
-					if len(path) > 0 && (path[0] == '|' || path[0] == '.') {
-						res := Get(rjson, path[1:])
-						res.Index = 0
-						return res
-					}
-					return Parse(rjson)
+		if path[0] == '@' {
+			// possible modifier
+			var ok bool
+			var npath string
+			var rjson string
+			npath, rjson, ok = execModifier(json, path)
+			if ok {
+				path = npath
+				if len(path) > 0 && (path[0] == '|' || path[0] == '.') {
+					res := Get(rjson, path[1:])
+					res.Index = 0
+					return res
 				}
+				return Parse(rjson)
 			}
 		}
 		if path[0] == '[' || path[0] == '{' {
