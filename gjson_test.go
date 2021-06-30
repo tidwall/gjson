@@ -922,7 +922,7 @@ var complicatedJSON = `
 	"nestedTagged": {
 		"Green": "Green",
 		"Map": {
-			"this": "that",
+			"this": "that", 
 			"and": "the other thing"
 		},
 		"Ints": {
