@@ -64,8 +64,8 @@ type Result struct {
 	Num float64
 	// Index of raw value in original json, zero means index unknown
 	Index int
-	// ArrayIndex is the Index of each returned element in the original json
-	ArrayIndex []int
+	// HashtagIndexes contains the Indexes of the elements returned by a query containing the '#' character
+	HashtagIndexes []int
 }
 
 // String returns a string representation of the value.
@@ -1263,6 +1263,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 	var alog []int
 	var partidx int
 	var multires []byte
+	var hashtagQueryIndex []int
 	rp := parseArrayPath(path)
 	if !rp.arrch {
 		n, ok := parseUint(rp.part)
@@ -1283,6 +1284,10 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				multires = append(multires, '[')
 			}
 		}
+		var tmp parseContext
+		tmp.value = qval
+		fillIndex(c.json, &tmp)
+		parentIndex := tmp.value.Index
 		var res Result
 		if qval.Type == JSON {
 			res = qval.Get(rp.query.path)
@@ -1314,6 +1319,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						multires = append(multires, ',')
 					}
 					multires = append(multires, raw...)
+					hashtagQueryIndex = append(hashtagQueryIndex, res.Index+parentIndex)
 				}
 			} else {
 				c.value = res
@@ -1478,7 +1484,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 							c.pipe = right
 							c.piped = true
 						}
-						var arrayIndex = make([]int, 0, 64)
+						var hashtagIndexes = make([]int, 0, 64)
 						var jsons = make([]byte, 0, 64)
 						jsons = append(jsons, '[')
 						for j, k := 0, 0; j < len(alog); j++ {
@@ -1505,7 +1511,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 											raw = res.String()
 										}
 										jsons = append(jsons, []byte(raw)...)
-										arrayIndex = append(arrayIndex, res.Index+parentIndex)
+										hashtagIndexes = append(hashtagIndexes, res.Index+parentIndex)
 										k++
 									}
 								}
@@ -1514,7 +1520,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						jsons = append(jsons, ']')
 						c.value.Type = JSON
 						c.value.Raw = string(jsons)
-						c.value.ArrayIndex = arrayIndex
+						c.value.HashtagIndexes = hashtagIndexes
 						return i + 1, true
 					}
 					if rp.alogok {
@@ -1530,8 +1536,9 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				if !c.value.Exists() {
 					if len(multires) > 0 {
 						c.value = Result{
-							Raw:  string(append(multires, ']')),
-							Type: JSON,
+							Raw:            string(append(multires, ']')),
+							Type:           JSON,
+							HashtagIndexes: hashtagQueryIndex,
 						}
 					} else if rp.query.all {
 						c.value = Result{
@@ -2052,10 +2059,10 @@ func parseAny(json string, i int, hit bool) (int, Result, bool) {
 				res.Raw = val
 				res.Type = JSON
 			}
-			var c parseContext
-			c.value = res
-			fillIndex(json, &c)
-			return i, c.value, true
+			var tmp parseContext
+			tmp.value = res
+			fillIndex(json, &tmp)
+			return i, tmp.value, true
 		}
 		if json[i] <= ' ' {
 			continue
