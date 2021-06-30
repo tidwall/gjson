@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -2085,4 +2086,37 @@ func TestBoolConvertQuery(t *testing.T) {
 	falses := Get(json, `vals.#(b==~false)#.a`).Raw
 	assert(t, trues == "[1,2,6,7,8]")
 	assert(t, falses == "[3,4,5,9,10,11]")
+}
+
+func TestModifierDoubleQuotes(t *testing.T) {
+	josn := `{
+		"data": [
+		  {
+			"name": "Product P4",
+			"productId": "1bb3",
+			"vendorId": "10de"
+		  },
+		  {
+			"name": "Product P4",
+			"productId": "1cc3",
+			"vendorId": "20de"
+		  },
+		  {
+			"name": "Product P4",
+			"productId": "1dd3",
+			"vendorId": "30de"
+		  }
+		]
+	  }`
+	AddModifier("string", func(josn, arg string) string {
+		return strconv.Quote(josn)
+	})
+
+	res := Get(josn, "data.#.{name,value:{productId,vendorId}.@string.@ugly}")
+
+	assert(t, res.Raw == `[`+
+		`{"name":"Product P4","value":"{\"productId\":\"1bb3\",\"vendorId\":\"10de\"}"},`+
+		`{"name":"Product P4","value":"{\"productId\":\"1cc3\",\"vendorId\":\"20de\"}"},`+
+		`{"name":"Product P4","value":"{\"productId\":\"1dd3\",\"vendorId\":\"30de\"}"}`+
+		`]`)
 }
