@@ -64,6 +64,8 @@ type Result struct {
 	Num float64
 	// Index of raw value in original json, zero means index unknown
 	Index int
+	// ArrayIndex is the Index of each returned element in the original json
+	ArrayIndex []int
 }
 
 // String returns a string representation of the value.
@@ -1476,6 +1478,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 							c.pipe = right
 							c.piped = true
 						}
+						var arrayIndex = make([]int, 0, 64)
 						var jsons = make([]byte, 0, 64)
 						jsons = append(jsons, '[')
 						for j, k := 0, 0; j < len(alog); j++ {
@@ -1490,6 +1493,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 							}
 							if idx < len(c.json) && c.json[idx] != ']' {
 								_, res, ok := parseAny(c.json, idx, true)
+								parentIndex := res.Index
 								if ok {
 									res := res.Get(rp.alogkey)
 									if res.Exists() {
@@ -1501,6 +1505,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 											raw = res.String()
 										}
 										jsons = append(jsons, []byte(raw)...)
+										arrayIndex = append(arrayIndex, res.Index+parentIndex)
 										k++
 									}
 								}
@@ -1509,6 +1514,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						jsons = append(jsons, ']')
 						c.value.Type = JSON
 						c.value.Raw = string(jsons)
+						c.value.ArrayIndex = arrayIndex
 						return i + 1, true
 					}
 					if rp.alogok {
@@ -2046,7 +2052,10 @@ func parseAny(json string, i int, hit bool) (int, Result, bool) {
 				res.Raw = val
 				res.Type = JSON
 			}
-			return i, res, true
+			var c parseContext
+			c.value = res
+			fillIndex(json, &c)
+			return i, c.value, true
 		}
 		if json[i] <= ' ' {
 			continue

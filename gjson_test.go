@@ -859,9 +859,9 @@ func TestIssue20(t *testing.T) {
 }
 
 func TestIssue21(t *testing.T) {
-	json := `{ "Level1Field1":3, 
-	           "Level1Field4":4, 
-			   "Level1Field2":{ "Level2Field1":[ "value1", "value2" ], 
+	json := `{ "Level1Field1":3,
+	           "Level1Field4":4,
+			   "Level1Field2":{ "Level2Field1":[ "value1", "value2" ],
 			   "Level2Field2":{ "Level3Field1":[ { "key1":"value1" } ] } } }`
 	paths := []string{"Level1Field1", "Level1Field2.Level2Field1",
 		"Level1Field2.Level2Field2.Level3Field1", "Level1Field4"}
@@ -922,7 +922,7 @@ var complicatedJSON = `
 	"nestedTagged": {
 		"Green": "Green",
 		"Map": {
-			"this": "that", 
+			"this": "that",
 			"and": "the other thing"
 		},
 		"Ints": {
@@ -1492,7 +1492,7 @@ func TestDeepSelectors(t *testing.T) {
 					}
 				},
 				{
-					"first": "Roger", "last": "Craig", 
+					"first": "Roger", "last": "Craig",
 					"extra": [40,50,60],
 					"details": {
 						"city": "Phoenix",
@@ -2119,4 +2119,51 @@ func TestModifierDoubleQuotes(t *testing.T) {
 		`{"name":"Product P4","value":"{\"productId\":\"1cc3\",\"vendorId\":\"20de\"}"},`+
 		`{"name":"Product P4","value":"{\"productId\":\"1dd3\",\"vendorId\":\"30de\"}"}`+
 		`]`)
+
+}
+
+func TestArrayIndex(t *testing.T) {
+	json := `{
+		"vals": [
+			[
+				2,
+				2,
+				{
+					"wut",
+					"yup"
+				}
+			],
+			[
+				4,
+				5,
+				6
+			]
+		]
+	}`
+	r := Get(json, `vals.#.2`)
+	fmt.Println(r.ArrayIndex)
+	fmt.Println(string(json[37]))
+
+	all := Get(json, `@this`)
+	all.ForEach(func(_, value Result) bool {
+		println(value.Raw, "index", value.Index)
+		println(string(json[value.Index : value.Index+len(value.Raw)]))
+		if value.IsArray() {
+			value.ForEach(func(_, v Result) bool {
+				println(v.Raw, "index", v.Index)
+				parentIndex := value.Index + v.Index
+				println(string(json[parentIndex : parentIndex+len(v.Raw)]))
+
+				if v.IsArray() {
+					v.ForEach(func(_, sv Result) bool {
+						println(sv.Raw, "index", sv.Index+parentIndex)
+						println(string(json[sv.Index+parentIndex : sv.Index+parentIndex+len(sv.Raw)]))
+						return true
+					})
+				}
+				return true
+			})
+		}
+		return true // keep iterating
+	})
 }
