@@ -1291,10 +1291,10 @@ func TestArrayValues(t *testing.T) {
 	}
 	expect := strings.Join([]string{
 		`gjson.Result{Type:3, Raw:"\"PERSON1\"", Str:"PERSON1", Num:0, ` +
-			`Index:0}`,
+			`Index:0, HashtagIndexes:[]int(nil)}`,
 		`gjson.Result{Type:3, Raw:"\"PERSON2\"", Str:"PERSON2", Num:0, ` +
-			`Index:0}`,
-		`gjson.Result{Type:2, Raw:"0", Str:"", Num:0, Index:0}`,
+			`Index:0, HashtagIndexes:[]int(nil)}`,
+		`gjson.Result{Type:2, Raw:"0", Str:"", Num:0, Index:0, HashtagIndexes:[]int(nil)}`,
 	}, "\n")
 	if output != expect {
 		t.Fatalf("expected '%v', got '%v'", expect, output)
