@@ -859,9 +859,9 @@ func TestIssue20(t *testing.T) {
 }
 
 func TestIssue21(t *testing.T) {
-	json := `{ "Level1Field1":3, 
-	           "Level1Field4":4, 
-			   "Level1Field2":{ "Level2Field1":[ "value1", "value2" ], 
+	json := `{ "Level1Field1":3,
+	           "Level1Field4":4,
+			   "Level1Field2":{ "Level2Field1":[ "value1", "value2" ],
 			   "Level2Field2":{ "Level3Field1":[ { "key1":"value1" } ] } } }`
 	paths := []string{"Level1Field1", "Level1Field2.Level2Field1",
 		"Level1Field2.Level2Field2.Level3Field1", "Level1Field4"}
@@ -922,7 +922,7 @@ var complicatedJSON = `
 	"nestedTagged": {
 		"Green": "Green",
 		"Map": {
-			"this": "that", 
+			"this": "that",
 			"and": "the other thing"
 		},
 		"Ints": {
@@ -1291,10 +1291,10 @@ func TestArrayValues(t *testing.T) {
 	}
 	expect := strings.Join([]string{
 		`gjson.Result{Type:3, Raw:"\"PERSON1\"", Str:"PERSON1", Num:0, ` +
-			`Index:0, HashtagIndexes:[]int(nil)}`,
+			`Index:0, Indexes:[]int(nil)}`,
 		`gjson.Result{Type:3, Raw:"\"PERSON2\"", Str:"PERSON2", Num:0, ` +
-			`Index:0, HashtagIndexes:[]int(nil)}`,
-		`gjson.Result{Type:2, Raw:"0", Str:"", Num:0, Index:0, HashtagIndexes:[]int(nil)}`,
+			`Index:0, Indexes:[]int(nil)}`,
+		`gjson.Result{Type:2, Raw:"0", Str:"", Num:0, Index:0, Indexes:[]int(nil)}`,
 	}, "\n")
 	if output != expect {
 		t.Fatalf("expected '%v', got '%v'", expect, output)
@@ -1492,7 +1492,7 @@ func TestDeepSelectors(t *testing.T) {
 					}
 				},
 				{
-					"first": "Roger", "last": "Craig", 
+					"first": "Roger", "last": "Craig",
 					"extra": [40,50,60],
 					"details": {
 						"city": "Phoenix",
@@ -2122,7 +2122,7 @@ func TestModifierDoubleQuotes(t *testing.T) {
 
 }
 
-func TestHashtagIndexes(t *testing.T) {
+func TestIndexes(t *testing.T) {
 	var exampleJSON = `{
 		"vals": [
 			[1,66,{test: 3}],
@@ -2150,14 +2150,18 @@ func TestHashtagIndexes(t *testing.T) {
 			`objectArray.#(age>43)#.first`,
 			[]string{`"`, `"`},
 		},
+		{
+			`objectArray.@reverse.#.first`,
+			nil,
+		},
 	}
 
 	for _, tc := range testCases {
 		r := Get(exampleJSON, tc.path)
 
-		assert(t, len(r.HashtagIndexes) == len(tc.expected))
+		assert(t, len(r.Indexes) == len(tc.expected))
 
-		for i, a := range r.HashtagIndexes {
+		for i, a := range r.Indexes {
 			assert(t, string(exampleJSON[a]) == tc.expected[i])
 		}
 	}
@@ -2178,10 +2182,10 @@ func TestHashtagIndexesMatchesRaw(t *testing.T) {
 				if v.IsArray() {
 					v.ForEach(func(_, sv Result) bool {
 						if sv.IsObject() {
-							assert(t, string(exampleJSON[r.HashtagIndexes[0]:r.HashtagIndexes[0]+len(sv.Raw)]) == sv.Raw)
+							assert(t, string(exampleJSON[r.Indexes[0]:r.Indexes[0]+len(sv.Raw)]) == sv.Raw)
 						}
 						if sv.IsArray() {
-							assert(t, string(exampleJSON[r.HashtagIndexes[1]:r.HashtagIndexes[1]+len(sv.Raw)]) == sv.Raw)
+							assert(t, string(exampleJSON[r.Indexes[1]:r.Indexes[1]+len(sv.Raw)]) == sv.Raw)
 						}
 						return true
 					})
