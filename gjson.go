@@ -281,7 +281,8 @@ func (t Result) ForEach(iterator func(key, value Result) bool) {
 	}
 }
 
-// Map returns back an map of values. The result should be a JSON array.
+// Map returns back a map of values. The result should be a JSON object.
+// If the result is not a JSON object, the return value will be an empty map.
 func (t Result) Map() map[string]Result {
 	if t.Type != JSON {
 		return map[string]Result{}
