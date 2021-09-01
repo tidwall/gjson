@@ -2167,32 +2167,20 @@ func TestIndexes(t *testing.T) {
 	}
 }
 
-func TestHashtagIndexesMatchesRaw(t *testing.T) {
+func TestIndexesMatchesRaw(t *testing.T) {
 	var exampleJSON = `{
 		"objectArray":[
+			{"first": "Jason", "age": 41},
 			{"first": "Dale", "age": 44},
 			{"first": "Roger", "age": 68},
+			{"first": "Mandy", "age": 32}
 		]
 	}`
 	r := Get(exampleJSON, `objectArray.#(age>43)#.first`)
-	all := Get(exampleJSON, `@this`)
-	all.ForEach(func(_, value Result) bool {
-		if value.IsArray() {
-			value.ForEach(func(_, v Result) bool {
-				if v.IsArray() {
-					v.ForEach(func(_, sv Result) bool {
-						if sv.IsObject() {
-							assert(t, string(exampleJSON[r.Indexes[0]:r.Indexes[0]+len(sv.Raw)]) == sv.Raw)
-						}
-						if sv.IsArray() {
-							assert(t, string(exampleJSON[r.Indexes[1]:r.Indexes[1]+len(sv.Raw)]) == sv.Raw)
-						}
-						return true
-					})
-				}
-				return true
-			})
-		}
-		return true
-	})
+	assert(t, len(r.Indexes) == 2)
+	assert(t, Parse(exampleJSON[r.Indexes[0]:]).String() == "Dale")
+	assert(t, Parse(exampleJSON[r.Indexes[1]:]).String() == "Roger")
+	r = Get(exampleJSON, `objectArray.#(age>43)#`)
+	assert(t, Parse(exampleJSON[r.Indexes[0]:]).Get("first").String() == "Dale")
+	assert(t, Parse(exampleJSON[r.Indexes[1]:]).Get("first").String() == "Roger")
 }
