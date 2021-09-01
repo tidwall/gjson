@@ -64,7 +64,7 @@ type Result struct {
 	Num float64
 	// Index of raw value in original json, zero means index unknown
 	Index int
-	// Indexes contains the Indexes of the elements returned by a query containing the '#' character
+	// Indexes of all the elements that match on a `#(...)#` query.
 	Indexes []int
 }
 
@@ -1511,7 +1511,8 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 											raw = res.String()
 										}
 										jsons = append(jsons, []byte(raw)...)
-										indexes = append(indexes, res.Index+parentIndex)
+										indexes = append(indexes,
+											res.Index+parentIndex)
 										k++
 									}
 								}
@@ -2472,7 +2473,8 @@ func parseInt(s string) (n int64, ok bool) {
 // safeInt validates a given JSON number
 // ensures it lies within the minimum and maximum representable JSON numbers
 func safeInt(f float64) (n int64, ok bool) {
-	//  https://tc39.es/ecma262/#sec-number.min_safe_integer || https://tc39.es/ecma262/#sec-number.max_safe_integer
+	// https://tc39.es/ecma262/#sec-number.min_safe_integer
+	// https://tc39.es/ecma262/#sec-number.max_safe_integer
 	if f < -9007199254740991 || f > 9007199254740991 {
 		return 0, false
 	}
