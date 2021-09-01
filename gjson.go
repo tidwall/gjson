@@ -64,6 +64,8 @@ type Result struct {
 	Num float64
 	// Index of raw value in original json, zero means index unknown
 	Index int
+	// Indexes contains the Indexes of the elements returned by a query containing the '#' character
+	Indexes []int
 }
 
 // String returns a string representation of the value.
@@ -1261,6 +1263,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 	var alog []int
 	var partidx int
 	var multires []byte
+	var queryIndexes []int
 	rp := parseArrayPath(path)
 	if !rp.arrch {
 		n, ok := parseUint(rp.part)
@@ -1281,6 +1284,10 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				multires = append(multires, '[')
 			}
 		}
+		var tmp parseContext
+		tmp.value = qval
+		fillIndex(c.json, &tmp)
+		parentIndex := tmp.value.Index
 		var res Result
 		if qval.Type == JSON {
 			res = qval.Get(rp.query.path)
@@ -1312,6 +1319,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						multires = append(multires, ',')
 					}
 					multires = append(multires, raw...)
+					queryIndexes = append(queryIndexes, res.Index+parentIndex)
 				}
 			} else {
 				c.value = res
@@ -1476,6 +1484,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 							c.pipe = right
 							c.piped = true
 						}
+						var indexes = make([]int, 0, 64)
 						var jsons = make([]byte, 0, 64)
 						jsons = append(jsons, '[')
 						for j, k := 0, 0; j < len(alog); j++ {
@@ -1490,6 +1499,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 							}
 							if idx < len(c.json) && c.json[idx] != ']' {
 								_, res, ok := parseAny(c.json, idx, true)
+								parentIndex := res.Index
 								if ok {
 									res := res.Get(rp.alogkey)
 									if res.Exists() {
@@ -1501,6 +1511,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 											raw = res.String()
 										}
 										jsons = append(jsons, []byte(raw)...)
+										indexes = append(indexes, res.Index+parentIndex)
 										k++
 									}
 								}
@@ -1509,6 +1520,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 						jsons = append(jsons, ']')
 						c.value.Type = JSON
 						c.value.Raw = string(jsons)
+						c.value.Indexes = indexes
 						return i + 1, true
 					}
 					if rp.alogok {
@@ -1524,8 +1536,9 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 				if !c.value.Exists() {
 					if len(multires) > 0 {
 						c.value = Result{
-							Raw:  string(append(multires, ']')),
-							Type: JSON,
+							Raw:     string(append(multires, ']')),
+							Type:    JSON,
+							Indexes: queryIndexes,
 						}
 					} else if rp.query.all {
 						c.value = Result{
@@ -1806,6 +1819,7 @@ func Get(json, path string) Result {
 					if len(path) > 0 && (path[0] == '|' || path[0] == '.') {
 						res := Get(rjson, path[1:])
 						res.Index = 0
+						res.Indexes = nil
 						return res
 					}
 					return Parse(rjson)
@@ -2046,7 +2060,10 @@ func parseAny(json string, i int, hit bool) (int, Result, bool) {
 				res.Raw = val
 				res.Type = JSON
 			}
-			return i, res, true
+			var tmp parseContext
+			tmp.value = res
+			fillIndex(json, &tmp)
+			return i, tmp.value, true
 		}
 		if json[i] <= ' ' {
 			continue
