@@ -128,7 +128,7 @@ result.Str            // holds the string
 result.Num            // holds the float64 number
 result.Raw            // holds the raw json
 result.Index          // index of raw value in original json, zero means index unknown
-result.Indexes        // Indexes of all the elements that match on a `#(...)#` query
+result.Indexes        // indexes of all the elements that match on a `#(...)#` query
 
 ```
 
