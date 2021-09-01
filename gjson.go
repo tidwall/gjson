@@ -64,7 +64,8 @@ type Result struct {
 	Num float64
 	// Index of raw value in original json, zero means index unknown
 	Index int
-	// Indexes of all the elements that match on a `#(...)#` query.
+	// Indexes of all the elements that match on a path containing the '#'
+	// query character.
 	Indexes []int
 }
 
