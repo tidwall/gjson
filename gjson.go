@@ -3,6 +3,8 @@ package gjson
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -464,6 +466,20 @@ func Parse(json string) Result {
 // If working with bytes, this method preferred over Parse(string(data))
 func ParseBytes(json []byte) Result {
 	return Parse(string(json))
+}
+
+// ParseBytes parses the json from HTTP URL and returns a result.
+func ParseUrl(url string) (ret Result, err error) {
+	res, err := http.Get(url)
+	if err != nil {
+		return
+	}
+	bs, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return
+	}
+	ret = ParseBytes(bs)
+	return
 }
 
 func squash(json string) string {
@@ -1921,6 +1937,12 @@ func Get(json, path string) Result {
 // If working with bytes, this method preferred over Get(string(data), path)
 func GetBytes(json []byte, path string) Result {
 	return getBytes(json, path)
+}
+
+// Unmarshal parses the JSON-encoded data and stores the result
+// in the value pointed to by v
+func (t Result) Unmarshal(v interface{}) error {
+	return json.Unmarshal([]byte(t.Raw), v)
 }
 
 // runeit returns the rune from the the \uXXXX
