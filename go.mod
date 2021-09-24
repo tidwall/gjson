@@ -1,4 +1,4 @@
-module github.com/tidwall/gjson
+module github.com/gwuhaolin/gjson
 
 go 1.12
 
