@@ -2024,6 +2024,11 @@ func TestVariousFuzz(t *testing.T) {
 	testJSON = `[#.@pretty.@join:{""[]""preserve"3,"][{]]]`
 	Get(testJSON, testJSON)
 
+	// Issue #237
+	testJSON1 := `["*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,,,,,,"]`
+	testJSON2 := `#[%"*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,,,,,,""*,*"]`
+	Get(testJSON1, testJSON2)
+
 }
 
 func TestSubpathsWithMultipaths(t *testing.T) {
