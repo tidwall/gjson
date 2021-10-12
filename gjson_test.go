@@ -2189,3 +2189,21 @@ func TestIndexesMatchesRaw(t *testing.T) {
 	assert(t, Parse(exampleJSON[r.Indexes[0]:]).Get("first").String() == "Dale")
 	assert(t, Parse(exampleJSON[r.Indexes[1]:]).Get("first").String() == "Roger")
 }
+
+func TestIssue240(t *testing.T) {
+	nonArrayData := `{"jsonrpc":"2.0","method":"subscription","params":
+		{"channel":"funny_channel","data":
+			{"name":"Jason","company":"good_company","number":12345}
+		}
+	}`
+	parsed := Parse(nonArrayData)
+	assert(t, len(parsed.Get("params.data").Array()) == 1)
+
+	arrayData := `{"jsonrpc":"2.0","method":"subscription","params":
+		{"channel":"funny_channel","data":[
+			{"name":"Jason","company":"good_company","number":12345}
+		]}
+	}`
+	parsed = Parse(arrayData)
+	assert(t, len(parsed.Get("params.data").Array()) == 1)
+}

@@ -189,14 +189,15 @@ func (t Result) Time() time.Time {
 }
 
 // Array returns back an array of values.
-// If the result represents a non-existent value, then an empty array will be
-// returned. If the result is not a JSON array, the return value will be an
+// If the result represents a null value or is non-existent, then an empty
+// array will be returned.
+// If the result is not a JSON array, the return value will be an
 // array containing one result.
 func (t Result) Array() []Result {
 	if t.Type == Null {
 		return []Result{}
 	}
-	if t.Type != JSON {
+	if !t.IsArray() {
 		return []Result{t}
 	}
 	r := t.arrayOrMap('[', false)
