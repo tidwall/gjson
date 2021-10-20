@@ -2565,6 +2565,8 @@ var modifiers = map[string]func(json, arg string) string{
 	"flatten": modFlatten,
 	"join":    modJoin,
 	"valid":   modValid,
+	"keys":    modKeys,
+	"values":  modValues,
 }
 
 // AddModifier binds a custom modifier command to the GJSON syntax.
@@ -2719,6 +2721,58 @@ func modFlatten(json, arg string) string {
 	})
 	out = append(out, ']')
 	return bytesString(out)
+}
+
+// @keys extracts the keys from an object.
+//  {"first":"Tom","last":"Smith"} -> ["first","last"]
+func modKeys(json, arg string) string {
+	v := Parse(json)
+	if !v.Exists() {
+		return "[]"
+	}
+	obj := v.IsObject()
+	var out strings.Builder
+	out.WriteByte('[')
+	var i int
+	v.ForEach(func(key, _ Result) bool {
+		if i > 0 {
+			out.WriteByte(',')
+		}
+		if obj {
+			out.WriteString(key.Raw)
+		} else {
+			out.WriteString("null")
+		}
+		i++
+		return true
+	})
+	out.WriteByte(']')
+	return out.String()
+}
+
+// @values extracts the values from an object.
+//   {"first":"Tom","last":"Smith"} -> ["Tom","Smith"]
+func modValues(json, arg string) string {
+	v := Parse(json)
+	if !v.Exists() {
+		return "[]"
+	}
+	if v.IsArray() {
+		return json
+	}
+	var out strings.Builder
+	out.WriteByte('[')
+	var i int
+	v.ForEach(func(_, value Result) bool {
+		if i > 0 {
+			out.WriteByte(',')
+		}
+		out.WriteString(value.Raw)
+		i++
+		return true
+	})
+	out.WriteByte(']')
+	return out.String()
 }
 
 // @join multiple objects into a single object.

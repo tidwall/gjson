@@ -2207,3 +2207,31 @@ func TestIssue240(t *testing.T) {
 	parsed = Parse(arrayData)
 	assert(t, len(parsed.Get("params.data").Array()) == 1)
 }
+
+func TestKeysValuesModifier(t *testing.T) {
+	var json = `{
+		"1300014": {
+		  "code": "1300014",
+		  "price": 59.18,
+		  "symbol": "300014",
+		  "update": "2020/04/15 15:59:54",
+		},
+		"1300015": {
+		  "code": "1300015",
+		  "price": 43.31,
+		  "symbol": "300015",
+		  "update": "2020/04/15 15:59:54",
+		}
+	  }`
+	assert(t, Get(json, `@keys`).String() == `["1300014","1300015"]`)
+	assert(t, Get(``, `@keys`).String() == `[]`)
+	assert(t, Get(`"hello"`, `@keys`).String() == `[null]`)
+	assert(t, Get(`[]`, `@keys`).String() == `[]`)
+	assert(t, Get(`[1,2,3]`, `@keys`).String() == `[null,null,null]`)
+
+	assert(t, Get(json, `@values.#.code`).String() == `["1300014","1300015"]`)
+	assert(t, Get(``, `@values`).String() == `[]`)
+	assert(t, Get(`"hello"`, `@values`).String() == `["hello"]`)
+	assert(t, Get(`[]`, `@values`).String() == `[]`)
+	assert(t, Get(`[1,2,3]`, `@values`).String() == `[1,2,3]`)
+}
