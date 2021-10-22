@@ -2245,20 +2245,16 @@ func TestNaNInf(t *testing.T) {
 		math.Inf(-1), math.Inf(+1), math.NaN(), math.NaN(), math.NaN(),
 		math.Copysign(0, -1), 0}
 
-	// assert(t, int(Get(json, `#`).Int()) == len(raws))
+	assert(t, int(Get(json, `#`).Int()) == len(raws))
 	for i := 0; i < len(raws); i++ {
 		r := Get(json, fmt.Sprintf("%d", i))
-		// fmt.Printf("%s %s\n", r.Raw, raws[i])
 		assert(t, r.Raw == raws[i])
-		// fmt.Printf("%f %f\n", r.Num, nums[i])
 		assert(t, r.Num == nums[i] || (math.IsNaN(r.Num) && math.IsNaN(nums[i])))
 	}
-	// println("------------")
+
 	var i int
 	Parse(json).ForEach(func(_, r Result) bool {
-		// fmt.Printf("%s %s\n", r.Raw, raws[i])
 		assert(t, r.Raw == raws[i])
-		// fmt.Printf("%f %f\n", r.Num, nums[i])
 		assert(t, r.Num == nums[i] || (math.IsNaN(r.Num) && math.IsNaN(nums[i])))
 		i++
 		return true
