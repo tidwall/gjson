@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -2234,4 +2235,33 @@ func TestKeysValuesModifier(t *testing.T) {
 	assert(t, Get(`"hello"`, `@values`).String() == `["hello"]`)
 	assert(t, Get(`[]`, `@values`).String() == `[]`)
 	assert(t, Get(`[1,2,3]`, `@values`).String() == `[1,2,3]`)
+}
+
+func TestNaNInf(t *testing.T) {
+	json := `[+Inf,-Inf,Inf,iNF,-iNF,+iNF,NaN,nan,nAn,-0,+0]`
+	raws := []string{"+Inf", "-Inf", "Inf", "iNF", "-iNF", "+iNF", "NaN", "nan",
+		"nAn", "-0", "+0"}
+	nums := []float64{math.Inf(+1), math.Inf(-1), math.Inf(0), math.Inf(0),
+		math.Inf(-1), math.Inf(+1), math.NaN(), math.NaN(), math.NaN(),
+		math.Copysign(0, -1), 0}
+
+	// assert(t, int(Get(json, `#`).Int()) == len(raws))
+	for i := 0; i < len(raws); i++ {
+		r := Get(json, fmt.Sprintf("%d", i))
+		// fmt.Printf("%s %s\n", r.Raw, raws[i])
+		assert(t, r.Raw == raws[i])
+		// fmt.Printf("%f %f\n", r.Num, nums[i])
+		assert(t, r.Num == nums[i] || (math.IsNaN(r.Num) && math.IsNaN(nums[i])))
+	}
+	// println("------------")
+	var i int
+	Parse(json).ForEach(func(_, r Result) bool {
+		// fmt.Printf("%s %s\n", r.Raw, raws[i])
+		assert(t, r.Raw == raws[i])
+		// fmt.Printf("%f %f\n", r.Num, nums[i])
+		assert(t, r.Num == nums[i] || (math.IsNaN(r.Num) && math.IsNaN(nums[i])))
+		i++
+		return true
+	})
+
 }
