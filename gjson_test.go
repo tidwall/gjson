@@ -2261,3 +2261,15 @@ func TestNaNInf(t *testing.T) {
 	})
 
 }
+
+func TestEmptyValueQuery(t *testing.T) {
+	// issue: https://github.com/tidwall/gjson/issues/246
+	assert(t, Get(
+		`["ig","","tw","fb","tw","ig","tw"]`,
+		`#(!="")#`).Raw ==
+		`["ig","tw","fb","tw","ig","tw"]`)
+	assert(t, Get(
+		`["ig","","tw","fb","tw","ig","tw"]`,
+		`#(!=)#`).Raw ==
+		`["ig","tw","fb","tw","ig","tw"]`)
+}

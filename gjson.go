@@ -761,7 +761,7 @@ func parseArrayPath(path string) (r arrayPathResult) {
 						// bad query, end now
 						break
 					}
-					if len(value) > 2 && value[0] == '"' &&
+					if len(value) >= 2 && value[0] == '"' &&
 						value[len(value)-1] == '"' {
 						value = value[1 : len(value)-1]
 						if vesc {
