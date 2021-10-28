@@ -717,10 +717,6 @@ var exampleJSON = `{
 	}
 }`
 
-func TestNewParse(t *testing.T) {
-	//fmt.Printf("%v\n", parse2(exampleJSON, "widget").String())
-}
-
 func TestUnmarshalMap(t *testing.T) {
 	var m1 = Parse(exampleJSON).Value().(map[string]interface{})
 	var m2 map[string]interface{}
@@ -2250,16 +2246,28 @@ func TestNaNInf(t *testing.T) {
 		r := Get(json, fmt.Sprintf("%d", i))
 		assert(t, r.Raw == raws[i])
 		assert(t, r.Num == nums[i] || (math.IsNaN(r.Num) && math.IsNaN(nums[i])))
+		assert(t, r.Type == Number)
 	}
 
 	var i int
 	Parse(json).ForEach(func(_, r Result) bool {
 		assert(t, r.Raw == raws[i])
 		assert(t, r.Num == nums[i] || (math.IsNaN(r.Num) && math.IsNaN(nums[i])))
+		assert(t, r.Type == Number)
 		i++
 		return true
 	})
 
+	// Parse should also return valid numbers
+	assert(t, math.IsNaN(Parse("nan").Float()))
+	assert(t, math.IsNaN(Parse("NaN").Float()))
+	assert(t, math.IsNaN(Parse(" NaN").Float()))
+	assert(t, math.IsInf(Parse("+inf").Float(), +1))
+	assert(t, math.IsInf(Parse("-inf").Float(), -1))
+	assert(t, math.IsInf(Parse("+INF").Float(), +1))
+	assert(t, math.IsInf(Parse("-INF").Float(), -1))
+	assert(t, math.IsInf(Parse(" +INF").Float(), +1))
+	assert(t, math.IsInf(Parse(" -INF").Float(), -1))
 }
 
 func TestEmptyValueQuery(t *testing.T) {
@@ -2272,4 +2280,15 @@ func TestEmptyValueQuery(t *testing.T) {
 		`["ig","","tw","fb","tw","ig","tw"]`,
 		`#(!=)#`).Raw ==
 		`["ig","tw","fb","tw","ig","tw"]`)
+}
+
+func TestParseIndex(t *testing.T) {
+	assert(t, Parse(`{}`).Index == 0)
+	assert(t, Parse(` {}`).Index == 1)
+	assert(t, Parse(` []`).Index == 1)
+	assert(t, Parse(` true`).Index == 1)
+	assert(t, Parse(` false`).Index == 1)
+	assert(t, Parse(` null`).Index == 1)
+	assert(t, Parse(` +inf`).Index == 1)
+	assert(t, Parse(` -inf`).Index == 1)
 }

@@ -426,7 +426,8 @@ end:
 // use the Valid function first.
 func Parse(json string) Result {
 	var value Result
-	for i := 0; i < len(json); i++ {
+	i := 0
+	for ; i < len(json); i++ {
 		if json[i] == '{' || json[i] == '[' {
 			value.Type = JSON
 			value.Raw = json[i:] // just take the entire raw
@@ -436,16 +437,20 @@ func Parse(json string) Result {
 			continue
 		}
 		switch json[i] {
-		default:
-			if (json[i] >= '0' && json[i] <= '9') || json[i] == '-' {
+		case '+', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			'i', 'I', 'N':
+			value.Type = Number
+			value.Raw, value.Num = tonum(json[i:])
+		case 'n':
+			if i+1 < len(json) && json[i+1] != 'u' {
+				// nan
 				value.Type = Number
 				value.Raw, value.Num = tonum(json[i:])
 			} else {
-				return Result{}
+				// null
+				value.Type = Null
+				value.Raw = tolit(json[i:])
 			}
-		case 'n':
-			value.Type = Null
-			value.Raw = tolit(json[i:])
 		case 't':
 			value.Type = True
 			value.Raw = tolit(json[i:])
@@ -455,8 +460,13 @@ func Parse(json string) Result {
 		case '"':
 			value.Type = String
 			value.Raw, value.Str = tostr(json[i:])
+		default:
+			return Result{}
 		}
 		break
+	}
+	if value.Exists() {
+		value.Index = i
 	}
 	return value
 }
@@ -531,20 +541,12 @@ func tonum(json string) (raw string, num float64) {
 				return
 			}
 			// could be a '+' or '-'. let's assume so.
-			continue
+		} else if json[i] == ']' || json[i] == '}' {
+			// break on ']' or '}'
+			raw = json[:i]
+			num, _ = strconv.ParseFloat(raw, 64)
+			return
 		}
-		if json[i] < ']' {
-			// probably a valid number
-			continue
-		}
-		if json[i] == 'e' || json[i] == 'E' {
-			// allow for exponential numbers
-			continue
-		}
-		// likely a ']' or '}'
-		raw = json[:i]
-		num, _ = strconv.ParseFloat(raw, 64)
-		return
 	}
 	raw = json
 	num, _ = strconv.ParseFloat(raw, 64)
@@ -2970,4 +2972,32 @@ func stringBytes(s string) []byte {
 
 func bytesString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
+}
+
+func GetPath(r Result, json string) (string, bool) {
+	if len(r.Raw) == 0 || len(json) == 0 {
+		return "", false
+	}
+	p := uintptr((*(*stringHeader)(unsafe.Pointer(&(r.Raw)))).data)
+	s := uintptr((*(*stringHeader)(unsafe.Pointer(&(json)))).data)
+	e := s + uintptr(len(json))
+	if p < s || p >= e {
+		return "", false
+	}
+	i := int(p - s)
+	_ = i
+	// for ; i >= 0; i-- {
+	// 	if json[i] <= ' ' {
+	// 	} else if json[i] == ':' {
+	// 		// inside of an object, read the key string
+	// 	} else if json[i] == ',' {
+	// 		// array-value
+	// 	} else if json[i] == '[' {
+	// 		// array-value (end or array)
+	// 	} else {
+
+	// 	}
+	// }
+	// return "", false
+	return "", false
 }
