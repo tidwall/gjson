@@ -108,7 +108,7 @@ func TestEscapePath(t *testing.T) {
 }
 
 // this json block is poorly formed on purpose.
-var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
+var basicJSON = `  {"age":100, "name":{"here":"B\\\"R"},
 	"noop":{"what is a wren?":"a bird"},
 	"happy":true,"immortal":false,
 	"items":[1,2,3,{"tags":[1,2,3],"points":[[1,2],[3,4]]},4,5,6,7],
@@ -141,8 +141,66 @@ var basicJSON = `{"age":100, "name":{"here":"B\\\"R"},
 			}
     	]
 	},
-	"lastly":{"yay":"final"}
+	"lastly":{"end...ing":"soon","yay":"final"}
 }`
+
+func TestPath(t *testing.T) {
+	json := basicJSON
+	r := Get(json, "@this")
+	path := r.Path(json)
+	if path != "@this" {
+		t.FailNow()
+	}
+
+	r = Parse(json)
+	path = r.Path(json)
+	if path != "@this" {
+		t.FailNow()
+	}
+
+	obj := Parse(json)
+	obj.ForEach(func(key, val Result) bool {
+		kp := key.Path(json)
+		assert(t, kp == "")
+		vp := val.Path(json)
+		if vp == "name" {
+			// there are two "name" keys
+			return true
+		}
+		val2 := obj.Get(vp)
+		assert(t, val2.Raw == val.Raw)
+		return true
+	})
+	arr := obj.Get("loggy.programmers")
+	arr.ForEach(func(_, val Result) bool {
+		vp := val.Path(json)
+		val2 := Get(json, vp)
+		assert(t, val2.Raw == val.Raw)
+		return true
+	})
+	get := func(path string) {
+		r1 := Get(json, path)
+		path2 := r1.Path(json)
+		r2 := Get(json, path2)
+		assert(t, r1.Raw == r2.Raw)
+	}
+	get("age")
+	get("name")
+	get("name.here")
+	get("noop")
+	get("noop.what is a wren?")
+	get("arr.0")
+	get("arr.1")
+	get("arr.2")
+	get("arr.3")
+	get("arr.3.hello")
+	get("arr.4")
+	get("arr.5")
+	get("loggy.programmers.2.email")
+	get("lastly.end\\.\\.\\.ing")
+	get("lastly.yay")
+
+}
 
 func TestTimeResult(t *testing.T) {
 	assert(t, Get(basicJSON, "created").String() ==
@@ -1288,10 +1346,10 @@ func TestArrayValues(t *testing.T) {
 	}
 	expect := strings.Join([]string{
 		`gjson.Result{Type:3, Raw:"\"PERSON1\"", Str:"PERSON1", Num:0, ` +
-			`Index:0, Indexes:[]int(nil)}`,
+			`Index:11, Indexes:[]int(nil)}`,
 		`gjson.Result{Type:3, Raw:"\"PERSON2\"", Str:"PERSON2", Num:0, ` +
-			`Index:0, Indexes:[]int(nil)}`,
-		`gjson.Result{Type:2, Raw:"0", Str:"", Num:0, Index:0, Indexes:[]int(nil)}`,
+			`Index:21, Indexes:[]int(nil)}`,
+		`gjson.Result{Type:2, Raw:"0", Str:"", Num:0, Index:31, Indexes:[]int(nil)}`,
 	}, "\n")
 	if output != expect {
 		t.Fatalf("expected '%v', got '%v'", expect, output)
@@ -2291,4 +2349,64 @@ func TestParseIndex(t *testing.T) {
 	assert(t, Parse(` null`).Index == 1)
 	assert(t, Parse(` +inf`).Index == 1)
 	assert(t, Parse(` -inf`).Index == 1)
+}
+
+func TestRevSquash(t *testing.T) {
+	assert(t, revSquash(` {}`) == `{}`)
+	assert(t, revSquash(` }`) == ` }`)
+	assert(t, revSquash(` [123]`) == `[123]`)
+	assert(t, revSquash(` ,123,123]`) == ` ,123,123]`)
+	assert(t, revSquash(` hello,[[true,false],[0,1,2,3,5],[123]]`) == `[[true,false],[0,1,2,3,5],[123]]`)
+	assert(t, revSquash(` "hello"`) == `"hello"`)
+	assert(t, revSquash(` "hel\\lo"`) == `"hel\\lo"`)
+	assert(t, revSquash(` "hel\\"lo"`) == `"lo"`)
+	assert(t, revSquash(` "hel\\\"lo"`) == `"hel\\\"lo"`)
+	assert(t, revSquash(`hel\\\"lo"`) == `hel\\\"lo"`)
+	assert(t, revSquash(`\"hel\\\"lo"`) == `\"hel\\\"lo"`)
+	assert(t, revSquash(`\\\"hel\\\"lo"`) == `\\\"hel\\\"lo"`)
+	assert(t, revSquash(`\\\\"hel\\\"lo"`) == `"hel\\\"lo"`)
+	assert(t, revSquash(`hello"`) == `hello"`)
+	json := `true,[0,1,"sadf\"asdf",{"hi":["hello","t\"\"u",{"a":"b"}]},9]`
+	assert(t, revSquash(json) == json[5:])
+	assert(t, revSquash(json[:len(json)-3]) == `{"hi":["hello","t\"\"u",{"a":"b"}]}`)
+	assert(t, revSquash(json[:len(json)-4]) == `["hello","t\"\"u",{"a":"b"}]`)
+	assert(t, revSquash(json[:len(json)-5]) == `{"a":"b"}`)
+	assert(t, revSquash(json[:len(json)-6]) == `"b"`)
+	assert(t, revSquash(json[:len(json)-10]) == `"a"`)
+	assert(t, revSquash(json[:len(json)-15]) == `"t\"\"u"`)
+	assert(t, revSquash(json[:len(json)-24]) == `"hello"`)
+	assert(t, revSquash(json[:len(json)-33]) == `"hi"`)
+	assert(t, revSquash(json[:len(json)-39]) == `"sadf\"asdf"`)
+}
+
+const readmeJSON = `
+{
+  "name": {"first": "Tom", "last": "Anderson"},
+  "age":37,
+  "children": ["Sara","Alex","Jack"],
+  "fav.movie": "Deer Hunter",
+  "friends": [
+    {"first": "Dale", "last": "Murphy", "age": 44, "nets": ["ig", "fb", "tw"]},
+    {"first": "Roger", "last": "Craig", "age": 68, "nets": ["fb", "tw"]},
+    {"first": "Jane", "last": "Murphy", "age": 47, "nets": ["ig", "tw"]}
+  ]
+}
+`
+
+func TestQueryGetPath(t *testing.T) {
+	assert(t, strings.Join(
+		Get(readmeJSON, "friends.#.first").Paths(readmeJSON), " ") ==
+		"friends.0.first friends.1.first friends.2.first")
+	assert(t, strings.Join(
+		Get(readmeJSON, "friends.#(last=Murphy)").Paths(readmeJSON), " ") ==
+		"")
+	assert(t, Get(readmeJSON, "friends.#(last=Murphy)").Path(readmeJSON) ==
+		"friends.0")
+	assert(t, strings.Join(
+		Get(readmeJSON, "friends.#(last=Murphy)#").Paths(readmeJSON), " ") ==
+		"friends.0 friends.2")
+	arr := Get(readmeJSON, "friends.#.first").Array()
+	for i := 0; i < len(arr); i++ {
+		assert(t, arr[i].Path(readmeJSON) == fmt.Sprintf("friends.%d.first", i))
+	}
 }

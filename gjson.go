@@ -249,6 +249,7 @@ func (t Result) ForEach(iterator func(key, value Result) bool) {
 	var str string
 	var vesc bool
 	var ok bool
+	var idx int
 	for ; i < len(json); i++ {
 		if keys {
 			if json[i] != '"' {
@@ -265,7 +266,7 @@ func (t Result) ForEach(iterator func(key, value Result) bool) {
 				key.Str = str[1 : len(str)-1]
 			}
 			key.Raw = str
-			key.Index = s
+			key.Index = s + t.Index
 		}
 		for ; i < len(json); i++ {
 			if json[i] <= ' ' || json[i] == ',' || json[i] == ':' {
@@ -278,10 +279,17 @@ func (t Result) ForEach(iterator func(key, value Result) bool) {
 		if !ok {
 			return
 		}
-		value.Index = s
+		if t.Indexes != nil {
+			if idx < len(t.Indexes) {
+				value.Index = t.Indexes[idx]
+			}
+		} else {
+			value.Index = s + t.Index
+		}
 		if !iterator(key, value) {
 			return
 		}
+		idx++
 	}
 }
 
@@ -298,7 +306,15 @@ func (t Result) Map() map[string]Result {
 // Get searches result for the specified path.
 // The result should be a JSON array or object.
 func (t Result) Get(path string) Result {
-	return Get(t.Raw, path)
+	r := Get(t.Raw, path)
+	if r.Indexes != nil {
+		for i := 0; i < len(r.Indexes); i++ {
+			r.Indexes[i] += t.Index
+		}
+	} else {
+		r.Index += t.Index
+	}
+	return r
 }
 
 type arrayOrMapResult struct {
@@ -389,6 +405,8 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
 			value.Raw, value.Str = tostr(json[i:])
 			value.Num = 0
 		}
+		value.Index = i + t.Index
+
 		i += len(value.Raw) - 1
 
 		if r.vc == '{' {
@@ -415,6 +433,17 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
 		}
 	}
 end:
+	if t.Indexes != nil {
+		if len(t.Indexes) != len(r.a) {
+			for i := 0; i < len(r.a); i++ {
+				r.a[i].Index = 0
+			}
+		} else {
+			for i := 0; i < len(r.a); i++ {
+				r.a[i].Index = t.Indexes[i]
+			}
+		}
+	}
 	return
 }
 
@@ -1515,7 +1544,6 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 							}
 							if idx < len(c.json) && c.json[idx] != ']' {
 								_, res, ok := parseAny(c.json, idx, true)
-								parentIndex := res.Index
 								if ok {
 									res := res.Get(rp.alogkey)
 									if res.Exists() {
@@ -1527,8 +1555,7 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 											raw = res.String()
 										}
 										jsons = append(jsons, []byte(raw)...)
-										indexes = append(indexes,
-											res.Index+parentIndex)
+										indexes = append(indexes, res.Index)
 										k++
 									}
 								}
@@ -2974,30 +3001,175 @@ func bytesString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-func GetPath(r Result, json string) (string, bool) {
-	if len(r.Raw) == 0 || len(json) == 0 {
-		return "", false
+func revSquash(json string) string {
+	// reverse squash
+	// expects that the tail character is a ']' or '}' or ')' or '"'
+	// squash the value, ignoring all nested arrays and objects.
+	i := len(json) - 1
+	var depth int
+	if json[i] != '"' {
+		depth++
 	}
-	p := uintptr((*(*stringHeader)(unsafe.Pointer(&(r.Raw)))).data)
-	s := uintptr((*(*stringHeader)(unsafe.Pointer(&(json)))).data)
-	e := s + uintptr(len(json))
-	if p < s || p >= e {
-		return "", false
+	if json[i] == '}' || json[i] == ']' || json[i] == ')' {
+		i--
 	}
-	i := int(p - s)
-	_ = i
-	// for ; i >= 0; i-- {
-	// 	if json[i] <= ' ' {
-	// 	} else if json[i] == ':' {
-	// 		// inside of an object, read the key string
-	// 	} else if json[i] == ',' {
-	// 		// array-value
-	// 	} else if json[i] == '[' {
-	// 		// array-value (end or array)
-	// 	} else {
+	for ; i >= 0; i-- {
+		switch json[i] {
+		case '"':
+			i--
+			for ; i >= 0; i-- {
+				if json[i] == '"' {
+					esc := 0
+					for i > 0 && json[i-1] == '\\' {
+						i--
+						esc++
+					}
+					if esc%2 == 1 {
+						continue
+					}
+					i += esc
+					break
+				}
+			}
+			if depth == 0 {
+				if i < 0 {
+					i = 0
+				}
+				return json[i:]
+			}
+		case '}', ']', ')':
+			depth++
+		case '{', '[', '(':
+			depth--
+			if depth == 0 {
+				return json[i:]
+			}
+		}
+	}
+	return json
+}
 
-	// 	}
-	// }
-	// return "", false
-	return "", false
+func (t Result) Paths(json string) []string {
+	if t.Indexes == nil {
+		return nil
+	}
+	paths := make([]string, 0, len(t.Indexes))
+	t.ForEach(func(_, value Result) bool {
+		paths = append(paths, value.Path(json))
+		return true
+	})
+	if len(paths) != len(t.Indexes) {
+		return nil
+	}
+	return paths
+}
+
+// Path returns the original GJSON path for Result.
+// The json param must be the original JSON used when calling Get.
+func (t Result) Path(json string) string {
+	var path []byte
+	var comps []string // raw components
+	i := t.Index - 1
+	if t.Index+len(t.Raw) > len(json) {
+		// JSON cannot safely contain Result.
+		goto fail
+	}
+	if !strings.HasPrefix(json[t.Index:], t.Raw) {
+		// Result is not at the JSON index as exepcted.
+		goto fail
+	}
+	for ; i >= 0; i-- {
+		if json[i] <= ' ' {
+			continue
+		}
+		if json[i] == ':' {
+			// inside of object, get the key
+			for ; i >= 0; i-- {
+				if json[i] != '"' {
+					continue
+				}
+				break
+			}
+			raw := revSquash(json[:i+1])
+			i = i - len(raw)
+			comps = append(comps, raw)
+			// key gotten, now squash the rest
+			raw = revSquash(json[:i+1])
+			i = i - len(raw)
+			i++ // increment the index for next loop step
+		} else if json[i] == '{' {
+			// Encountered an open object. The original result was probably an
+			// object key.
+			goto fail
+		} else if json[i] == ',' || json[i] == '[' {
+			// inside of an array, count the position
+			var arrIdx int
+			if json[i] == ',' {
+				arrIdx++
+				i--
+			}
+			for ; i >= 0; i-- {
+				if json[i] == ':' {
+					// Encountered an unexpected colon. The original result was
+					// probably an object key.
+					goto fail
+				} else if json[i] == ',' {
+					arrIdx++
+				} else if json[i] == '[' {
+					comps = append(comps, strconv.Itoa(arrIdx))
+					break
+				} else if json[i] == ']' || json[i] == '}' || json[i] == '"' {
+					raw := revSquash(json[:i+1])
+					i = i - len(raw) + 1
+				}
+			}
+		}
+	}
+	if len(comps) == 0 {
+		if DisableModifiers {
+			goto fail
+		}
+		return "@this"
+	}
+	for i := len(comps) - 1; i >= 0; i-- {
+		rcomp := Parse(comps[i])
+		if !rcomp.Exists() {
+			goto fail
+		}
+		comp := escapeComp(rcomp.String())
+		path = append(path, '.')
+		path = append(path, comp...)
+	}
+	if len(path) > 0 {
+		path = path[1:]
+	}
+	return string(path)
+fail:
+	return ""
+}
+
+// isSafePathKeyChar returns true if the input character is safe for not
+// needing escaping.
+func isSafePathKeyChar(c byte) bool {
+	return c <= ' ' || c > '~' || c == '_' || c == '-' || c == ':' ||
+		(c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+		(c >= '0' && c <= '9')
+}
+
+// escapeComp escaped a path compontent, making it safe for generating a
+// path for later use.
+func escapeComp(comp string) string {
+	for i := 0; i < len(comp); i++ {
+		if !isSafePathKeyChar(comp[i]) {
+			ncomp := []byte(comp[:i])
+			for ; i < len(comp); i++ {
+				if !isSafePathKeyChar(comp[i]) {
+					ncomp = append(ncomp, '\\')
+				}
+				ncomp = append(ncomp, comp[i])
+			}
+			return string(ncomp)
+		}
+	}
+	return comp
 }
