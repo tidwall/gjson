@@ -2410,3 +2410,31 @@ func TestQueryGetPath(t *testing.T) {
 		assert(t, arr[i].Path(readmeJSON) == fmt.Sprintf("friends.%d.first", i))
 	}
 }
+
+func TestStaticJSON(t *testing.T) {
+	json := `{
+		"name": {"first": "Tom", "last": "Anderson"}
+	}`
+	assert(t, Get(json,
+		`"bar"`).Raw ==
+		``)
+	assert(t, Get(json,
+		`!"bar"`).Raw ==
+		`"bar"`)
+	assert(t, Get(json,
+		`!{"name":{"first":"Tom"}}.{name.first}.first`).Raw ==
+		`"Tom"`)
+	assert(t, Get(json,
+		`{name.last,"foo":!"bar"}`).Raw ==
+		`{"last":"Anderson","foo":"bar"}`)
+	assert(t, Get(json,
+		`{name.last,"foo":!{"a":"b"},"that"}`).Raw ==
+		`{"last":"Anderson","foo":{"a":"b"}}`)
+	assert(t, Get(json,
+		`{name.last,"foo":!{"c":"d"},!"that"}`).Raw ==
+		`{"last":"Anderson","foo":{"c":"d"},"_":"that"}`)
+	assert(t, Get(json,
+		`[!true,!false,!null,!inf,!nan,!hello,{"name":!"andy",name.last},+inf,!["any","thing"]]`).Raw ==
+		`[true,false,null,inf,nan,{"name":"andy","last":"Anderson"},["any","thing"]]`,
+	)
+}
