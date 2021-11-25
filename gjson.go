@@ -1728,7 +1728,7 @@ type subSelector struct {
 // first character in path is either '[' or '{', and has already been checked
 // prior to calling this function.
 func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
-	modifer := 0
+	modifier := 0
 	depth := 1
 	colon := 0
 	start := 1
@@ -1743,6 +1743,7 @@ func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 		}
 		sels = append(sels, sel)
 		colon = 0
+		modifier = 0
 		start = i + 1
 	}
 	for ; i < len(path); i++ {
@@ -1750,11 +1751,11 @@ func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 		case '\\':
 			i++
 		case '@':
-			if modifer == 0 && i > 0 && (path[i-1] == '.' || path[i-1] == '|') {
-				modifer = i
+			if modifier == 0 && i > 0 && (path[i-1] == '.' || path[i-1] == '|') {
+				modifier = i
 			}
 		case ':':
-			if modifer == 0 && colon == 0 && depth == 1 {
+			if modifier == 0 && colon == 0 && depth == 1 {
 				colon = i
 			}
 		case ',':

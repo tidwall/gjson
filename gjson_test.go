@@ -1892,6 +1892,9 @@ func TestModifiersInMultipaths(t *testing.T) {
 	exp = `{"first":"DALE"}`
 	assert(t, res.Raw == exp)
 
+	res = Get(readmeJSON, `{"children":children|@case:upper,"name":name.first,"age":age}`)
+	exp = `{"children":["SARA","ALEX","JACK"],"name":"Tom","age":37}`
+	assert(t, res.Raw == exp)
 }
 
 func TestIssue141(t *testing.T) {
