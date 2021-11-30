@@ -13,10 +13,10 @@ This document is designed to explain the structure of a GJSON Path through examp
 - [Dot vs Pipe](#dot-vs-pipe)
 - [Modifiers](#modifiers)
 - [Multipaths](#multipaths)
+- [Literals](#literals)
 
 The definitive implemenation is [github.com/tidwall/gjson](https://github.com/tidwall/gjson).  
 Use the [GJSON Playground](https://gjson.dev) to experiment with the syntax online.
-
 
 ## Path structure
 
@@ -296,7 +296,7 @@ Starting with v1.3.0, GJSON added the ability to join multiple paths together
 to form new documents. Wrapping comma-separated paths between `[...]` or
 `{...}` will result in a new array or object, respectively.
 
-For example, using the given multipath 
+For example, using the given multipath:
 
 ```
 {name.first,age,"the_murphys":friends.#(last="Murphy")#.first}
@@ -312,8 +312,28 @@ determined, then "_" is used.
 
 This results in
 
-```
+```json
 {"first":"Tom","age":37,"the_murphys":["Dale","Jane"]}
 ```
 
+### Literals
 
+Starting with v1.12.0, GJSON added support of json literals, which provides a way for constructing static blocks of json. This is can be particularly useful when constructing a new json document using [multipaths](#multipaths).  
+
+A json literal begins with the '!' declaration character. 
+
+For example, using the given multipath:
+
+```
+{name.first,age,"company":!"Happysoft","employed":!true}
+```
+
+Here we selected the first name and age. Then add two new fields, "company" and "employed".
+
+This results in 
+
+```json
+{"first":"Tom","age":37,"company":"Happysoft","employed":true}
+```
+
+*See issue [#249](https://github.com/tidwall/gjson/issues/249) for additional context on JSON Literals.*
