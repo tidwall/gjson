@@ -435,9 +435,9 @@ func TestBasic1(t *testing.T) {
 	mtok := get(basicJSON, `loggy.programmers`)
 	var count int
 	mtok.ForEach(func(key, value Result) bool {
-		if key.Exists() {
-			t.Fatalf("expected %v, got %v", false, key.Exists())
-		}
+		assert(t, key.Exists())
+		assert(t, key.String() == fmt.Sprint(count))
+		assert(t, key.Int() == int64(count))
 		count++
 		if count == 3 {
 			return false
@@ -2440,4 +2440,24 @@ func TestStaticJSON(t *testing.T) {
 		`[!true,!false,!null,!inf,!nan,!hello,{"name":!"andy",name.last},+inf,!["any","thing"]]`).Raw ==
 		`[true,false,null,inf,nan,{"name":"andy","last":"Anderson"},["any","thing"]]`,
 	)
+}
+
+func TestArrayKeys(t *testing.T) {
+	N := 100
+	json := "["
+	for i := 0; i < N; i++ {
+		if i > 0 {
+			json += ","
+		}
+		json += fmt.Sprint(i)
+	}
+	json += "]"
+	var i int
+	Parse(json).ForEach(func(key, value Result) bool {
+		assert(t, key.String() == fmt.Sprint(i))
+		assert(t, key.Int() == int64(i))
+		i++
+		return true
+	})
+	assert(t, i == N)
 }
