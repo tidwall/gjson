@@ -77,7 +77,7 @@ Special purpose characters, such as `.`, `*`, and `?` can be escaped with `\`.
 fav\.movie             "Deer Hunter"
 ```
 
-You'll also need to make sure that the `\` character is correctly escaped when hardcoding a path in you source code.
+You'll also need to make sure that the `\` character is correctly escaped when hardcoding a path in your source code.
 
 ```go
 // Go
