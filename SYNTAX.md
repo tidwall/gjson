@@ -22,7 +22,7 @@ Use the [GJSON Playground](https://gjson.dev) to experiment with the syntax onli
 
 A GJSON Path is intended to be easily expressed as a series of components seperated by a `.` character. 
 
-Along with `.` character, there are a few more that have special meaning, including `|`, `#`, `@`, `\`, `*`, and `?`.
+Along with `.` character, there are a few more that have special meaning, including `|`, `#`, `@`, `\`, `*`, `!`, and `?`.
 
 ## Example
 
