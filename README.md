@@ -63,6 +63,9 @@ To access an array value use the index as the key.
 To get the number of elements in an array or to access a child path, use the '#' character.
 The dot and wildcard characters can be escaped with '\\'.
 
+A path key can also be a valid regular expression. Provide the regular expression string by enclosing it '~'.
+If provided regular expression is valid, then it will return the matched result set. If regular expression is invalid, then we return an empty result set.
+
 ```json
 {
   "name": {"first": "Tom", "last": "Anderson"},
@@ -77,16 +80,19 @@ The dot and wildcard characters can be escaped with '\\'.
 }
 ```
 ```
-"name.last"          >> "Anderson"
-"age"                >> 37
-"children"           >> ["Sara","Alex","Jack"]
-"children.#"         >> 3
-"children.1"         >> "Alex"
-"child*.2"           >> "Jack"
-"c?ildren.0"         >> "Sara"
-"fav\.movie"         >> "Deer Hunter"
-"friends.#.first"    >> ["Dale","Roger","Jane"]
-"friends.1.last"     >> "Craig"
+"name.last"             >> "Anderson"
+"age"                   >> 37
+"children"              >> ["Sara","Alex","Jack"]
+"children.#"            >> 3
+"children.1"            >> "Alex"
+"child*.2"              >> "Jack"
+"c?ildren.0"            >> "Sara"
+"fav\.movie"            >> "Deer Hunter"
+"friends.#.first"       >> ["Dale","Roger","Jane"]
+"friends.1.last"        >> "Craig"
+"name.~\w~"             >> "Tom"
+"name.~la*~"            >> "Anderson"
+"friends.2.~^(\w{3})$~" >> 47
 ```
 
 You can also query an array for the first match by using `#(...)`, or find all 

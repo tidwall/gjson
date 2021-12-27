@@ -4,16 +4,21 @@ A GJSON Path is a text string syntax that describes a search pattern for quickly
 
 This document is designed to explain the structure of a GJSON Path through examples.
 
-- [Path structure](#path-structure)
-- [Basic](#basic)
-- [Wildcards](#wildcards)
-- [Escape Character](#escape-character)
-- [Arrays](#arrays)
-- [Queries](#queries)
-- [Dot vs Pipe](#dot-vs-pipe)
-- [Modifiers](#modifiers)
-- [Multipaths](#multipaths)
-- [Literals](#literals)
+- [GJSON Path Syntax](#gjson-path-syntax)
+  - [Path structure](#path-structure)
+  - [Example](#example)
+    - [Basic](#basic)
+    - [Wildcards](#wildcards)
+    - [Regular Expression](#regular-expression)
+    - [Escape character](#escape-character)
+    - [Arrays](#arrays)
+    - [Queries](#queries)
+    - [Dot vs Pipe](#dot-vs-pipe)
+    - [Modifiers](#modifiers)
+      - [Modifier arguments](#modifier-arguments)
+      - [Custom modifiers](#custom-modifiers)
+    - [Multipaths](#multipaths)
+    - [Literals](#literals)
 
 The definitive implemenation is [github.com/tidwall/gjson](https://github.com/tidwall/gjson).  
 Use the [GJSON Playground](https://gjson.dev) to experiment with the syntax online.
@@ -67,6 +72,15 @@ The `*` will match on any zero+ characters, and `?` matches on any one character
 ```go
 child*.2               "Jack"
 c?ildren.0             "Sara"
+```
+
+### Regular Expression
+Regular expression based key matching is supported, but the expression should be enclosed by `~`. If the provided regular expression is invalid, then it always return empty result set.
+
+```go
+~fav.*~               "Deer Hunter"
+friends.#.~fir*~      ["Dale","Roger","Jane"]
+~[~
 ```
 
 ### Escape character

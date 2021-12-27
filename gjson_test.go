@@ -105,6 +105,10 @@ func TestEscapePath(t *testing.T) {
 	testEscapePath(t, json, "test.keyv\\.", "val5")
 	testEscapePath(t, json, "test.key\\.v", "val6")
 	testEscapePath(t, json, "test.keyk\\*.key\\?", "val7")
+
+	//XXX
+	//Do we have escaped regex string as key ?
+	//Rather, let user provide a valid regex to perform the escape.
 }
 
 // this json block is poorly formed on purpose.
@@ -200,6 +204,27 @@ func TestPath(t *testing.T) {
 	get("lastly.end\\.\\.\\.ing")
 	get("lastly.yay")
 
+	//XXX
+	//Regex path testing goes here
+	regexGet := func(path string, isValid bool) {
+		r1 := Get(json, path)
+		if isValid {
+			assert(t, r1.Raw != "")
+		} else {
+			assert(t, r1.Raw == "")
+		}
+	}
+
+	//XXX
+	//Testing a valid regular expression path
+	regexGet("~.~", true)
+	regexGet("loggy.~programmers~", true)
+	regexGet("~last*~.~end*~", true)
+	//Get any 3 word length string from the JSON path
+	regexGet(`loggy.programmers.2.~^(\w{3})$~`, true)
+
+	//Testing an invalid regular expression
+	regexGet("~[0-9~", false)
 }
 
 func TestTimeResult(t *testing.T) {
