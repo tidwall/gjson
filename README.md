@@ -204,6 +204,8 @@ There are currently the following built-in modifiers:
 - `@join`: Joins multiple objects into a single object.
 - `@keys`: Returns an array of keys for an object.
 - `@values`: Returns an array of values for an object.
+- `@tostr`: Converts json to a string. Wraps a json string.
+- `@fromstr`: Converts a string from json. Unwraps a json string.
 
 ### Modifier arguments
 

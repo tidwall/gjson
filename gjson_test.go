@@ -2461,3 +2461,9 @@ func TestArrayKeys(t *testing.T) {
 	})
 	assert(t, i == N)
 }
+
+func TestToFromStr(t *testing.T) {
+	json := `{"Message":"{\"Records\":[{\"eventVersion\":\"2.1\"}]"}`
+	res := Get(json, "Message.@fromstr.Records.#.eventVersion.@tostr").Raw
+	assert(t, res == `["\"2.1\""]`)
+}
