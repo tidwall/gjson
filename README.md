@@ -16,6 +16,8 @@ It has features such as [one line retrieval](#get-a-value), [dot notation paths]
 
 Also check out [SJSON](https://github.com/tidwall/sjson) for modifying json, and the [JJ](https://github.com/tidwall/jj) command line tool.
 
+This README is a quick overview of how to use GJSON, for more information check out [GJSON Syntax](SYNTAX.md).
+
 Getting Started
 ===============
 
