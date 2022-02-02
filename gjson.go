@@ -214,6 +214,11 @@ func (t Result) IsArray() bool {
 	return t.Type == JSON && len(t.Raw) > 0 && t.Raw[0] == '['
 }
 
+// IsBool returns true if the result value is a JSON boolean.
+func (t Result) IsBool() bool {
+	return t.Type == True || t.Type == False
+}
+
 // ForEach iterates through values.
 // If the result represents a non-existent value, then no values will be
 // iterated. If the result is an Object, the iterator will pass the key and
