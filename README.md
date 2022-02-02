@@ -208,6 +208,7 @@ There are currently the following built-in modifiers:
 - `@values`: Returns an array of values for an object.
 - `@tostr`: Converts json to a string. Wraps a json string.
 - `@fromstr`: Converts a string from json. Unwraps a json string.
+- `@group`: Groups arrays of objects. See e4fc67c.
 
 ### Modifier arguments
 
