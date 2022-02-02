@@ -2467,3 +2467,39 @@ func TestToFromStr(t *testing.T) {
 	res := Get(json, "Message.@fromstr.Records.#.eventVersion.@tostr").Raw
 	assert(t, res == `["\"2.1\""]`)
 }
+
+func TestGroup(t *testing.T) {
+	json := `{"id":["123","456","789"],"val":[2,1]}`
+	res := Get(json, "@group").Raw
+	assert(t, res == `[{"id":"123","val":2},{"id":"456","val":1},{"id":"789"}]`)
+
+	json = `
+{
+	"issues": [
+	  {
+		"fields": {
+		  "labels": [
+			"milestone_1",
+			"group:foo",
+			"plan:a",
+			"plan:b"
+		  ]
+		},
+		"id": "123"
+	  },{
+		"fields": {
+		  "labels": [
+			"milestone_1",
+			"group:foo",
+			"plan:a",
+			"plan"
+		  ]
+		},
+		"id": "456"
+	  }
+	]
+  }
+  `
+	res = Get(json, `{"id":issues.#.id,"plans":issues.#.fields.labels.#(%"plan:*")#|#.#}|@group|#(plans>=2)#.id`).Raw
+	assert(t, res == `["123"]`)
+}
