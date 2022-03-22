@@ -3147,6 +3147,20 @@ func revSquash(json string) string {
 	return json
 }
 
+// Paths returns the original GJSON paths for a Result where the Result came
+// from a simple query path that returns an array, like:
+//
+//    gjson.Get(json, "friends.#.first")
+//
+// The returned value will be in the form of a JSON array:
+//
+//    ["friends.0.first","friends.1.first","friends.2.first"]
+//
+// The param 'json' must be the original JSON used when calling Get.
+//
+// Returns an empty string if the paths cannot be determined, which can happen
+// when the Result came from a path that contained a multipath, modifier,
+// or a nested query.
 func (t Result) Paths(json string) []string {
 	if t.Indexes == nil {
 		return nil
@@ -3162,8 +3176,20 @@ func (t Result) Paths(json string) []string {
 	return paths
 }
 
-// Path returns the original GJSON path for Result.
-// The json param must be the original JSON used when calling Get.
+// Path returns the original GJSON path for a Result where the Result came
+// from a simple path that returns a single value, like:
+//
+//    gjson.Get(json, "friends.#(last=Murphy)")
+//
+// The returned value will be in the form of a JSON string:
+//
+//    "friends.0"
+//
+// The param 'json' must be the original JSON used when calling Get.
+//
+// Returns an empty string if the paths cannot be determined, which can happen
+// when the Result came from a path that contained a multipath, modifier,
+// or a nested query.
 func (t Result) Path(json string) string {
 	var path []byte
 	var comps []string // raw components
