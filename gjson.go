@@ -3,6 +3,7 @@ package gjson
 
 import (
 	"encoding/json"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -948,9 +949,11 @@ type objectPathResult struct {
 	piped bool
 	wild  bool
 	more  bool
+	regex bool
 }
 
 func parseObjectPath(path string) (r objectPathResult) {
+	var regexBegin = false
 	for i := 0; i < len(path); i++ {
 		if path[i] == '|' {
 			r.part = path[:i]
@@ -958,7 +961,7 @@ func parseObjectPath(path string) (r objectPathResult) {
 			r.piped = true
 			return
 		}
-		if path[i] == '.' {
+		if path[i] == '.' && !regexBegin {
 			r.part = path[:i]
 			if i < len(path)-1 && isDotPiperChar(path[i+1]) {
 				r.pipe = path[i+1:]
@@ -973,7 +976,17 @@ func parseObjectPath(path string) (r objectPathResult) {
 			r.wild = true
 			continue
 		}
-		if path[i] == '\\' {
+		if path[i] == '~' {
+
+			if !regexBegin {
+				regexBegin = true
+			} else {
+				r.regex = true
+				regexBegin = false
+			}
+			continue
+		}
+		if path[i] == '\\' && !regexBegin {
 			// go into escape mode. this is a slower path that
 			// strips off the escape character from the part.
 			epart := []byte(path[:i])
@@ -1128,17 +1141,26 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 		if !ok {
 			return i, false
 		}
-		if rp.wild {
+
+		if rp.regex {
 			if kesc {
-				pmatch = matchLimit(unescape(key), rp.part)
+				pmatch = matchRegex(unescape(key), rp.part)
 			} else {
-				pmatch = matchLimit(key, rp.part)
+				pmatch = matchRegex(key, rp.part)
 			}
 		} else {
-			if kesc {
-				pmatch = rp.part == unescape(key)
+			if rp.wild {
+				if kesc {
+					pmatch = matchLimit(unescape(key), rp.part)
+				} else {
+					pmatch = matchLimit(key, rp.part)
+				}
 			} else {
-				pmatch = rp.part == key
+				if kesc {
+					pmatch = rp.part == unescape(key)
+				} else {
+					pmatch = rp.part == key
+				}
 			}
 		}
 		hit = pmatch && !rp.more
@@ -1235,6 +1257,18 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 func matchLimit(str, pattern string) bool {
 	matched, _ := match.MatchLimit(str, pattern, 10000)
 	return matched
+}
+
+func matchRegex(str, pattern string) bool {
+	// Remove the enclosed pattern character "~"
+	match, err := regexp.MatchString(strings.Trim(pattern, "~"), str)
+	if err != nil {
+		// XXX
+		// If regex is invalid, then do not throw any error.
+		// Rather, return false to the calling environment.
+		return false
+	}
+	return match
 }
 
 func queryMatches(rp *arrayPathResult, value Result) bool {
