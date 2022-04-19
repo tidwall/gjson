@@ -3,7 +3,6 @@ package gjson
 import (
 	"bytes"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
@@ -12,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	//Much better perfomance than encoding/json
+	json "github.com/json-iterator/go"
 	"github.com/tidwall/pretty"
 )
 

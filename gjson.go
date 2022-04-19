@@ -2,7 +2,6 @@
 package gjson
 
 import (
-	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
@@ -10,6 +9,8 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
+	//Much better perfomance than encoding/json
+	json "github.com/json-iterator/go"
 	"github.com/tidwall/match"
 	"github.com/tidwall/pretty"
 )
