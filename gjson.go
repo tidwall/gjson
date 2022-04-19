@@ -2,7 +2,6 @@
 package gjson
 
 import (
-	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
@@ -1824,17 +1823,64 @@ func isSimpleName(component string) bool {
 	return true
 }
 
-func appendJSONString(dst []byte, s string) []byte {
+var hexchars = [...]byte{
+	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+	'a', 'b', 'c', 'd', 'e', 'f',
+}
+
+func appendHex16(dst []byte, x uint16) []byte {
+	return append(dst,
+		hexchars[x>>12&0xF], hexchars[x>>8&0xF],
+		hexchars[x>>4&0xF], hexchars[x>>0&0xF],
+	)
+}
+
+// AppendJSONString is a convenience function that converts the provided string
+// to a valid JSON string and appends it to dst.
+func AppendJSONString(dst []byte, s string) []byte {
+	dst = append(dst, make([]byte, len(s)+2)...)
+	dst = append(dst[:len(dst)-len(s)-2], '"')
 	for i := 0; i < len(s); i++ {
-		if s[i] < ' ' || s[i] == '\\' || s[i] == '"' || s[i] > 126 {
-			d, _ := json.Marshal(s)
-			return append(dst, string(d)...)
+		if s[i] < ' ' {
+			dst = append(dst, '\\')
+			switch s[i] {
+			case '\n':
+				dst = append(dst, 'n')
+			case '\r':
+				dst = append(dst, 'r')
+			case '\t':
+				dst = append(dst, 't')
+			default:
+				dst = append(dst, 'u')
+				dst = appendHex16(dst, uint16(s[i]))
+			}
+		} else if s[i] == '>' || s[i] == '<' || s[i] == '&' {
+			dst = append(dst, '\\', 'u')
+			dst = appendHex16(dst, uint16(s[i]))
+		} else if s[i] == '\\' {
+			dst = append(dst, '\\', '\\')
+		} else if s[i] == '"' {
+			dst = append(dst, '\\', '"')
+		} else if s[i] > 127 {
+			// read utf8 character
+			r, n := utf8.DecodeRuneInString(s[i:])
+			if n == 0 {
+				break
+			}
+			if r == utf8.RuneError && n == 1 {
+				dst = append(dst, `\ufffd`...)
+			} else if r == '\u2028' || r == '\u2029' {
+				dst = append(dst, `\u202`...)
+				dst = append(dst, hexchars[r&0xF])
+			} else {
+				dst = append(dst, s[i:i+n]...)
+			}
+			i = i + n - 1
+		} else {
+			dst = append(dst, s[i])
 		}
 	}
-	dst = append(dst, '"')
-	dst = append(dst, s...)
-	dst = append(dst, '"')
-	return dst
+	return append(dst, '"')
 }
 
 type parseContext struct {
@@ -1924,14 +1970,14 @@ func Get(json, path string) Result {
 									if sub.name[0] == '"' && Valid(sub.name) {
 										b = append(b, sub.name...)
 									} else {
-										b = appendJSONString(b, sub.name)
+										b = AppendJSONString(b, sub.name)
 									}
 								} else {
 									last := nameOfLast(sub.path)
 									if isSimpleName(last) {
-										b = appendJSONString(b, last)
+										b = AppendJSONString(b, last)
 									} else {
-										b = appendJSONString(b, "_")
+										b = AppendJSONString(b, "_")
 									}
 								}
 								b = append(b, ':')
@@ -2974,8 +3020,7 @@ func modFromStr(json, arg string) string {
 // @tostr converts a string to json
 //   {"id":1023,"name":"alert"} -> "{\"id\":1023,\"name\":\"alert\"}"
 func modToStr(str, arg string) string {
-	data, _ := json.Marshal(str)
-	return string(data)
+	return string(AppendJSONString(nil, str))
 }
 
 func modGroup(json, arg string) string {
