@@ -649,6 +649,9 @@ func tostr(json string) (raw string, str string) {
 //		println("value exists")
 //  }
 func (t Result) Exists() bool {
+	if t.IsArray() && len(t.Raw) == 2 {
+		return false
+	}
 	return t.Type != Null || len(t.Raw) != 0
 }
 
