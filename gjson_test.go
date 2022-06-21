@@ -1320,7 +1320,7 @@ func TestNumFloatString(t *testing.T) {
 }
 
 func TestDuplicateKeys(t *testing.T) {
-	// this is vaild json according to the JSON spec
+	// this is valid json according to the JSON spec
 	var json = `{"name": "Alex","name": "Peter"}`
 	if Parse(json).Get("name").String() !=
 		Parse(json).Map()["name"].String() {
