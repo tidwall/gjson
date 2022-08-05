@@ -2543,3 +2543,14 @@ func TestJSONString(t *testing.T) {
 		testJSONString(t, string(buf[:]))
 	}
 }
+
+func TestIndexAtSymbol(t *testing.T) {
+	json := `{
+		"@context": {
+		  "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+		  "@vocab": "http://schema.org/",
+		  "sh": "http://www.w3.org/ns/shacl#"
+		}
+	}`
+	assert(t, Get(json, "@context.@vocab").Index == 85)
+}
