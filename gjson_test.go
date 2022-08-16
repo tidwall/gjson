@@ -2554,3 +2554,22 @@ func TestIndexAtSymbol(t *testing.T) {
 	}`
 	assert(t, Get(json, "@context.@vocab").Index == 85)
 }
+
+func TestDeepModifierWithOptions(t *testing.T) {
+	rawJson := `{"x":[{"y":[{"z":{"b":1, "c": 2, "a": 3}}]}]}`
+	jsonPathExpr := `x.#.y.#.z.@pretty:{"sortKeys":true}`
+	results := GetManyBytes([]byte(rawJson), jsonPathExpr)
+	assert(t, len(results) == 1)
+	actual := results[0].Raw
+	expected := `[[{
+  "a": 3,
+  "b": 1,
+  "c": 2
+}
+]]`
+	if expected != actual {
+		t.Fatal(strconv.Quote(rawJson) + "\n\t" +
+			expected + "\n\t" +
+			actual + "\n\t<<< MISMATCH >>>")
+	}
+}
