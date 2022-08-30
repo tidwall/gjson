@@ -511,7 +511,7 @@ func Parse(json string) Result {
 // ParseBytes parses the json and returns a result.
 // If working with bytes, this method preferred over Parse(string(data))
 func ParseBytes(json []byte) Result {
-	return Parse(string(json))
+	return Parse(*(*string)(unsafe.Pointer(&json)))
 }
 
 func squash(json string) string {
