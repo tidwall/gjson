@@ -2573,3 +2573,21 @@ func TestDeepModifierWithOptions(t *testing.T) {
 			actual + "\n\t<<< MISMATCH >>>")
 	}
 }
+
+func TestIssue301(t *testing.T) {
+	json := `{
+		"children": ["Sara","Alex","Jack"],
+		"fav.movie": ["Deer Hunter"]
+	}`
+
+	assert(t, Get(json, `children.0`).String() == "Sara")
+	assert(t, Get(json, `children.[0]`).String() == `["Sara"]`)
+	assert(t, Get(json, `children.1`).String() == "Alex")
+	assert(t, Get(json, `children.[1]`).String() == `["Alex"]`)
+	assert(t, Get(json, `children.[10]`).String() == `[]`)
+	assert(t, Get(json, `fav\.movie.0`).String() == "Deer Hunter")
+	assert(t, Get(json, `fav\.movie.[0]`).String() == `["Deer Hunter"]`)
+	assert(t, Get(json, `fav\.movie.1`).String() == "")
+	assert(t, Get(json, `fav\.movie.[1]`).String() == "[]")
+
+}
