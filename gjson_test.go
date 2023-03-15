@@ -2591,3 +2591,41 @@ func TestIssue301(t *testing.T) {
 	assert(t, Get(json, `fav\.movie.[1]`).String() == "[]")
 
 }
+
+func TestTruthy(t *testing.T) {
+	json := `{
+		"aye1": true,
+		"aye2": 1,
+		"aye3": -1,
+		"aye4": 0.001,
+		"aye5": "aye",
+		"aye6": {},
+		"aye7": [],
+		"aye8": +Inf,
+		"aye9": -Inf,
+
+		"nay1": false,
+		"nay2": null,
+		"nay3": 0,
+		"nay4": -0,
+		"nay5": "",
+		"nay6": NaN,
+	}`
+
+	assert(t, Get(json, "aye1").Truthy() == true)
+	assert(t, Get(json, "aye2").Truthy() == true)
+	assert(t, Get(json, "aye3").Truthy() == true)
+	assert(t, Get(json, "aye4").Truthy() == true)
+	assert(t, Get(json, "aye5").Truthy() == true)
+	assert(t, Get(json, "aye6").Truthy() == true)
+	assert(t, Get(json, "aye7").Truthy() == true)
+	assert(t, Get(json, "aye8").Truthy() == true)
+	assert(t, Get(json, "aye9").Truthy() == true)
+
+	assert(t, Get(json, "nay1").Truthy() == false)
+	assert(t, Get(json, "nay2").Truthy() == false)
+	assert(t, Get(json, "nay3").Truthy() == false)
+	assert(t, Get(json, "nay4").Truthy() == false)
+	assert(t, Get(json, "nay5").Truthy() == false)
+	assert(t, Get(json, "nay6").Truthy() == false)
+}

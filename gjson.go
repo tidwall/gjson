@@ -2,6 +2,7 @@
 package gjson
 
 import (
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -185,6 +186,22 @@ func (t Result) Float() float64 {
 func (t Result) Time() time.Time {
 	res, _ := time.Parse(time.RFC3339, t.String())
 	return res
+}
+
+// Truthy returns the truthiness of the value (all values are truthy except false, null, 0, -0, NaN, and "").
+func (t Result) Truthy() bool {
+	switch t.Type {
+	case Null, False:
+		return false
+	case Number:
+		return math.IsNaN(t.Num) == false && t.Num != 0
+	case String:
+		return t.Str != ""
+	case True, JSON:
+		return true
+	default:
+		return false
+	}
 }
 
 // Array returns back an array of values.
