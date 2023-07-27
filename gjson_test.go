@@ -2129,10 +2129,10 @@ func TestEncodedQueryString(t *testing.T) {
 	assert(t, Get(json, `friends.#(last=="Murphy").age`).Int() == 47)
 }
 
-func TestBoolConvertQuery(t *testing.T) {
+func TestTildeQueries(t *testing.T) {
 	json := `{
 		"vals": [
-			{ "a": 1, "b": true },
+			{ "a": 1, "b": "data" },
 			{ "a": 2, "b": true },
 			{ "a": 3, "b": false },
 			{ "a": 4, "b": "0" },
@@ -2146,9 +2146,54 @@ func TestBoolConvertQuery(t *testing.T) {
 		]
 	}`
 	trues := Get(json, `vals.#(b==~true)#.a`).Raw
+	truesNOT := Get(json, `vals.#(b!=~true)#.a`).Raw
 	falses := Get(json, `vals.#(b==~false)#.a`).Raw
-	assert(t, trues == "[1,2,6,7,8]")
+	falsesNOT := Get(json, `vals.#(b!=~false)#.a`).Raw
+	nulls := Get(json, `vals.#(b==~null)#.a`).Raw
+	nullsNOT := Get(json, `vals.#(b!=~null)#.a`).Raw
+	exists := Get(json, `vals.#(b==~*)#.a`).Raw
+	existsNOT := Get(json, `vals.#(b!=~*)#.a`).Raw
+
+	assert(t, trues == "[2,6,7,8]")
+	assert(t, truesNOT == "[1,3,4,5,9,10,11]")
 	assert(t, falses == "[3,4,5,9,10,11]")
+	assert(t, falsesNOT == "[1,2,6,7,8]")
+	assert(t, nulls == "[10,11]")
+	assert(t, nullsNOT == "[1,2,3,4,5,6,7,8,9]")
+	assert(t, exists == "[1,2,3,4,5,6,7,8,9,10]")
+	assert(t, existsNOT == "[11]")
+	json = `{
+		"vals": [
+		  { "a": 1, "b": "something" },
+		  { "a": 2, "b": "else" },
+		  { "a": 3, "b": false },
+		  { "a": 4, "b": "0" },
+		  { "a": 5, "b": 0 },
+		  { "a": 6, "b": "1" },
+		  { "a": 7, "b": 1 },
+		  { "a": 8, "b": "true" },
+		  { "a": 9, "b": false },
+		  { "a": 10, "b": null },
+		  { "a": 11 }
+		],
+		"anything": "else"
+	}`
+	trues = Get(json, `vals.#(b==~true)#.a`).Raw
+	truesNOT = Get(json, `vals.#(b!=~true)#.a`).Raw
+	falses = Get(json, `vals.#(b==~false)#.a`).Raw
+	falsesNOT = Get(json, `vals.#(b!=~false)#.a`).Raw
+	nulls = Get(json, `vals.#(b==~null)#.a`).Raw
+	nullsNOT = Get(json, `vals.#(b!=~null)#.a`).Raw
+	exists = Get(json, `vals.#(b==~*)#.a`).Raw
+	existsNOT = Get(json, `vals.#(b!=~*)#.a`).Raw
+	assert(t, trues == "[6,7,8]")
+	assert(t, truesNOT == "[1,2,3,4,5,9,10,11]")
+	assert(t, falses == "[3,4,5,9,10,11]")
+	assert(t, falsesNOT == "[1,2,6,7,8]")
+	assert(t, nulls == "[10,11]")
+	assert(t, nullsNOT == "[1,2,3,4,5,6,7,8,9]")
+	assert(t, exists == "[1,2,3,4,5,6,7,8,9,10]")
+	assert(t, existsNOT == "[11]")
 }
 
 func TestModifierDoubleQuotes(t *testing.T) {
