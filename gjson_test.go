@@ -2636,3 +2636,68 @@ func TestIssue301(t *testing.T) {
 	assert(t, Get(json, `fav\.movie.[1]`).String() == "[]")
 
 }
+
+func TestModDig(t *testing.T) {
+	json := `
+		{
+
+			"group": {
+				"issues": [
+					{
+						"fields": {
+						"labels": [
+							"milestone_1",
+							"group:foo",
+							"plan:a",
+							"plan:b"
+						]
+						},
+						"refid": "123"
+					},{
+						"fields": {
+						"labels": [
+							"milestone_2",
+							"group:foo",
+							"plan:a",
+							"plan"
+						]
+						},
+						"refid": "456"
+					},[
+						{"extra_deep":[{
+							"fields": {
+							"labels": [
+								"milestone_3",
+								"group:foo",
+								"plan:a",
+								"plan"
+							]
+							},
+							"refid": "789"
+						}]
+					}]
+				]
+			}
+		}
+	`
+	assert(t, Get(json, "group.@dig:#(refid=123)|0.fields.labels.0").String() == "milestone_1")
+	assert(t, Get(json, "group.@dig:#(refid=456)|0.fields.labels.0").String() == "milestone_2")
+	assert(t, Get(json, "group.@dig:#(refid=789)|0.fields.labels.0").String() == "milestone_3")
+	json = `
+	{ "something": {
+		"anything": {
+		  "abcdefg": {
+			  "finally": {
+				"important": {
+					"secret": "password",
+					"name": "jake"
+				}
+			},
+			"name": "melinda"
+		  }
+		}
+	  }
+	}`
+	assert(t, Get(json, "@dig:name").String() == `["melinda","jake"]`)
+	assert(t, Get(json, "@dig:secret").String() == `["password"]`)
+}
