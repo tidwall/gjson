@@ -2701,3 +2701,16 @@ func TestModDig(t *testing.T) {
 	assert(t, Get(json, "@dig:name").String() == `["melinda","jake"]`)
 	assert(t, Get(json, "@dig:secret").String() == `["password"]`)
 }
+
+func TestEscape(t *testing.T) {
+	json := `{
+		"user":{
+			"first.name": "Janet",
+			"last.name": "Prichard"
+		  }
+	  }`
+	user := Get(json, "user")
+	assert(t, user.Get(Escape("first.name")).String() == "Janet")
+	assert(t, user.Get(Escape("last.name")).String() == "Prichard")
+	assert(t, user.Get("first.name").String() == "")
+}
