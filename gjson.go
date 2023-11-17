@@ -1252,7 +1252,7 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 }
 
 // matchLimit will limit the complexity of the match operation to avoid ReDos
-// attacks from arbritary inputs.
+// attacks from arbitrary inputs.
 // See the github.com/tidwall/match.MatchLimit function for more information.
 func matchLimit(str, pattern string) bool {
 	matched, _ := match.MatchLimit(str, pattern, 10000)
@@ -2189,8 +2189,8 @@ func unescape(json string) string {
 	return string(str)
 }
 
-// Less return true if a token is less than another token.
-// The caseSensitive paramater is used when the tokens are Strings.
+// Less returns true if a token is less than another token.
+// The caseSensitive parameter is used when the tokens are Strings.
 // The order when comparing two different type is:
 //
 //	Null < False < Number < String < True < JSON
