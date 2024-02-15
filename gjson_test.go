@@ -2578,6 +2578,7 @@ func TestJSONString(t *testing.T) {
 	testJSONString(t, s)
 	testJSONString(t, "R\xfd\xfc\a!\x82eO\x16?_\x0f\x9ab\x1dr")
 	testJSONString(t, "_\xb9\v\xad\xb3|X!\xb6\xd9U&\xa4\x1a\x95\x04")
+	testJSONString(t, "\b\f")
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	start := time.Now()
 	var buf [16]byte
