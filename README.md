@@ -28,7 +28,7 @@ Getting Started
 To start using GJSON, install Go and run `go get`:
 
 ```sh
-$ go get -u github.com/tidwall/gjson
+go get -u github.com/tidwall/gjson
 ```
 
 This will retrieve the library.
