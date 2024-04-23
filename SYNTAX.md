@@ -15,12 +15,12 @@ This document is designed to explain the structure of a GJSON Path through examp
 - [Multipaths](#multipaths)
 - [Literals](#literals)
 
-The definitive implementation is [github.com/tidwall/gjson](https://github.com/tidwall/gjson).  
+The definitive implementation is [github.com/tidwall/gjson](https://github.com/tidwall/gjson).
 Use the [GJSON Playground](https://gjson.dev) to experiment with the syntax online.
 
 ## Path structure
 
-A GJSON Path is intended to be easily expressed as a series of components separated by a `.` character. 
+A GJSON Path is intended to be easily expressed as a series of components separated by a `.` character.
 
 Along with `.` character, there are a few more that have special meaning, including `|`, `#`, `@`, `\`, `*`, `!`, and `?`.
 
@@ -44,7 +44,7 @@ Given this JSON
 
 The following GJSON Paths evaluate to the accompanying values.
 
-### Basic 
+### Basic
 
 In many cases you'll just want to retrieve values by object name or array index.
 
@@ -61,7 +61,7 @@ friends.1.first        "Roger"
 
 ### Wildcards
 
-A key may contain the special wildcard characters `*` and `?`. 
+A key may contain the special wildcard characters `*` and `?`.
 The `*` will match on any zero+ characters, and `?` matches on any one character.
 
 ```go
@@ -71,7 +71,7 @@ c?ildren.0             "Sara"
 
 ### Escape character
 
-Special purpose characters, such as `.`, `*`, and `?` can be escaped with `\`. 
+Special purpose characters, such as `.`, `*`, and `?` can be escaped with `\`.
 
 ```go
 fav\.movie             "Deer Hunter"
@@ -82,13 +82,13 @@ You'll also need to make sure that the `\` character is correctly escaped when h
 ```go
 // Go
 val := gjson.Get(json, "fav\\.movie")  // must escape the slash
-val := gjson.Get(json, `fav\.movie`)   // no need to escape the slash 
+val := gjson.Get(json, `fav\.movie`)   // no need to escape the slash
 ```
 
 ```rust
 // Rust
 let val = gjson::get(json, "fav\\.movie")     // must escape the slash
-let val = gjson::get(json, r#"fav\.movie"#)   // no need to escape the slash 
+let val = gjson::get(json, r#"fav\.movie"#)   // no need to escape the slash
 ```
 
 
@@ -105,8 +105,8 @@ friends.#.age         [44,68,47]
 
 ### Queries
 
-You can also query an array for the first match by  using `#(...)`, or find all matches with `#(...)#`. 
-Queries support the `==`, `!=`, `<`, `<=`, `>`, `>=` comparison operators, 
+You can also query an array for the first match by  using `#(...)`, or find all matches with `#(...)#`.
+Queries support the `==`, `!=`, `<`, `<=`, `>`, `>=` comparison operators,
 and the simple pattern matching `%` (like) and `!%` (not like) operators.
 
 ```go
@@ -131,7 +131,7 @@ friends.#(nets.#(=="fb"))#.first  >> ["Dale","Roger"]
 ```
 
 *Please note that prior to v1.3.0, queries used the `#[...]` brackets. This was
-changed in v1.3.0 as to avoid confusion with the new [multipath](#multipaths) 
+changed in v1.3.0 as to avoid confusion with the new [multipath](#multipaths)
 syntax. For backwards compatibility, `#[...]` will continue to work until the
 next major release.*
 
@@ -185,9 +185,9 @@ vals.#(b!=~*)#.a       >> [11]
 
 ### Dot vs Pipe
 
-The `.` is standard separator, but it's also possible to use a `|`. 
+The `.` is standard separator, but it's also possible to use a `|`.
 In most cases they both end up returning the same results.
-The cases where`|` differs from `.` is when it's used after the `#` for [Arrays](#arrays) and [Queries](#queries). 
+The cases where`|` differs from `.` is when it's used after the `#` for [Arrays](#arrays) and [Queries](#queries).
 
 Here are some examples
 
@@ -221,8 +221,8 @@ The `.first` suffix will process the `first` path on each array element *before*
 ["Dale","Jane"]
 ```
 
-But the `|first` suffix actually processes the `first` path *after* the previous result. 
-Since the previous result is an array, not an object, it's not possible to process 
+But the `|first` suffix actually processes the `first` path *after* the previous result.
+Since the previous result is an array, not an object, it's not possible to process
 because `first` does not exist.
 
 Yet, `|0` suffix returns
@@ -286,12 +286,12 @@ Which makes the json pretty and orders all of its keys.
 }
 ```
 
-*The full list of `@pretty` options are `sortKeys`, `indent`, `prefix`, and `width`. 
+*The full list of `@pretty` options are `sortKeys`, `indent`, `prefix`, and `width`.
 Please see [Pretty Options](https://github.com/tidwall/pretty#customized-output) for more information.*
 
 #### Custom modifiers
 
-You can also add custom modifiers. 
+You can also add custom modifiers.
 
 For example, here we create a modifier which makes the entire JSON payload upper or lower case.
 
@@ -323,11 +323,11 @@ For example, using the given multipath:
 {name.first,age,"the_murphys":friends.#(last="Murphy")#.first}
 ```
 
-Here we selected the first name, age, and the first name for friends with the 
+Here we selected the first name, age, and the first name for friends with the
 last name "Murphy".
 
-You'll notice that an optional key can be provided, in this case 
-"the_murphys", to force assign a key to a value. Otherwise, the name of the 
+You'll notice that an optional key can be provided, in this case
+"the_murphys", to force assign a key to a value. Otherwise, the name of the
 actual field will be used, in this case "first". If a name cannot be
 determined, then "_" is used.
 
@@ -339,9 +339,9 @@ This results in
 
 ### Literals
 
-Starting with v1.12.0, GJSON added support of json literals, which provides a way for constructing static blocks of json. This is can be particularly useful when constructing a new json document using [multipaths](#multipaths).  
+Starting with v1.12.0, GJSON added support of json literals, which provides a way for constructing static blocks of json. This is can be particularly useful when constructing a new json document using [multipaths](#multipaths).
 
-A json literal begins with the '!' declaration character. 
+A json literal begins with the '!' declaration character.
 
 For example, using the given multipath:
 
@@ -351,7 +351,7 @@ For example, using the given multipath:
 
 Here we selected the first name and age. Then add two new fields, "company" and "employed".
 
-This results in 
+This results in
 
 ```json
 {"first":"Tom","age":37,"company":"Happysoft","employed":true}

@@ -334,7 +334,7 @@ type arrayOrMapResult struct {
 }
 
 func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
-	var json = t.Raw
+	json := t.Raw
 	var i int
 	var value Result
 	var count int
@@ -686,7 +686,7 @@ func (t Result) Value() interface{} {
 }
 
 func parseString(json string, i int) (int, string, bool, bool) {
-	var s = i
+	s := i
 	for ; i < len(json); i++ {
 		if json[i] > '\\' {
 			continue
@@ -724,7 +724,7 @@ func parseString(json string, i int) (int, string, bool, bool) {
 }
 
 func parseNumber(json string, i int) (int, string) {
-	var s = i
+	s := i
 	i++
 	for ; i < len(json); i++ {
 		if json[i] <= ' ' || json[i] == ',' || json[i] == ']' ||
@@ -736,7 +736,7 @@ func parseNumber(json string, i int) (int, string) {
 }
 
 func parseLiteral(json string, i int) (int, string) {
-	var s = i
+	s := i
 	i++
 	for ; i < len(json); i++ {
 		if json[i] < 'a' || json[i] > 'z' {
@@ -793,8 +793,7 @@ func parseArrayPath(path string) (r arrayPathResult) {
 				} else if path[1] == '[' || path[1] == '(' {
 					// query
 					r.query.on = true
-					qpath, op, value, _, fi, vesc, ok :=
-						parseQuery(path[i:])
+					qpath, op, value, _, fi, vesc, ok := parseQuery(path[i:])
 					if !ok {
 						// bad query, end now
 						break
@@ -1103,7 +1102,7 @@ func parseObject(c *parseContext, i int, path string) (int, bool) {
 				// this is slightly different from getting s string value
 				// because we don't need the outer quotes.
 				i++
-				var s = i
+				s := i
 				for ; i < len(c.json); i++ {
 					if c.json[i] > '\\' {
 						continue
@@ -1400,6 +1399,7 @@ func queryMatches(rp *arrayPathResult, value Result) bool {
 	}
 	return false
 }
+
 func parseArray(c *parseContext, i int, path string) (int, bool) {
 	var pmatch, vesc, ok, hit bool
 	var val string
@@ -1619,8 +1619,8 @@ func parseArray(c *parseContext, i int, path string) (int, bool) {
 							c.pipe = right
 							c.piped = true
 						}
-						var indexes = make([]int, 0, 64)
-						var jsons = make([]byte, 0, 64)
+						indexes := make([]int, 0, 64)
+						jsons := make([]byte, 0, 64)
 						jsons = append(jsons, '[')
 						for j, k := 0, 0; j < len(alog); j++ {
 							idx := alog[j]
@@ -2095,7 +2095,7 @@ func Get(json, path string) Result {
 		}
 	}
 	var i int
-	var c = &parseContext{json: json}
+	c := &parseContext{json: json}
 	if len(path) >= 2 && path[0] == '.' && path[1] == '.' {
 		c.lines = true
 		parseArray(c, 0, path[2:])
@@ -2136,7 +2136,7 @@ func runeit(json string) rune {
 
 // unescape unescapes a string
 func unescape(json string) string {
-	var str = make([]byte, 0, len(json))
+	str := make([]byte, 0, len(json))
 	for i := 0; i < len(json); i++ {
 		switch {
 		default:
@@ -2377,6 +2377,7 @@ func validpayload(data []byte, i int) (outi int, ok bool) {
 	}
 	return i, false
 }
+
 func validany(data []byte, i int) (outi int, ok bool) {
 	for ; i < len(data); i++ {
 		switch data[i] {
@@ -2402,6 +2403,7 @@ func validany(data []byte, i int) (outi int, ok bool) {
 	}
 	return i, false
 }
+
 func validobject(data []byte, i int) (outi int, ok bool) {
 	for ; i < len(data); i++ {
 		switch data[i] {
@@ -2444,6 +2446,7 @@ func validobject(data []byte, i int) (outi int, ok bool) {
 	}
 	return i, false
 }
+
 func validcolon(data []byte, i int) (outi int, ok bool) {
 	for ; i < len(data); i++ {
 		switch data[i] {
@@ -2457,6 +2460,7 @@ func validcolon(data []byte, i int) (outi int, ok bool) {
 	}
 	return i, false
 }
+
 func validcomma(data []byte, i int, end byte) (outi int, ok bool) {
 	for ; i < len(data); i++ {
 		switch data[i] {
@@ -2472,6 +2476,7 @@ func validcomma(data []byte, i int, end byte) (outi int, ok bool) {
 	}
 	return i, false
 }
+
 func validarray(data []byte, i int) (outi int, ok bool) {
 	for ; i < len(data); i++ {
 		switch data[i] {
@@ -2495,6 +2500,7 @@ func validarray(data []byte, i int) (outi int, ok bool) {
 	}
 	return i, false
 }
+
 func validstring(data []byte, i int) (outi int, ok bool) {
 	for ; i < len(data); i++ {
 		if data[i] < ' ' {
@@ -2527,6 +2533,7 @@ func validstring(data []byte, i int) (outi int, ok bool) {
 	}
 	return i, false
 }
+
 func validnumber(data []byte, i int) (outi int, ok bool) {
 	i--
 	// sign
@@ -2609,6 +2616,7 @@ func validtrue(data []byte, i int) (outi int, ok bool) {
 	}
 	return i, false
 }
+
 func validfalse(data []byte, i int) (outi int, ok bool) {
 	if i+4 <= len(data) && data[i] == 'a' && data[i+1] == 'l' &&
 		data[i+2] == 's' && data[i+3] == 'e' {
@@ -2616,6 +2624,7 @@ func validfalse(data []byte, i int) (outi int, ok bool) {
 	}
 	return i, false
 }
+
 func validnull(data []byte, i int) (outi int, ok bool) {
 	if i+3 <= len(data) && data[i] == 'u' && data[i+1] == 'l' &&
 		data[i+2] == 'l' {

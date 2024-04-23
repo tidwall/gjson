@@ -1,12 +1,12 @@
 <p align="center">
-<img 
-    src="logo.png" 
+<img
+    src="logo.png"
     width="240" height="78" border="0" alt="GJSON">
 <br>
 <a href="https://godoc.org/github.com/tidwall/gjson"><img src="https://img.shields.io/badge/api-reference-blue.svg?style=flat-square" alt="GoDoc"></a>
 <a href="https://tidwall.com/gjson-play"><img src="https://img.shields.io/badge/%F0%9F%8F%90-playground-9900cc.svg?style=flat-square" alt="GJSON Playground"></a>
 <a href="SYNTAX.md"><img src="https://img.shields.io/badge/{}-syntax-33aa33.svg?style=flat-square" alt="GJSON Syntax"></a>
-	
+
 </p>
 
 <p align="center">get json values quickly</a></p>
@@ -34,7 +34,7 @@ $ go get -u github.com/tidwall/gjson
 This will retrieve the library.
 
 ## Get a value
-Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". When the value is found it's returned immediately. 
+Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". When the value is found it's returned immediately.
 
 ```go
 package main
@@ -93,9 +93,9 @@ The dot and wildcard characters can be escaped with '\\'.
 "friends.1.last"     >> "Craig"
 ```
 
-You can also query an array for the first match by using `#(...)`, or find all 
-matches with `#(...)#`. Queries support the `==`, `!=`, `<`, `<=`, `>`, `>=` 
-comparison operators and the simple pattern matching `%` (like) and `!%` 
+You can also query an array for the first match by using `#(...)`, or find all
+matches with `#(...)#`. Queries support the `==`, `!=`, `<`, `<=`, `>`, `>=`
+comparison operators and the simple pattern matching `%` (like) and `!%`
 (not like) operators.
 
 ```
@@ -109,13 +109,13 @@ friends.#(nets.#(=="fb"))#.first   >> ["Dale","Roger"]
 
 *Please note that prior to v1.3.0, queries used the `#[...]` brackets. This was
 changed in v1.3.0 as to avoid confusion with the new
-[multipath](SYNTAX.md#multipaths) syntax. For backwards compatibility, 
+[multipath](SYNTAX.md#multipaths) syntax. For backwards compatibility,
 `#[...]` will continue to work until the next major release.*
 
 ## Result Type
 
-GJSON supports the json types `string`, `number`, `bool`, and `null`. 
-Arrays and Objects are returned as their raw json types. 
+GJSON supports the json types `string`, `number`, `bool`, and `null`.
+Arrays and Objects are returned as their raw json types.
 
 The `Result` type holds one of these:
 
@@ -179,14 +179,14 @@ result.Int() int64    // -9223372036854775808 to 9223372036854775807
 result.Uint() uint64   // 0 to 18446744073709551615
 ```
 
-## Modifiers and path chaining 
+## Modifiers and path chaining
 
 New in version 1.2 is support for modifier functions and path chaining.
 
-A modifier is a path component that performs custom processing on the 
+A modifier is a path component that performs custom processing on the
 json.
 
-Multiple paths can be "chained" together using the pipe character. 
+Multiple paths can be "chained" together using the pipe character.
 This is useful for getting results from a modified query.
 
 For example, using the built-in `@reverse` modifier on the above json document,
@@ -215,13 +215,13 @@ There are currently the following built-in modifiers:
 
 ### Modifier arguments
 
-A modifier may accept an optional argument. The argument can be a valid JSON 
+A modifier may accept an optional argument. The argument can be a valid JSON
 document or just characters.
 
-For example, the `@pretty` modifier takes a json object as its argument. 
+For example, the `@pretty` modifier takes a json object as its argument.
 
 ```
-@pretty:{"sortKeys":true} 
+@pretty:{"sortKeys":true}
 ```
 
 Which makes the json pretty and orders all of its keys.
@@ -240,7 +240,7 @@ Which makes the json pretty and orders all of its keys.
 }
 ```
 
-*The full list of `@pretty` options are `sortKeys`, `indent`, `prefix`, and `width`. 
+*The full list of `@pretty` options are `sortKeys`, `indent`, `prefix`, and `width`.
 Please see [Pretty Options](https://github.com/tidwall/pretty#customized-output) for more information.*
 
 ### Custom modifiers
@@ -269,7 +269,7 @@ gjson.AddModifier("case", func(json, arg string) string {
 
 ## JSON Lines
 
-There's support for [JSON Lines](http://jsonlines.org/) using the `..` prefix, which treats a multilined document as an array. 
+There's support for [JSON Lines](http://jsonlines.org/) using the `..` prefix, which treats a multilined document as an array.
 
 For example:
 
@@ -305,14 +305,14 @@ Suppose you want all the last names from the following json:
 {
   "programmers": [
     {
-      "firstName": "Janet", 
-      "lastName": "McLaughlin", 
+      "firstName": "Janet",
+      "lastName": "McLaughlin",
     }, {
-      "firstName": "Elliotte", 
-      "lastName": "Hunter", 
+      "firstName": "Elliotte",
+      "lastName": "Hunter",
     }, {
-      "firstName": "Jason", 
-      "lastName": "Harold", 
+      "firstName": "Jason",
+      "lastName": "Harold",
     }
   ]
 }
@@ -336,7 +336,7 @@ println(name.String())  // prints "Elliotte"
 
 ## Iterate through an object or array
 
-The `ForEach` function allows for quickly iterating through an object or array. 
+The `ForEach` function allows for quickly iterating through an object or array.
 The key and value are passed to the iterator function for objects.
 Only the value is passed for arrays.
 Returning `false` from an iterator will stop iteration.
@@ -344,7 +344,7 @@ Returning `false` from an iterator will stop iteration.
 ```go
 result := gjson.Get(json, "programmers")
 result.ForEach(func(key, value gjson.Result) bool {
-	println(value.String()) 
+	println(value.String())
 	return true // keep iterating
 })
 ```
@@ -363,7 +363,7 @@ gjson.Get(json, "name.last")
 
 ## Check for the existence of a value
 
-Sometimes you just want to know if a value exists. 
+Sometimes you just want to know if a value exists.
 
 ```go
 value := gjson.Get(json, "name.last")
@@ -429,8 +429,8 @@ This is a best-effort no allocation sub slice of the original json. This method 
 
 ## Performance
 
-Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/), 
-[ffjson](https://github.com/pquerna/ffjson), 
+Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/),
+[ffjson](https://github.com/pquerna/ffjson),
 [EasyJSON](https://github.com/mailru/easyjson),
 [jsonparser](https://github.com/buger/jsonparser),
 and [json-iterator](https://github.com/json-iterator/go)
@@ -459,7 +459,7 @@ JSON document used:
       "width": 500,
       "height": 500
     },
-    "image": { 
+    "image": {
       "src": "Images/Sun.png",
       "hOffset": 250,
       "vOffset": 250,
@@ -474,7 +474,7 @@ JSON document used:
       "onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
     }
   }
-}    
+}
 ```
 
 Each operation was rotated through one of the following search paths:
