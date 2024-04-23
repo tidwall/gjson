@@ -34,7 +34,7 @@ $ go get -u github.com/tidwall/gjson
 This will retrieve the library.
 
 ## Get a value
-Get searches JSON for the specified path. A path is in dot syntax, such as "name.last" or "age". When the value is found it's returned immediately.
+Get searches JSON for the specified path. A path is in dot syntax, such as `name.last` or `age`. When the value is found it's returned immediately.
 
 ```go
 package main
@@ -318,7 +318,7 @@ Suppose you want all the last names from the following JSON:
 }
 ```
 
-You would use the path "programmers.#.lastName" like such:
+You would use the path `programmers.#.lastName` like such:
 
 ```go
 result := gjson.Get(json, "programmers.#.lastName")

@@ -324,12 +324,12 @@ For example, using the given multi-path:
 ```
 
 Here we selected the first name, age, and the first name for friends with the
-last name "Murphy".
+last name `Murphy`.
 
 You'll notice that an optional key can be provided, in this case
-"the_murphys", to force assign a key to a value. Otherwise, the name of the
-actual field will be used, in this case "first". If a name cannot be
-determined, then "_" is used.
+`the_murphys`, to force assign a key to a value. Otherwise, the name of the
+actual field will be used, in this case `first`. If a name cannot be
+determined, then `_` is used.
 
 This results in
 
@@ -349,7 +349,7 @@ For example, using the given multi-path:
 {name.first,age,"company":!"Happysoft","employed":!true}
 ```
 
-Here we selected the first name and age. Then add two new fields, "company" and "employed".
+Here we selected the first name and age. Then add two new fields, `company` and `employed`.
 
 This results in
 
