@@ -1,20 +1,20 @@
 <p align="center">
-<img 
-    src="logo.png" 
+<img
+    src="logo.png"
     width="240" height="78" border="0" alt="GJSON">
 <br>
 <a href="https://godoc.org/github.com/tidwall/gjson"><img src="https://img.shields.io/badge/api-reference-blue.svg?style=flat-square" alt="GoDoc"></a>
 <a href="https://tidwall.com/gjson-play"><img src="https://img.shields.io/badge/%F0%9F%8F%90-playground-9900cc.svg?style=flat-square" alt="GJSON Playground"></a>
 <a href="SYNTAX.md"><img src="https://img.shields.io/badge/{}-syntax-33aa33.svg?style=flat-square" alt="GJSON Syntax"></a>
-	
+
 </p>
 
-<p align="center">get json values quickly</a></p>
+<p align="center">get JSON values quickly</a></p>
 
-GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a json document.
-It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array), and [parsing json lines](#json-lines).
+GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a JSON document.
+It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array), and [parsing JSON lines](#json-lines).
 
-Also check out [SJSON](https://github.com/tidwall/sjson) for modifying json, and the [JJ](https://github.com/tidwall/jj) command line tool.
+Also check out [SJSON](https://github.com/tidwall/sjson) for modifying JSON, and the [JJ](https://github.com/tidwall/jj) command-line tool.
 
 This README is a quick overview of how to use GJSON, for more information check out [GJSON Syntax](SYNTAX.md).
 
@@ -34,7 +34,7 @@ $ go get -u github.com/tidwall/gjson
 This will retrieve the library.
 
 ## Get a value
-Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". When the value is found it's returned immediately. 
+Get searches JSON for the specified path. A path is in dot syntax, such as `name.last` or `age`. When the value is found it's returned immediately.
 
 ```go
 package main
@@ -58,7 +58,7 @@ Prichard
 
 ## Path Syntax
 
-Below is a quick overview of the path syntax, for more complete information please
+Below is a quick overview of the path syntax, for further information please
 check out [GJSON Syntax](SYNTAX.md).
 
 A path is a series of keys separated by a dot.
@@ -93,9 +93,9 @@ The dot and wildcard characters can be escaped with '\\'.
 "friends.1.last"     >> "Craig"
 ```
 
-You can also query an array for the first match by using `#(...)`, or find all 
-matches with `#(...)#`. Queries support the `==`, `!=`, `<`, `<=`, `>`, `>=` 
-comparison operators and the simple pattern matching `%` (like) and `!%` 
+You can also query an array for the first match by using `#(...)`, or find all
+matches with `#(...)#`. Queries support the `==`, `!=`, `<`, `<=`, `>`, `>=`
+comparison operators and the simple pattern matching `%` (like) and `!%`
 (not like) operators.
 
 ```
@@ -107,15 +107,15 @@ friends.#(first!%"D*").last        >> "Craig"
 friends.#(nets.#(=="fb"))#.first   >> ["Dale","Roger"]
 ```
 
-*Please note that prior to v1.3.0, queries used the `#[...]` brackets. This was
+*Please note that before v1.3.0, queries used the `#[...]` brackets. This was
 changed in v1.3.0 as to avoid confusion with the new
-[multipath](SYNTAX.md#multipaths) syntax. For backwards compatibility, 
+[multi-paths](SYNTAX.md#multi-paths) syntax. For backwards compatibility,
 `#[...]` will continue to work until the next major release.*
 
 ## Result Type
 
-GJSON supports the json types `string`, `number`, `bool`, and `null`. 
-Arrays and Objects are returned as their raw json types. 
+GJSON supports the JSON types `string`, `number`, `bool`, and `null`.
+Arrays and Objects are returned as their raw JSON types.
 
 The `Result` type holds one of these:
 
@@ -137,7 +137,7 @@ result.Index          // index of raw value in original json, zero means index u
 result.Indexes        // indexes of all the elements that match on a path containing the '#' query character.
 ```
 
-There are a variety of handy functions that work on a result:
+These are a variety of handy functions that work on a result:
 
 ```go
 result.Exists() bool
@@ -179,17 +179,17 @@ result.Int() int64    // -9223372036854775808 to 9223372036854775807
 result.Uint() uint64   // 0 to 18446744073709551615
 ```
 
-## Modifiers and path chaining 
+## Modifiers and path chaining
 
 New in version 1.2 is support for modifier functions and path chaining.
 
-A modifier is a path component that performs custom processing on the 
-json.
+A modifier is a path component that performs custom processing on the
+JSON.
 
-Multiple paths can be "chained" together using the pipe character. 
+Multiple paths can be "chained" together using the pipe character.
 This is useful for getting results from a modified query.
 
-For example, using the built-in `@reverse` modifier on the above json document,
+For example, using the built-in `@reverse` modifier on the above JSON document,
 we'll get `children` array and reverse the order:
 
 ```
@@ -197,34 +197,34 @@ we'll get `children` array and reverse the order:
 "children|@reverse|0"         >> "Jack"
 ```
 
-There are currently the following built-in modifiers:
+These are currently the following built-in modifiers:
 
 - `@reverse`: Reverse an array or the members of an object.
-- `@ugly`: Remove all whitespace from a json document.
-- `@pretty`: Make the json document more human readable.
+- `@ugly`: Remove all whitespace from a JSON document.
+- `@pretty`: Make the JSON document more human-readable.
 - `@this`: Returns the current element. It can be used to retrieve the root element.
-- `@valid`: Ensure the json document is valid.
+- `@valid`: Ensure the JSON document is valid.
 - `@flatten`: Flattens an array.
 - `@join`: Joins multiple objects into a single object.
 - `@keys`: Returns an array of keys for an object.
 - `@values`: Returns an array of values for an object.
-- `@tostr`: Converts json to a string. Wraps a json string.
-- `@fromstr`: Converts a string from json. Unwraps a json string.
+- `@tostr`: Converts JSON to a string. Wraps a JSON string.
+- `@fromstr`: Converts a string from JSON. Unwraps a JSON string.
 - `@group`: Groups arrays of objects. See [e4fc67c](https://github.com/tidwall/gjson/commit/e4fc67c92aeebf2089fabc7872f010e340d105db).
 - `@dig`: Search for a value without providing its entire path. See [e8e87f2](https://github.com/tidwall/gjson/commit/e8e87f2a00dc41f3aba5631094e21f59a8cf8cbf).
 
 ### Modifier arguments
 
-A modifier may accept an optional argument. The argument can be a valid JSON 
+A modifier may accept an optional argument. The argument can be a valid JSON
 document or just characters.
 
-For example, the `@pretty` modifier takes a json object as its argument. 
+For example, the `@pretty` modifier takes a JSON object as its argument.
 
 ```
-@pretty:{"sortKeys":true} 
+@pretty:{"sortKeys":true}
 ```
 
-Which makes the json pretty and orders all of its keys.
+Which makes the JSON pretty and orders all of its keys.
 
 ```json
 {
@@ -240,14 +240,14 @@ Which makes the json pretty and orders all of its keys.
 }
 ```
 
-*The full list of `@pretty` options are `sortKeys`, `indent`, `prefix`, and `width`. 
+*The full list of `@pretty` options are `sortKeys`, `indent`, `prefix`, and `width`.
 Please see [Pretty Options](https://github.com/tidwall/pretty#customized-output) for more information.*
 
 ### Custom modifiers
 
 You can also add custom modifiers.
 
-For example, here we create a modifier that makes the entire json document upper
+For example, here we create a modifier that makes the entire JSON document upper
 or lower case.
 
 ```go
@@ -269,7 +269,7 @@ gjson.AddModifier("case", func(json, arg string) string {
 
 ## JSON Lines
 
-There's support for [JSON Lines](http://jsonlines.org/) using the `..` prefix, which treats a multilined document as an array. 
+There's support for [JSON Lines](http://jsonlines.org/) using the `..` prefix, which treats a multi-lined document as an array.
 
 For example:
 
@@ -299,26 +299,26 @@ gjson.ForEachLine(json, func(line gjson.Result) bool{
 
 ## Get nested array values
 
-Suppose you want all the last names from the following json:
+Suppose you want all the last names from the following JSON:
 
 ```json
 {
   "programmers": [
     {
-      "firstName": "Janet", 
-      "lastName": "McLaughlin", 
+      "firstName": "Janet",
+      "lastName": "McLaughlin",
     }, {
-      "firstName": "Elliotte", 
-      "lastName": "Hunter", 
+      "firstName": "Elliotte",
+      "lastName": "Hunter",
     }, {
-      "firstName": "Jason", 
-      "lastName": "Harold", 
+      "firstName": "Jason",
+      "lastName": "Harold",
     }
   ]
 }
 ```
 
-You would use the path "programmers.#.lastName" like such:
+You would use the path `programmers.#.lastName` like such:
 
 ```go
 result := gjson.Get(json, "programmers.#.lastName")
@@ -336,7 +336,7 @@ println(name.String())  // prints "Elliotte"
 
 ## Iterate through an object or array
 
-The `ForEach` function allows for quickly iterating through an object or array. 
+The `ForEach` function allows for quickly iterating through an object or array.
 The key and value are passed to the iterator function for objects.
 Only the value is passed for arrays.
 Returning `false` from an iterator will stop iteration.
@@ -344,7 +344,7 @@ Returning `false` from an iterator will stop iteration.
 ```go
 result := gjson.Get(json, "programmers")
 result.ForEach(func(key, value gjson.Result) bool {
-	println(value.String()) 
+	println(value.String())
 	return true // keep iterating
 })
 ```
@@ -353,7 +353,7 @@ result.ForEach(func(key, value gjson.Result) bool {
 
 There's a `Parse(json)` function that will do a simple parse, and `result.Get(path)` that will search a result.
 
-For example, all of these will return the same result:
+For example, these will return the same result:
 
 ```go
 gjson.Parse(json).Get("name").Get("last")
@@ -363,7 +363,7 @@ gjson.Get(json, "name.last")
 
 ## Check for the existence of a value
 
-Sometimes you just want to know if a value exists. 
+Sometimes you just want to know if a value exists.
 
 ```go
 value := gjson.Get(json, "name.last")
@@ -381,9 +381,9 @@ if gjson.Get(json, "name.last").Exists() {
 
 ## Validate JSON
 
-The `Get*` and `Parse*` functions expects that the json is well-formed. Bad json will not panic, but it may return back unexpected results.
+The `Get*` and `Parse*` functions expects that the JSON is well-formed. Bad JSON will not panic, but it may return unexpected results.
 
-If you are consuming JSON from an unpredictable source then you may want to validate prior to using GJSON.
+If you are consuming JSON from an unpredictable source then you may want to validate before using GJSON.
 
 ```go
 if !gjson.Valid(json) {
@@ -412,7 +412,7 @@ var json []byte = ...
 result := gjson.GetBytes(json, path)
 ```
 
-If you are using the `gjson.GetBytes(json, path)` function and you want to avoid converting `result.Raw` to a `[]byte`, then you can use this pattern:
+If you are using the `gjson.GetBytes(json, path)` function, and you want to avoid converting `result.Raw` to a `[]byte`, then you can use this pattern:
 
 ```go
 var json []byte = ...
@@ -425,12 +425,12 @@ if result.Index > 0 {
 }
 ```
 
-This is a best-effort no allocation sub slice of the original json. This method utilizes the `result.Index` field, which is the position of the raw data in the original json. It's possible that the value of `result.Index` equals zero, in which case the `result.Raw` is converted to a `[]byte`.
+This is a best-effort no allocation sub slice of the original JSON. This method utilizes the `result.Index` field, which is the position of the raw data in the original JSON. It's possible that the value of `result.Index` equals zero, in which case the `result.Raw` is converted to a `[]byte`.
 
 ## Performance
 
-Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/), 
-[ffjson](https://github.com/pquerna/ffjson), 
+Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/json/),
+[ffjson](https://github.com/pquerna/ffjson),
 [EasyJSON](https://github.com/mailru/easyjson),
 [jsonparser](https://github.com/buger/jsonparser),
 and [json-iterator](https://github.com/json-iterator/go)
@@ -459,7 +459,7 @@ JSON document used:
       "width": 500,
       "height": 500
     },
-    "image": { 
+    "image": {
       "src": "Images/Sun.png",
       "hOffset": 250,
       "vOffset": 250,
@@ -474,7 +474,7 @@ JSON document used:
       "onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
     }
   }
-}    
+}
 ```
 
 Each operation was rotated through one of the following search paths:
