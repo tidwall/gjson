@@ -1,4 +1,4 @@
-// Package gjson provides searching for json strings.
+// Package gjson provides searching for JSON strings.
 package gjson
 
 import (
@@ -17,15 +17,15 @@ import (
 type Type int
 
 const (
-	// Null is a null json value
+	// Null is a null JSON value
 	Null Type = iota
-	// False is a json false boolean
+	// False is a JSON false boolean
 	False
-	// Number is json number
+	// Number is JSON number
 	Number
-	// String is a json string
+	// String is a JSON string
 	String
-	// True is a json true boolean
+	// True is a JSON true boolean
 	True
 	// JSON is a raw block of JSON
 	JSON
@@ -51,17 +51,17 @@ func (t Type) String() string {
 	}
 }
 
-// Result represents a json value that is returned from Get().
+// Result represents a JSON value that is returned from Get().
 type Result struct {
-	// Type is the json type
+	// Type is the JSON type
 	Type Type
-	// Raw is the raw json
+	// Raw is the raw JSON
 	Raw string
-	// Str is the json string
+	// Str is the JSON string
 	Str string
-	// Num is the json number
+	// Num is the JSON number
 	Num float64
-	// Index of raw value in original json, zero means index unknown
+	// Index of raw value in original JSON, zero means index unknown
 	Index int
 	// Indexes of all the elements that match on a path containing the '#'
 	// query character.
@@ -455,10 +455,10 @@ end:
 	return
 }
 
-// Parse parses the json and returns a result.
+// Parse parses the JSON and returns a result.
 //
-// This function expects that the json is well-formed, and does not validate.
-// Invalid json will not panic, but it may return back unexpected results.
+// This function expects that the JSON is well-formed, and does not validate.
+// Invalid JSON will not panic, but it may return back unexpected results.
 // If you are consuming JSON from an unpredictable source then you may want to
 // use the Valid function first.
 func Parse(json string) Result {
@@ -508,7 +508,7 @@ func Parse(json string) Result {
 	return value
 }
 
-// ParseBytes parses the json and returns a result.
+// ParseBytes parses the JSON and returns a result.
 // If working with bytes, this method preferred over Parse(string(data))
 func ParseBytes(json []byte) Result {
 	return Parse(string(json))
@@ -1978,7 +1978,7 @@ type parseContext struct {
 	lines bool
 }
 
-// Get searches json for the specified path.
+// Get searches JSON for the specified path.
 // A path is in dot syntax, such as "name.last" or "age".
 // When the value is found it's returned immediately.
 //
@@ -2007,8 +2007,8 @@ type parseContext struct {
 //	"c?ildren.0"         >> "Sara"
 //	"friends.#.first"    >> ["James","Roger"]
 //
-// This function expects that the json is well-formed, and does not validate.
-// Invalid json will not panic, but it may return back unexpected results.
+// This function expects that the JSON is well-formed, and does not validate.
+// Invalid JSON will not panic, but it may return back unexpected results.
 // If you are consuming JSON from an unpredictable source then you may want to
 // use the Valid function first.
 func Get(json, path string) Result {
@@ -2122,7 +2122,7 @@ func Get(json, path string) Result {
 	return c.value
 }
 
-// GetBytes searches json for the specified path.
+// GetBytes searches JSON for the specified path.
 // If working with bytes, this method preferred over Get(string(data), path)
 func GetBytes(json []byte, path string) Result {
 	return getBytes(json, path)
@@ -2254,7 +2254,7 @@ func stringLessInsensitive(a, b string) bool {
 	return len(a) < len(b)
 }
 
-// parseAny parses the next value from a json string.
+// parseAny parses the next value from a JSON string.
 // A Result is returned when the hit param is set.
 // The return values are (i int, res Result, ok bool)
 func parseAny(json string, i int, hit bool) (int, Result, bool) {
@@ -2332,7 +2332,7 @@ func parseAny(json string, i int, hit bool) (int, Result, bool) {
 	return i, res, false
 }
 
-// GetMany searches json for the multiple paths.
+// GetMany searches JSON for the multiple paths.
 // The return value is a Result array where the number of items
 // will be equal to the number of input paths.
 func GetMany(json string, path ...string) []Result {
@@ -2343,7 +2343,7 @@ func GetMany(json string, path ...string) []Result {
 	return res
 }
 
-// GetManyBytes searches json for the multiple paths.
+// GetManyBytes searches JSON for the multiple paths.
 // The return value is a Result array where the number of items
 // will be equal to the number of input paths.
 func GetManyBytes(json []byte, path ...string) []Result {
@@ -2633,7 +2633,7 @@ func validnull(data []byte, i int) (outi int, ok bool) {
 	return i, false
 }
 
-// Valid returns true if the input is valid json.
+// Valid returns true if the input is valid JSON.
 //
 //	if !gjson.Valid(json) {
 //		return errors.New("invalid json")
@@ -2644,7 +2644,7 @@ func Valid(json string) bool {
 	return ok
 }
 
-// ValidBytes returns true if the input is valid json.
+// ValidBytes returns true if the input is valid JSON.
 //
 //	if !gjson.Valid(json) {
 //		return errors.New("invalid json")
@@ -2767,7 +2767,7 @@ func execModifier(json, path string) (pathOut, res string, ok bool) {
 			var parsedArgs bool
 			switch pathOut[0] {
 			case '{', '[', '"':
-				// json arg
+				// JSON arg
 				res := Parse(pathOut)
 				if res.Exists() {
 					args = squash(pathOut)
@@ -2797,7 +2797,7 @@ func execModifier(json, path string) (pathOut, res string, ok bool) {
 	return pathOut, res, false
 }
 
-// unwrap removes the '[]' or '{}' characters around json
+// unwrap removes the '[]' or '{}' characters around JSON
 func unwrap(json string) string {
 	json = trim(json)
 	if len(json) >= 2 && (json[0] == '[' || json[0] == '{') {
@@ -2862,7 +2862,7 @@ func cleanWS(s string) string {
 	return s
 }
 
-// @pretty modifier makes the json look nice.
+// @pretty modifier makes the JSON look nice.
 func modPretty(json, arg string) string {
 	if len(arg) > 0 {
 		opts := *pretty.DefaultOptions
@@ -2944,7 +2944,7 @@ func modReverse(json, arg string) string {
 //
 //	[1,[2],[3,4],[5,[6,7]]] -> [1,2,3,4,5,6,7]
 //
-// The original json is returned when the json is not an array.
+// The original JSON is returned when the JSON is not an array.
 func modFlatten(json, arg string) string {
 	res := Parse(json)
 	if !res.IsArray() {
@@ -3053,7 +3053,7 @@ func modValues(json, arg string) string {
 //
 //	[{"first":"Tom","age":37},{"age":41}] -> {"first","Tom","age":41}
 //
-// The original json is returned when the json is not an object.
+// The original JSON is returned when the JSON is not an object.
 func modJoin(json, arg string) string {
 	res := Parse(json)
 	if !res.IsArray() {
@@ -3115,9 +3115,9 @@ func modJoin(json, arg string) string {
 	return bytesString(out)
 }
 
-// @valid ensures that the json is valid before moving on. An empty string is
-// returned when the json is not valid, otherwise it returns the original json.
-func modValid(json, arg string) string {
+// @valid ensures that the JSON is valid before moving on. An empty string is
+// returned when the JSON is not valid, otherwise it returns the original JSON.
+func modValid(json, _ string) string {
 	if !Valid(json) {
 		return ""
 	}
@@ -3189,9 +3189,9 @@ type sliceHeader struct {
 	cap  int
 }
 
-// getBytes casts the input json bytes to a string and safely returns the
+// getBytes casts the input JSON bytes to a string and safely returns the
 // results as uniquely allocated data. This operation is intended to minimize
-// copies and allocations for the large json string->[]byte.
+// copies and allocations for the large JSON string->[]byte.
 func getBytes(json []byte, path string) Result {
 	var result Result
 	if json != nil {

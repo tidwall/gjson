@@ -9,12 +9,12 @@
 
 </p>
 
-<p align="center">get json values quickly</a></p>
+<p align="center">get JSON values quickly</a></p>
 
-GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a json document.
-It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array), and [parsing json lines](#json-lines).
+GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a JSON document.
+It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array), and [parsing JSON lines](#json-lines).
 
-Also check out [SJSON](https://github.com/tidwall/sjson) for modifying json, and the [JJ](https://github.com/tidwall/jj) command line tool.
+Also check out [SJSON](https://github.com/tidwall/sjson) for modifying JSON, and the [JJ](https://github.com/tidwall/jj) command line tool.
 
 This README is a quick overview of how to use GJSON, for more information check out [GJSON Syntax](SYNTAX.md).
 
@@ -34,7 +34,7 @@ $ go get -u github.com/tidwall/gjson
 This will retrieve the library.
 
 ## Get a value
-Get searches json for the specified path. A path is in dot syntax, such as "name.last" or "age". When the value is found it's returned immediately.
+Get searches JSON for the specified path. A path is in dot syntax, such as "name.last" or "age". When the value is found it's returned immediately.
 
 ```go
 package main
@@ -114,8 +114,8 @@ changed in v1.3.0 as to avoid confusion with the new
 
 ## Result Type
 
-GJSON supports the json types `string`, `number`, `bool`, and `null`.
-Arrays and Objects are returned as their raw json types.
+GJSON supports the JSON types `string`, `number`, `bool`, and `null`.
+Arrays and Objects are returned as their raw JSON types.
 
 The `Result` type holds one of these:
 
@@ -184,12 +184,12 @@ result.Uint() uint64   // 0 to 18446744073709551615
 New in version 1.2 is support for modifier functions and path chaining.
 
 A modifier is a path component that performs custom processing on the
-json.
+JSON.
 
 Multiple paths can be "chained" together using the pipe character.
 This is useful for getting results from a modified query.
 
-For example, using the built-in `@reverse` modifier on the above json document,
+For example, using the built-in `@reverse` modifier on the above JSON document,
 we'll get `children` array and reverse the order:
 
 ```
@@ -197,19 +197,19 @@ we'll get `children` array and reverse the order:
 "children|@reverse|0"         >> "Jack"
 ```
 
-There are currently the following built-in modifiers:
+These are currently the following built-in modifiers:
 
 - `@reverse`: Reverse an array or the members of an object.
-- `@ugly`: Remove all whitespace from a json document.
-- `@pretty`: Make the json document more human readable.
+- `@ugly`: Remove all whitespace from a JSON document.
+- `@pretty`: Make the JSON document more human readable.
 - `@this`: Returns the current element. It can be used to retrieve the root element.
-- `@valid`: Ensure the json document is valid.
+- `@valid`: Ensure the JSON document is valid.
 - `@flatten`: Flattens an array.
 - `@join`: Joins multiple objects into a single object.
 - `@keys`: Returns an array of keys for an object.
 - `@values`: Returns an array of values for an object.
-- `@tostr`: Converts json to a string. Wraps a json string.
-- `@fromstr`: Converts a string from json. Unwraps a json string.
+- `@tostr`: Converts JSON to a string. Wraps a JSON string.
+- `@fromstr`: Converts a string from JSON. Unwraps a JSON string.
 - `@group`: Groups arrays of objects. See [e4fc67c](https://github.com/tidwall/gjson/commit/e4fc67c92aeebf2089fabc7872f010e340d105db).
 - `@dig`: Search for a value without providing its entire path. See [e8e87f2](https://github.com/tidwall/gjson/commit/e8e87f2a00dc41f3aba5631094e21f59a8cf8cbf).
 
@@ -218,13 +218,13 @@ There are currently the following built-in modifiers:
 A modifier may accept an optional argument. The argument can be a valid JSON
 document or just characters.
 
-For example, the `@pretty` modifier takes a json object as its argument.
+For example, the `@pretty` modifier takes a JSON object as its argument.
 
 ```
 @pretty:{"sortKeys":true}
 ```
 
-Which makes the json pretty and orders all of its keys.
+Which makes the JSON pretty and orders all of its keys.
 
 ```json
 {
@@ -247,7 +247,7 @@ Please see [Pretty Options](https://github.com/tidwall/pretty#customized-output)
 
 You can also add custom modifiers.
 
-For example, here we create a modifier that makes the entire json document upper
+For example, here we create a modifier that makes the entire JSON document upper
 or lower case.
 
 ```go
@@ -299,7 +299,7 @@ gjson.ForEachLine(json, func(line gjson.Result) bool{
 
 ## Get nested array values
 
-Suppose you want all the last names from the following json:
+Suppose you want all the last names from the following JSON:
 
 ```json
 {
@@ -381,7 +381,7 @@ if gjson.Get(json, "name.last").Exists() {
 
 ## Validate JSON
 
-The `Get*` and `Parse*` functions expects that the json is well-formed. Bad json will not panic, but it may return back unexpected results.
+The `Get*` and `Parse*` functions expects that the JSON is well-formed. Bad JSON will not panic, but it may return back unexpected results.
 
 If you are consuming JSON from an unpredictable source then you may want to validate prior to using GJSON.
 
@@ -425,7 +425,7 @@ if result.Index > 0 {
 }
 ```
 
-This is a best-effort no allocation sub slice of the original json. This method utilizes the `result.Index` field, which is the position of the raw data in the original json. It's possible that the value of `result.Index` equals zero, in which case the `result.Raw` is converted to a `[]byte`.
+This is a best-effort no allocation sub slice of the original JSON. This method utilizes the `result.Index` field, which is the position of the raw data in the original JSON. It's possible that the value of `result.Index` equals zero, in which case the `result.Raw` is converted to a `[]byte`.
 
 ## Performance
 

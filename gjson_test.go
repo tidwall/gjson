@@ -107,7 +107,7 @@ func TestEscapePath(t *testing.T) {
 	testEscapePath(t, json, "test.keyk\\*.key\\?", "val7")
 }
 
-// this json block is poorly formed on purpose.
+// this JSON block is poorly formed on purpose.
 var basicJSON = `  {"age":100, "name":{"here":"B\\\"R"},
 	"noop":{"what is a wren?":"a bird"},
 	"happy":true,"immortal":false,

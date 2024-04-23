@@ -250,13 +250,13 @@ There are currently the following built-in modifiers:
 - `@ugly`: Remove all whitespace from JSON.
 - `@pretty`: Make the JSON more human readable.
 - `@this`: Returns the current element. It can be used to retrieve the root element.
-- `@valid`: Ensure the json document is valid.
+- `@valid`: Ensure the JSON document is valid.
 - `@flatten`: Flattens an array.
 - `@join`: Joins multiple objects into a single object.
 - `@keys`: Returns an array of keys for an object.
 - `@values`: Returns an array of values for an object.
-- `@tostr`: Converts json to a string. Wraps a json string.
-- `@fromstr`: Converts a string from json. Unwraps a json string.
+- `@tostr`: Converts JSON to a string. Wraps a JSON string.
+- `@fromstr`: Converts a string from JSON. Unwraps a JSON string.
 - `@group`: Groups arrays of objects. See [e4fc67c](https://github.com/tidwall/gjson/commit/e4fc67c92aeebf2089fabc7872f010e340d105db).
 - `@dig`: Search for a value without providing its entire path. See [e8e87f2](https://github.com/tidwall/gjson/commit/e8e87f2a00dc41f3aba5631094e21f59a8cf8cbf).
 
@@ -264,13 +264,13 @@ There are currently the following built-in modifiers:
 
 A modifier may accept an optional argument. The argument can be a valid JSON payload or just characters.
 
-For example, the `@pretty` modifier takes a json object as its argument.
+For example, the `@pretty` modifier takes a JSON object as its argument.
 
 ```
 @pretty:{"sortKeys":true}
 ```
 
-Which makes the json pretty and orders all of its keys.
+Which makes the JSON pretty and orders all of its keys.
 
 ```json
 {
@@ -339,9 +339,9 @@ This results in
 
 ### Literals
 
-Starting with v1.12.0, GJSON added support of json literals, which provides a way for constructing static blocks of json. This is can be particularly useful when constructing a new json document using [multipaths](#multipaths).
+Starting with v1.12.0, GJSON added support of JSON literals, which provides a way for constructing static blocks of JSON. This is can be particularly useful when constructing a new JSON document using [multipaths](#multipaths).
 
-A json literal begins with the '!' declaration character.
+A JSON literal begins with the '!' declaration character.
 
 For example, using the given multipath:
 
