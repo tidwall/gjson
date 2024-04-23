@@ -14,7 +14,7 @@
 GJSON is a Go package that provides a [fast](#performance) and [simple](#get-a-value) way to get values from a JSON document.
 It has features such as [one line retrieval](#get-a-value), [dot notation paths](#path-syntax), [iteration](#iterate-through-an-object-or-array), and [parsing JSON lines](#json-lines).
 
-Also check out [SJSON](https://github.com/tidwall/sjson) for modifying JSON, and the [JJ](https://github.com/tidwall/jj) command line tool.
+Also check out [SJSON](https://github.com/tidwall/sjson) for modifying JSON, and the [JJ](https://github.com/tidwall/jj) command-line tool.
 
 This README is a quick overview of how to use GJSON, for more information check out [GJSON Syntax](SYNTAX.md).
 
@@ -58,7 +58,7 @@ Prichard
 
 ## Path Syntax
 
-Below is a quick overview of the path syntax, for more complete information please
+Below is a quick overview of the path syntax, for further information please
 check out [GJSON Syntax](SYNTAX.md).
 
 A path is a series of keys separated by a dot.
@@ -107,9 +107,9 @@ friends.#(first!%"D*").last        >> "Craig"
 friends.#(nets.#(=="fb"))#.first   >> ["Dale","Roger"]
 ```
 
-*Please note that prior to v1.3.0, queries used the `#[...]` brackets. This was
+*Please note that before v1.3.0, queries used the `#[...]` brackets. This was
 changed in v1.3.0 as to avoid confusion with the new
-[multipath](SYNTAX.md#multipaths) syntax. For backwards compatibility,
+[multi-paths](SYNTAX.md#multi-paths) syntax. For backwards compatibility,
 `#[...]` will continue to work until the next major release.*
 
 ## Result Type
@@ -137,7 +137,7 @@ result.Index          // index of raw value in original json, zero means index u
 result.Indexes        // indexes of all the elements that match on a path containing the '#' query character.
 ```
 
-There are a variety of handy functions that work on a result:
+These are a variety of handy functions that work on a result:
 
 ```go
 result.Exists() bool
@@ -201,7 +201,7 @@ These are currently the following built-in modifiers:
 
 - `@reverse`: Reverse an array or the members of an object.
 - `@ugly`: Remove all whitespace from a JSON document.
-- `@pretty`: Make the JSON document more human readable.
+- `@pretty`: Make the JSON document more human-readable.
 - `@this`: Returns the current element. It can be used to retrieve the root element.
 - `@valid`: Ensure the JSON document is valid.
 - `@flatten`: Flattens an array.
@@ -269,7 +269,7 @@ gjson.AddModifier("case", func(json, arg string) string {
 
 ## JSON Lines
 
-There's support for [JSON Lines](http://jsonlines.org/) using the `..` prefix, which treats a multilined document as an array.
+There's support for [JSON Lines](http://jsonlines.org/) using the `..` prefix, which treats a multi-lined document as an array.
 
 For example:
 
@@ -353,7 +353,7 @@ result.ForEach(func(key, value gjson.Result) bool {
 
 There's a `Parse(json)` function that will do a simple parse, and `result.Get(path)` that will search a result.
 
-For example, all of these will return the same result:
+For example, these will return the same result:
 
 ```go
 gjson.Parse(json).Get("name").Get("last")
@@ -381,9 +381,9 @@ if gjson.Get(json, "name.last").Exists() {
 
 ## Validate JSON
 
-The `Get*` and `Parse*` functions expects that the JSON is well-formed. Bad JSON will not panic, but it may return back unexpected results.
+The `Get*` and `Parse*` functions expects that the JSON is well-formed. Bad JSON will not panic, but it may return unexpected results.
 
-If you are consuming JSON from an unpredictable source then you may want to validate prior to using GJSON.
+If you are consuming JSON from an unpredictable source then you may want to validate before using GJSON.
 
 ```go
 if !gjson.Valid(json) {
@@ -412,7 +412,7 @@ var json []byte = ...
 result := gjson.GetBytes(json, path)
 ```
 
-If you are using the `gjson.GetBytes(json, path)` function and you want to avoid converting `result.Raw` to a `[]byte`, then you can use this pattern:
+If you are using the `gjson.GetBytes(json, path)` function, and you want to avoid converting `result.Raw` to a `[]byte`, then you can use this pattern:
 
 ```go
 var json []byte = ...

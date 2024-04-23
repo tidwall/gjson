@@ -99,7 +99,7 @@ func (t Result) String() string {
 	}
 }
 
-// Bool returns an boolean representation.
+// Bool returns a boolean representation.
 func (t Result) Bool() bool {
 	switch t.Type {
 	default:
@@ -166,7 +166,7 @@ func (t Result) Uint() uint64 {
 	}
 }
 
-// Float returns an float64 representation.
+// Float returns a float64 representation.
 func (t Result) Float() float64 {
 	switch t.Type {
 	default:
@@ -458,7 +458,7 @@ end:
 // Parse parses the JSON and returns a result.
 //
 // This function expects that the JSON is well-formed, and does not validate.
-// Invalid JSON will not panic, but it may return back unexpected results.
+// Invalid JSON will not panic, but it may return unexpected results.
 // If you are consuming JSON from an unpredictable source then you may want to
 // use the Valid function first.
 func Parse(json string) Result {
@@ -480,7 +480,7 @@ func Parse(json string) Result {
 			value.Raw, value.Num = tonum(json[i:])
 		case 'n':
 			if i+1 < len(json) && json[i+1] != 'u' {
-				// nan
+				// NaN
 				value.Type = Number
 				value.Raw, value.Num = tonum(json[i:])
 			} else {
@@ -1813,10 +1813,10 @@ type subSelector struct {
 	path string
 }
 
-// parseSubSelectors returns the subselectors belonging to a '[path1,path2]' or
+// parseSubSelectors returns the sub-selectors belonging to a '[path1,path2]' or
 // '{"field1":path1,"field2":path2}' type subSelection. It's expected that the
 // first character in path is either '[' or '{', and has already been checked
-// prior to calling this function.
+// before calling this function.
 func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 	modifier := 0
 	depth := 1
@@ -2008,7 +2008,7 @@ type parseContext struct {
 //	"friends.#.first"    >> ["James","Roger"]
 //
 // This function expects that the JSON is well-formed, and does not validate.
-// Invalid JSON will not panic, but it may return back unexpected results.
+// Invalid JSON will not panic, but it may return unexpected results.
 // If you are consuming JSON from an unpredictable source then you may want to
 // use the Valid function first.
 func Get(json, path string) Result {
@@ -2035,7 +2035,7 @@ func Get(json, path string) Result {
 			}
 		}
 		if path[0] == '[' || path[0] == '{' {
-			// using a subselector path
+			// using a sub-selector path
 			kind := path[0]
 			var ok bool
 			var subs []subSelector
@@ -2128,7 +2128,7 @@ func GetBytes(json []byte, path string) Result {
 	return getBytes(json, path)
 }
 
-// runeit returns the rune from the the \uXXXX
+// runeit returns the rune from the \uXXXX
 func runeit(json string) rune {
 	n, _ := strconv.ParseUint(json[:4], 16, 64)
 	return rune(n)
@@ -2255,7 +2255,7 @@ func stringLessInsensitive(a, b string) bool {
 }
 
 // parseAny parses the next value from a JSON string.
-// A Result is returned when the hit param is set.
+// A Result is returned when the hit parameter is set.
 // The return values are (i int, res Result, ok bool)
 func parseAny(json string, i int, hit bool) (int, Result, bool) {
 	var res Result
@@ -2767,7 +2767,7 @@ func execModifier(json, path string) (pathOut, res string, ok bool) {
 			var parsedArgs bool
 			switch pathOut[0] {
 			case '{', '[', '"':
-				// JSON arg
+				// JSON argument
 				res := Parse(pathOut)
 				if res.Exists() {
 					args = squash(pathOut)
@@ -2776,7 +2776,7 @@ func execModifier(json, path string) (pathOut, res string, ok bool) {
 				}
 			}
 			if !parsedArgs {
-				// simple arg
+				// simple argument
 				i := 0
 				for ; i < len(pathOut); i++ {
 					if pathOut[i] == '|' {
@@ -2940,7 +2940,7 @@ func modReverse(json, arg string) string {
 //
 //	[1,[2],[3,4],[5,[6,7]]] -> [1,2,3,4,5,[6,7]]
 //
-// The {"deep":true} arg can be provide for deep flattening.
+// The {"deep":true} argument can be provided for deep flattening.
 //
 //	[1,[2],[3,4],[5,[6,7]]] -> [1,2,3,4,5,6,7]
 //
@@ -3221,11 +3221,11 @@ func getBytes(json []byte, path string) Result {
 		} else if uintptr(strh.data) >= uintptr(rawh.data) &&
 			uintptr(strh.data)+uintptr(strh.len) <=
 				uintptr(rawh.data)+uintptr(rawh.len) {
-			// Str is a substring of Raw.
+			// Str is a sub-string of Raw.
 			start := uintptr(strh.data) - uintptr(rawh.data)
 			// safely copy the raw slice header
 			result.Raw = string(*(*[]byte)(unsafe.Pointer(&rawh)))
-			// substring the raw
+			// sub-string the raw
 			result.Str = result.Raw[start : start+uintptr(strh.len)]
 		} else {
 			// safely copy both the raw and str slice headers to strings
@@ -3319,10 +3319,10 @@ func revSquash(json string) string {
 //
 //	["friends.0.first","friends.1.first","friends.2.first"]
 //
-// The param 'json' must be the original JSON used when calling Get.
+// The parameter 'json' must be the original JSON used when calling Get.
 //
 // Returns an empty string if the paths cannot be determined, which can happen
-// when the Result came from a path that contained a multipath, modifier,
+// when the Result came from a path that contained a multi-path, modifier,
 // or a nested query.
 func (t Result) Paths(json string) []string {
 	if t.Indexes == nil {
@@ -3348,10 +3348,10 @@ func (t Result) Paths(json string) []string {
 //
 //	"friends.0"
 //
-// The param 'json' must be the original JSON used when calling Get.
+// The parameter 'json' must be the original JSON used when calling Get.
 //
 // Returns an empty string if the paths cannot be determined, which can happen
-// when the Result came from a path that contained a multipath, modifier,
+// when the Result came from a path that contained a multi-path, modifier,
 // or a nested query.
 func (t Result) Path(json string) string {
 	var path []byte

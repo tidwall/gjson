@@ -353,7 +353,7 @@ func TestPlus53BitInts(t *testing.T) {
 }
 
 func TestIssue38(t *testing.T) {
-	// These should not fail, even though the unicode is invalid.
+	// These should not fail, even though the Unicode is invalid.
 	Get(`["S3O PEDRO DO BUTI\udf93"]`, "0")
 	Get(`["S3O PEDRO DO BUTI\udf93asdf"]`, "0")
 	Get(`["S3O PEDRO DO BUTI\udf93\u"]`, "0")
@@ -2227,7 +2227,7 @@ func TestTildeQueries(t *testing.T) {
 }
 
 func TestModifierDoubleQuotes(t *testing.T) {
-	josn := `{
+	json := `{
 		"data": [
 		  {
 			"name": "Product P4",
@@ -2246,11 +2246,11 @@ func TestModifierDoubleQuotes(t *testing.T) {
 		  }
 		]
 	  }`
-	AddModifier("string", func(josn, arg string) string {
-		return strconv.Quote(josn)
+	AddModifier("string", func(json, arg string) string {
+		return strconv.Quote(json)
 	})
 
-	res := Get(josn, "data.#.{name,value:{productId,vendorId}.@string.@ugly}")
+	res := Get(json, "data.#.{name,value:{productId,vendorId}.@string.@ugly}")
 
 	assert(t, res.Raw == `[`+
 		`{"name":"Product P4","value":"{\"productId\":\"1bb3\",\"vendorId\":\"10de\"}"},`+

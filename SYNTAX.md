@@ -10,9 +10,9 @@ This document is designed to explain the structure of a GJSON Path through examp
 - [Escape Character](#escape-character)
 - [Arrays](#arrays)
 - [Queries](#queries)
-- [Dot vs Pipe](#dot-vs-pipe)
+- [Dot vs. Pipe](#dot-vs-pipe)
 - [Modifiers](#modifiers)
-- [Multipaths](#multipaths)
+- [Multi-paths](#multi-paths)
 - [Literals](#literals)
 
 The definitive implementation is [github.com/tidwall/gjson](https://github.com/tidwall/gjson).
@@ -46,7 +46,7 @@ The following GJSON Paths evaluate to the accompanying values.
 
 ### Basic
 
-In many cases you'll just want to retrieve values by object name or array index.
+Often, you'll just want to retrieve values by object name or array index.
 
 ```go
 name.last              "Anderson"
@@ -77,7 +77,7 @@ Special purpose characters, such as `.`, `*`, and `?` can be escaped with `\`.
 fav\.movie             "Deer Hunter"
 ```
 
-You'll also need to make sure that the `\` character is correctly escaped when hardcoding a path in your source code.
+You'll also need to make sure that the `\` character is correctly escaped when hard-coding a path in your source code.
 
 ```go
 // Go
@@ -105,7 +105,7 @@ friends.#.age         [44,68,47]
 
 ### Queries
 
-You can also query an array for the first match by  using `#(...)`, or find all matches with `#(...)#`.
+You can also query an array for the first match by using `#(...)`, or find all matches with `#(...)#`.
 Queries support the `==`, `!=`, `<`, `<=`, `>`, `>=` comparison operators,
 and the simple pattern matching `%` (like) and `!%` (not like) operators.
 
@@ -130,8 +130,8 @@ Nested queries are allowed.
 friends.#(nets.#(=="fb"))#.first  >> ["Dale","Roger"]
 ```
 
-*Please note that prior to v1.3.0, queries used the `#[...]` brackets. This was
-changed in v1.3.0 as to avoid confusion with the new [multipath](#multipaths)
+*Please note that before v1.3.0, queries used the `#[...]` brackets. This was
+changed in v1.3.0 as to avoid confusion with the new [multi-paths](#multi-paths)
 syntax. For backwards compatibility, `#[...]` will continue to work until the
 next major release.*
 
@@ -183,10 +183,10 @@ vals.#(b==~*)#.a       >> [1,2,3,4,5,6,7,8,9,10]
 vals.#(b!=~*)#.a       >> [11]
 ```
 
-### Dot vs Pipe
+### Dot vs. Pipe
 
 The `.` is standard separator, but it's also possible to use a `|`.
-In most cases they both end up returning the same results.
+Usually, they both end up returning the same results.
 The cases where`|` differs from `.` is when it's used after the `#` for [Arrays](#arrays) and [Queries](#queries).
 
 Here are some examples
@@ -215,14 +215,14 @@ The path `friends.#(last="Murphy")#` all by itself results in
 [{"first": "Dale", "last": "Murphy", "age": 44},{"first": "Jane", "last": "Murphy", "age": 47}]
 ```
 
-The `.first` suffix will process the `first` path on each array element *before* returning the results. Which becomes
+The `.first` suffix will process the `first` path on each array element *before* returning the results. Which becomes:
 
 ```json
 ["Dale","Jane"]
 ```
 
 But the `|first` suffix actually processes the `first` path *after* the previous result.
-Since the previous result is an array, not an object, it's not possible to process
+Since the previous result is an array, not an object, it's impossible to process
 because `first` does not exist.
 
 Yet, `|0` suffix returns
@@ -244,11 +244,11 @@ children.@reverse                   ["Jack","Alex","Sara"]
 children.@reverse.0                 "Jack"
 ```
 
-There are currently the following built-in modifiers:
+These are currently the following built-in modifiers:
 
 - `@reverse`: Reverse an array or the members of an object.
 - `@ugly`: Remove all whitespace from JSON.
-- `@pretty`: Make the JSON more human readable.
+- `@pretty`: Make the JSON more human-readable.
 - `@this`: Returns the current element. It can be used to retrieve the root element.
 - `@valid`: Ensure the JSON document is valid.
 - `@flatten`: Flattens an array.
@@ -270,7 +270,7 @@ For example, the `@pretty` modifier takes a JSON object as its argument.
 @pretty:{"sortKeys":true}
 ```
 
-Which makes the JSON pretty and orders all of its keys.
+Which makes the JSON pretty and orders all its keys.
 
 ```json
 {
@@ -311,13 +311,13 @@ gjson.AddModifier("case", func(json, arg string) string {
 
 *Note: Custom modifiers are not yet available in the Rust version*
 
-### Multipaths
+### Multi-paths
 
 Starting with v1.3.0, GJSON added the ability to join multiple paths together
 to form new documents. Wrapping comma-separated paths between `[...]` or
 `{...}` will result in a new array or object, respectively.
 
-For example, using the given multipath:
+For example, using the given multi-path:
 
 ```
 {name.first,age,"the_murphys":friends.#(last="Murphy")#.first}
@@ -339,11 +339,11 @@ This results in
 
 ### Literals
 
-Starting with v1.12.0, GJSON added support of JSON literals, which provides a way for constructing static blocks of JSON. This is can be particularly useful when constructing a new JSON document using [multipaths](#multipaths).
+Starting with v1.12.0, GJSON added support of JSON literals, which provides a way for constructing static blocks of JSON. This can be particularly useful when constructing a new JSON document using [multi-paths](#multi-paths).
 
 A JSON literal begins with the '!' declaration character.
 
-For example, using the given multipath:
+For example, using the given multi-path:
 
 ```
 {name.first,age,"company":!"Happysoft","employed":!true}
