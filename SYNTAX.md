@@ -117,7 +117,7 @@ friends.#(first%"D*").last          "Murphy"
 friends.#(first!%"D*").last         "Craig"
 ```
 
-To query for a non-object value in an array, you can forgo the string to the right of the operator.
+To query for a non-object value in an array, you can forgo the string to the left of the operator.
 
 ```go
 children.#(!%"*a*")                 "Alex"
