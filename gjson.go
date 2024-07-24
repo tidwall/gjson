@@ -2821,8 +2821,6 @@ func init() {
 }
 
 // AddModifier binds a custom modifier command to the GJSON syntax.
-// This operation is not thread safe and should be executed prior to
-// using all other gjson function.
 func AddModifier(name string, fn func(json, arg string) string) {
 	modifiers.Store(name, fn)
 }
