@@ -2831,12 +2831,13 @@ func ModifierExists(name string, fn func(json, arg string) string) bool {
 	return ok
 }
 
-// DeleteModifier delete a custom modifier
+// DeleteModifier delete a custom modifier command
+// Modifier can be deleted when ever needed
 func DeleteModifier(name string) {
 	modifiers.Delete(name)
 }
 
-// DeleteModifierIfExists delete a custom modifier if it is existing
+// DeleteModifierIfExists delete a custom modifier command if it is existing
 func DeleteModifierIfExists(name string) {
 	_, ok := modifiers.Load(name)
 	if ok {
