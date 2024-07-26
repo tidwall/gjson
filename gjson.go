@@ -4,6 +4,7 @@ package gjson
 import (
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -957,7 +958,7 @@ func isDotPiperChar(s string) bool {
 				break
 			}
 		}
-		_, ok := modifiers[s[1:i]]
+		_, ok := modifiers.Load(s[1:i])
 		return ok
 	}
 	return c == '[' || c == '{'
@@ -2752,7 +2753,8 @@ func execModifier(json, path string) (pathOut, res string, ok bool) {
 			break
 		}
 	}
-	if fn, ok := modifiers[name]; ok {
+	if fn, ok := modifiers.Load(name); ok {
+		function := fn.(func(json, arg string) string)
 		var args string
 		if hasArgs {
 			var parsedArgs bool
@@ -2783,7 +2785,7 @@ func execModifier(json, path string) (pathOut, res string, ok bool) {
 				pathOut = pathOut[i:]
 			}
 		}
-		return pathOut, fn(json, args), true
+		return pathOut, function(json, args), true
 	}
 	return pathOut, res, false
 }
@@ -2800,37 +2802,47 @@ func unwrap(json string) string {
 // DisableModifiers will disable the modifier syntax
 var DisableModifiers = false
 
-var modifiers map[string]func(json, arg string) string
+var modifiers sync.Map
 
 func init() {
-	modifiers = map[string]func(json, arg string) string{
-		"pretty":  modPretty,
-		"ugly":    modUgly,
-		"reverse": modReverse,
-		"this":    modThis,
-		"flatten": modFlatten,
-		"join":    modJoin,
-		"valid":   modValid,
-		"keys":    modKeys,
-		"values":  modValues,
-		"tostr":   modToStr,
-		"fromstr": modFromStr,
-		"group":   modGroup,
-		"dig":     modDig,
-	}
+	modifiers.Store("pretty", modPretty)
+	modifiers.Store("ugly", modUgly)
+	modifiers.Store("reverse", modReverse)
+	modifiers.Store("this", modThis)
+	modifiers.Store("flatten", modFlatten)
+	modifiers.Store("join", modJoin)
+	modifiers.Store("valid", modValid)
+	modifiers.Store("keys", modKeys)
+	modifiers.Store("values", modValues)
+	modifiers.Store("tostr", modToStr)
+	modifiers.Store("fromstr", modFromStr)
+	modifiers.Store("group", modGroup)
+	modifiers.Store("dig", modDig)
 }
 
 // AddModifier binds a custom modifier command to the GJSON syntax.
-// This operation is not thread safe and should be executed prior to
-// using all other gjson function.
 func AddModifier(name string, fn func(json, arg string) string) {
-	modifiers[name] = fn
+	modifiers.Store(name, fn)
 }
 
 // ModifierExists returns true when the specified modifier exists.
 func ModifierExists(name string, fn func(json, arg string) string) bool {
-	_, ok := modifiers[name]
+	_, ok := modifiers.Load(name)
 	return ok
+}
+
+// DeleteModifier delete a custom modifier command
+// Modifier can be deleted when ever needed
+func DeleteModifier(name string) {
+	modifiers.Delete(name)
+}
+
+// DeleteModifierIfExists delete a custom modifier command if it is existing
+func DeleteModifierIfExists(name string) {
+	_, ok := modifiers.Load(name)
+	if ok {
+		modifiers.Delete(name)
+	}
 }
 
 // cleanWS remove any non-whitespace from string
