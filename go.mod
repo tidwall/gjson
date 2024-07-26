@@ -1,4 +1,4 @@
-module github.com/tidwall/gjson
+module github.com/coderx31/coderx-gjson
 
 go 1.12
 
