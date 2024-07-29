@@ -2549,9 +2549,17 @@ func TestGroup(t *testing.T) {
 	assert(t, res == `["123"]`)
 }
 
+func goJSONMarshal(i interface{}) ([]byte, error) {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(i)
+	return bytes.TrimRight(buffer.Bytes(), "\n"), err
+}
+
 func testJSONString(t *testing.T, str string) {
 	gjsonString := string(AppendJSONString(nil, str))
-	data, err := json.Marshal(str)
+	data, err := goJSONMarshal(str)
 	if err != nil {
 		panic(123)
 	}
@@ -2579,7 +2587,7 @@ func TestJSONString(t *testing.T) {
 	testJSONString(t, "R\xfd\xfc\a!\x82eO\x16?_\x0f\x9ab\x1dr")
 	testJSONString(t, "_\xb9\v\xad\xb3|X!\xb6\xd9U&\xa4\x1a\x95\x04")
 	data, _ := json.Marshal("\b\f")
-	if (string(data) == "\"\\b\\f\"") {
+	if string(data) == "\"\\b\\f\"" {
 		// Go version 1.22+ encodes "\b" and "\f" correctly.
 		testJSONString(t, "\b\f")
 		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
