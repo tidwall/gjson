@@ -1917,6 +1917,16 @@ func appendHex16(dst []byte, x uint16) []byte {
 	)
 }
 
+// DisableEscapeHTML will disable the automatic escaping of certain
+// "problamatic" HTML characters when encoding to JSON.
+// These character include '>', '<' and '&', which get escaped to \u003e,
+// \u0026, and \u003c respectively.
+//
+// This is a global flag and will affect all further gjson operations.
+// Ideally, if used, it should be set one time before other gjson functions
+// are called.
+var DisableEscapeHTML = false
+
 // AppendJSONString is a convenience function that converts the provided string
 // to a valid JSON string and appends it to dst.
 func AppendJSONString(dst []byte, s string) []byte {
@@ -1940,6 +1950,10 @@ func AppendJSONString(dst []byte, s string) []byte {
 				dst = append(dst, 'u')
 				dst = appendHex16(dst, uint16(s[i]))
 			}
+		} else if !DisableEscapeHTML &&
+			(s[i] == '>' || s[i] == '<' || s[i] == '&') {
+			dst = append(dst, '\\', 'u')
+			dst = appendHex16(dst, uint16(s[i]))
 		} else if s[i] == '\\' {
 			dst = append(dst, '\\', '\\')
 		} else if s[i] == '"' {

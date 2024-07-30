@@ -2552,7 +2552,7 @@ func TestGroup(t *testing.T) {
 func goJSONMarshal(i interface{}) ([]byte, error) {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
-	encoder.SetEscapeHTML(false)
+	encoder.SetEscapeHTML(!DisableEscapeHTML)
 	err := encoder.Encode(i)
 	return bytes.TrimRight(buffer.Bytes(), "\n"), err
 }
