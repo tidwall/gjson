@@ -438,7 +438,7 @@ Benchmarks of GJSON alongside [encoding/json](https://golang.org/pkg/encoding/js
 and [json-iterator](https://github.com/json-iterator/go)
 
 ```
-BenchmarkGJSONGet-10             14919366    240.9 ns/op      0 B/op     0 allocs/op
+BenchmarkGJSONGet-10             17893731    202.1 ns/op      0 B/op     0 allocs/op
 BenchmarkGJSONUnmarshalMap-10     1663548   2157 ns/op     1920 B/op    26 allocs/op
 BenchmarkJSONUnmarshalMap-10       832236   4279 ns/op     2920 B/op    68 allocs/op
 BenchmarkJSONUnmarshalStruct-10   1076475   3219 ns/op      920 B/op    12 allocs/op
@@ -488,7 +488,5 @@ widget.text.onMouseUp
 ```
 
 **
-
-Last run: Oct 1, 2024
 
 *These benchmarks were run on a MacBook Pro M1 Max using Go 1.22 and can be found [here](https://github.com/tidwall/gjson-benchmarks).*
