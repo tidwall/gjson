@@ -2308,7 +2308,7 @@ func unescape(json string) string {
 	return string(str)
 }
 
-// Less return true if a token is less than another token.
+// Less returns true if a token is less than another token.
 // The caseSensitive parameter is used when the tokens are Strings.
 // The order when comparing two different type is:
 //
