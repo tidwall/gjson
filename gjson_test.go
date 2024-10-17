@@ -199,7 +199,6 @@ func TestPath(t *testing.T) {
 	get("loggy.programmers.2.email")
 	get("lastly.end\\.\\.\\.ing")
 	get("lastly.yay")
-
 }
 
 func TestTimeResult(t *testing.T) {
@@ -216,8 +215,10 @@ func TestParseAny(t *testing.T) {
 
 func TestManyVariousPathCounts(t *testing.T) {
 	json := `{"a":"a","b":"b","c":"c"}`
-	counts := []int{3, 4, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127,
-		128, 129, 255, 256, 257, 511, 512, 513}
+	counts := []int{
+		3, 4, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127,
+		128, 129, 255, 256, 257, 511, 512, 513,
+	}
 	paths := []string{"a", "b", "c"}
 	expects := []string{"a", "b", "c"}
 	for _, count := range counts {
@@ -238,6 +239,7 @@ func TestManyVariousPathCounts(t *testing.T) {
 		}
 	}
 }
+
 func TestManyRecursion(t *testing.T) {
 	var json string
 	var path string
@@ -252,6 +254,7 @@ func TestManyRecursion(t *testing.T) {
 	path = path[1:]
 	assert(t, GetMany(json, path)[0].String() == "b")
 }
+
 func TestByteSafety(t *testing.T) {
 	jsonb := []byte(`{"name":"Janet","age":38}`)
 	mtok := GetBytes(jsonb, "name")
@@ -348,6 +351,7 @@ func TestPlus53BitInts(t *testing.T) {
 	// flip the number to the negative sign.
 	assert(t, Get(json, "overflow_int64").Int() == -9223372036854775808)
 }
+
 func TestIssue38(t *testing.T) {
 	// These should not fail, even though the unicode is invalid.
 	Get(`["S3O PEDRO DO BUTI\udf93"]`, "0")
@@ -359,6 +363,7 @@ func TestIssue38(t *testing.T) {
 	Get(`["S3O PEDRO DO BUTI\udf93\u1345"]`, "0")
 	Get(`["S3O PEDRO DO BUTI\udf93\u1345asd"]`, "0")
 }
+
 func TestTypes(t *testing.T) {
 	assert(t, (Result{Type: String}).Type.String() == "String")
 	assert(t, (Result{Type: Number}).Type.String() == "Number")
@@ -404,6 +409,7 @@ func TestTypes(t *testing.T) {
 	assert(t, (Result{Type: False}).Float() == 0)
 	assert(t, (Result{Type: Number, Num: 1}).Float() == 1)
 }
+
 func TestForEach(t *testing.T) {
 	Result{}.ForEach(nil)
 	Result{Type: String, Str: "Hello"}.ForEach(func(_, value Result) bool {
@@ -423,6 +429,7 @@ func TestForEach(t *testing.T) {
 	ParseBytes([]byte(`{"bad`)).ForEach(nil)
 	ParseBytes([]byte(`{"ok":"bad`)).ForEach(nil)
 }
+
 func TestMap(t *testing.T) {
 	assert(t, len(ParseBytes([]byte(`"asdf"`)).Map()) == 0)
 	assert(t, ParseBytes([]byte(`{"asdf":"ghjk"`)).Map()["asdf"].String() ==
@@ -431,6 +438,7 @@ func TestMap(t *testing.T) {
 	assert(t, Result{Type: JSON, Raw: "**invalid**"}.Value() == nil)
 	assert(t, Result{Type: JSON, Raw: "{"}.Map() != nil)
 }
+
 func TestBasic1(t *testing.T) {
 	mtok := get(basicJSON, `loggy.programmers`)
 	var count int
@@ -474,6 +482,7 @@ func TestBasic1(t *testing.T) {
 		t.Fatalf("expected %v, got %v", 3, count)
 	}
 }
+
 func TestBasic2(t *testing.T) {
 	mtok := get(basicJSON, `loggy.programmers.#[age=101].firstName`)
 	if mtok.String() != "1002.3" {
@@ -509,6 +518,7 @@ func TestBasic2(t *testing.T) {
 			mtok.Map()["programmers"].Array()[1].Map()["firstName"].Str)
 	}
 }
+
 func TestBasic3(t *testing.T) {
 	var mtok Result
 	if Parse(basicJSON).Get("loggy.programmers").Get("1").
@@ -549,6 +559,7 @@ func TestBasic3(t *testing.T) {
 		t.Fatalf("expected 0, got %v", len(mtok.Array()))
 	}
 }
+
 func TestBasic4(t *testing.T) {
 	if get(basicJSON, "items.3.tags.#").Num != 3 {
 		t.Fatalf("expected 3, got %v", get(basicJSON, "items.3.tags.#").Num)
@@ -593,6 +604,7 @@ func TestBasic4(t *testing.T) {
 		t.Fatal("should be nil")
 	}
 }
+
 func TestBasic5(t *testing.T) {
 	token := get(basicJSON, "age")
 	if token.String() != "100" {
@@ -630,8 +642,9 @@ func TestBasic5(t *testing.T) {
 		t.Fatalf("expecting %v, got %v", "Jason", fn)
 	}
 }
+
 func TestUnicode(t *testing.T) {
-	var json = `{"key":0,"的情况下解":{"key":1,"的情况":2}}`
+	json := `{"key":0,"的情况下解":{"key":1,"的情况":2}}`
 	if Get(json, "的情况下解.key").Num != 1 {
 		t.Fatal("fail")
 	}
@@ -659,11 +672,13 @@ func TestUnescape(t *testing.T) {
 	unescape(string([]byte{'\\', '\\', 0}))
 	unescape(string([]byte{'\\', '/', '\\', 'b', '\\', 'f'}))
 }
+
 func assert(t testing.TB, cond bool) {
 	if !cond {
 		panic("assert failed")
 	}
 }
+
 func TestLess(t *testing.T) {
 	assert(t, !Result{Type: Null}.Less(Result{Type: Null}, true))
 	assert(t, Result{Type: Null}.Less(Result{Type: False}, true))
@@ -673,18 +688,30 @@ func TestLess(t *testing.T) {
 	assert(t, Result{Type: Null}.Less(Result{Type: String}, true))
 	assert(t, !Result{Type: False}.Less(Result{Type: Null}, true))
 	assert(t, Result{Type: False}.Less(Result{Type: True}, true))
-	assert(t, Result{Type: String, Str: "abc"}.Less(Result{Type: String,
-		Str: "bcd"}, true))
-	assert(t, Result{Type: String, Str: "ABC"}.Less(Result{Type: String,
-		Str: "abc"}, true))
-	assert(t, !Result{Type: String, Str: "ABC"}.Less(Result{Type: String,
-		Str: "abc"}, false))
-	assert(t, Result{Type: Number, Num: 123}.Less(Result{Type: Number,
-		Num: 456}, true))
-	assert(t, !Result{Type: Number, Num: 456}.Less(Result{Type: Number,
-		Num: 123}, true))
-	assert(t, !Result{Type: Number, Num: 456}.Less(Result{Type: Number,
-		Num: 456}, true))
+	assert(t, Result{Type: String, Str: "abc"}.Less(Result{
+		Type: String,
+		Str:  "bcd",
+	}, true))
+	assert(t, Result{Type: String, Str: "ABC"}.Less(Result{
+		Type: String,
+		Str:  "abc",
+	}, true))
+	assert(t, !Result{Type: String, Str: "ABC"}.Less(Result{
+		Type: String,
+		Str:  "abc",
+	}, false))
+	assert(t, Result{Type: Number, Num: 123}.Less(Result{
+		Type: Number,
+		Num:  456,
+	}, true))
+	assert(t, !Result{Type: Number, Num: 456}.Less(Result{
+		Type: Number,
+		Num:  123,
+	}, true))
+	assert(t, !Result{Type: Number, Num: 456}.Less(Result{
+		Type: Number,
+		Num:  456,
+	}, true))
 	assert(t, stringLessInsensitive("abcde", "BBCDE"))
 	assert(t, stringLessInsensitive("abcde", "bBCDE"))
 	assert(t, stringLessInsensitive("Abcde", "BBCDE"))
@@ -776,7 +803,7 @@ var exampleJSON = `{
 }`
 
 func TestUnmarshalMap(t *testing.T) {
-	var m1 = Parse(exampleJSON).Value().(map[string]interface{})
+	m1 := Parse(exampleJSON).Value().(map[string]interface{})
 	var m2 map[string]interface{}
 	if err := json.Unmarshal([]byte(exampleJSON), &m2); err != nil {
 		t.Fatal(err)
@@ -795,9 +822,9 @@ func TestUnmarshalMap(t *testing.T) {
 }
 
 func TestSingleArrayValue(t *testing.T) {
-	var json = `{"key": "value","key2":[1,2,3,4,"A"]}`
-	var result = Get(json, "key")
-	var array = result.Array()
+	json := `{"key": "value","key2":[1,2,3,4,"A"]}`
+	result := Get(json, "key")
+	array := result.Array()
 	if len(array) != 1 {
 		t.Fatal("array is empty")
 	}
@@ -814,7 +841,6 @@ func TestSingleArrayValue(t *testing.T) {
 	if len(array) != 0 {
 		t.Fatalf("got '%v', expected '%v'", len(array), 0)
 	}
-
 }
 
 var manyJSON = `  {
@@ -867,12 +893,15 @@ func TestManyBasic(t *testing.T) {
 	testMany(true, `[Cat Nancy]`, "name\\.first", "name.first")
 	testMany(true, `[world]`, strings.Repeat("a.", 70)+"hello")
 }
+
 func testMany(t *testing.T, json string, paths, expected []string) {
 	testManyAny(t, json, paths, expected, true)
 	testManyAny(t, json, paths, expected, false)
 }
+
 func testManyAny(t *testing.T, json string, paths, expected []string,
-	bytes bool) {
+	bytes bool,
+) {
 	var result []Result
 	for i := 0; i < 2; i++ {
 		var which string
@@ -902,6 +931,7 @@ func testManyAny(t *testing.T, json string, paths, expected []string,
 		}
 	}
 }
+
 func TestIssue20(t *testing.T) {
 	json := `{ "name": "FirstName", "name1": "FirstName1", ` +
 		`"address": "address1", "addressDetails": "address2", }`
@@ -918,10 +948,14 @@ func TestIssue21(t *testing.T) {
 	           "Level1Field4":4,
 			   "Level1Field2":{ "Level2Field1":[ "value1", "value2" ],
 			   "Level2Field2":{ "Level3Field1":[ { "key1":"value1" } ] } } }`
-	paths := []string{"Level1Field1", "Level1Field2.Level2Field1",
-		"Level1Field2.Level2Field2.Level3Field1", "Level1Field4"}
-	expected := []string{"3", `[ "value1", "value2" ]`,
-		`[ { "key1":"value1" } ]`, "4"}
+	paths := []string{
+		"Level1Field1", "Level1Field2.Level2Field1",
+		"Level1Field2.Level2Field2.Level3Field1", "Level1Field4",
+	}
+	expected := []string{
+		"3", `[ "value1", "value2" ]`,
+		`[ { "key1":"value1" } ]`, "4",
+	}
 	t.Run("SingleMany", func(t *testing.T) {
 		testMany(t, json, paths,
 			expected)
@@ -1097,8 +1131,10 @@ func TestValidBasic(t *testing.T) {
 	testvalid(t, "[-.123]", false)
 }
 
-var jsonchars = []string{"{", "[", ",", ":", "}", "]", "1", "0", "true",
-	"false", "null", `""`, `"\""`, `"a"`}
+var jsonchars = []string{
+	"{", "[", ",", ":", "}", "]", "1", "0", "true",
+	"false", "null", `""`, `"\""`, `"a"`,
+}
 
 func makeRandomJSONChars(b []byte) {
 	var bb []byte
@@ -1217,6 +1253,7 @@ func TestIssue55(t *testing.T) {
 		}
 	}
 }
+
 func TestIssue58(t *testing.T) {
 	json := `{"data":[{"uid": 1},{"uid": 2}]}`
 	res := Get(json, `data.#[uid!=1]`).Raw
@@ -1279,11 +1316,10 @@ null
 	if i != 4 {
 		t.Fatalf("expected '%v', got '%v'", 4, i)
 	}
-
 }
 
 func TestNumUint64String(t *testing.T) {
-	var i int64 = 9007199254740993 //2^53 + 1
+	var i int64 = 9007199254740993 // 2^53 + 1
 	j := fmt.Sprintf(`{"data":  [  %d, "hello" ] }`, i)
 	res := Get(j, "data.0")
 	if res.String() != "9007199254740993" {
@@ -1312,7 +1348,7 @@ func TestNumBigString(t *testing.T) {
 
 func TestNumFloatString(t *testing.T) {
 	var i int64 = -9007199254740993
-	j := fmt.Sprintf(`{"data":[ "hello", %d ]}`, i) //No quotes around value!!
+	j := fmt.Sprintf(`{"data":[ "hello", %d ]}`, i) // No quotes around value!!
 	res := Get(j, "data.1")
 	if res.String() != "-9007199254740993" {
 		t.Fatalf("expected '%v', got '%v'", "-9007199254740993", res.String())
@@ -1321,7 +1357,7 @@ func TestNumFloatString(t *testing.T) {
 
 func TestDuplicateKeys(t *testing.T) {
 	// this is valid json according to the JSON spec
-	var json = `{"name": "Alex","name": "Peter"}`
+	json := `{"name": "Alex","name": "Peter"}`
 	if Parse(json).Get("name").String() !=
 		Parse(json).Map()["name"].String() {
 		t.Fatalf("expected '%v', got '%v'",
@@ -1335,7 +1371,7 @@ func TestDuplicateKeys(t *testing.T) {
 }
 
 func TestArrayValues(t *testing.T) {
-	var json = `{"array": ["PERSON1","PERSON2",0],}`
+	json := `{"array": ["PERSON1","PERSON2",0],}`
 	values := Get(json, "array").Array()
 	var output string
 	for i, val := range values {
@@ -1354,7 +1390,6 @@ func TestArrayValues(t *testing.T) {
 	if output != expect {
 		t.Fatalf("expected '%v', got '%v'", expect, output)
 	}
-
 }
 
 func BenchmarkValid(b *testing.B) {
@@ -1409,6 +1444,15 @@ func TestModifier(t *testing.T) {
 		}
 		return json
 	})
+	if !ModifierExists("case", func(json, arg string) string { return "" }) {
+		t.Fatalf("expected 'case' modifier exist with fn param, got not exist")
+	}
+	if !ModifierExists("case", nil) {
+		t.Fatalf("expected 'case' modifier exist with nil, got not exist")
+	}
+	if ModifierExists("non_existing_case", nil) {
+		t.Fatalf("expected 'non_existing_case' modifier not exist, got exist")
+	}
 	res = Get(json, "other|@case:upper").String()
 	if res != `{"HELLO":"WORLD"}` {
 		t.Fatalf("expected '%v', got '%v'", `{"HELLO":"WORLD"}`, res)
@@ -1459,7 +1503,6 @@ func TestSplitPipe(t *testing.T) {
 	split(t, `hello.#[a|1="asdf\"|1324"]#|that.more|yikes`,
 		`hello.#[a|1="asdf\"|1324"]#`, "that.more|yikes", true)
 	split(t, `a.#[]#\|b`, "", "", false)
-
 }
 
 func TestArrayEx(t *testing.T) {
@@ -1705,7 +1748,6 @@ func TestQueries(t *testing.T) {
 	assert(t, Get(json, `i*.f*.#[cust1>=true].first`).Exists())
 	assert(t, !Get(json, `i*.f*.#[cust2<false].first`).Exists())
 	assert(t, Get(json, `i*.f*.#[cust2<=false].first`).Exists())
-
 }
 
 func TestQueryArrayValues(t *testing.T) {
@@ -1797,8 +1839,7 @@ func TestParseQuery(t *testing.T) {
 	var path, op, value, remain string
 	var ok bool
 
-	path, op, value, remain, _, _, ok =
-		parseQuery(`#(service_roles.#(=="one").()==asdf).cap`)
+	path, op, value, remain, _, _, ok = parseQuery(`#(service_roles.#(=="one").()==asdf).cap`)
 	assert(t, ok &&
 		path == `service_roles.#(=="one").()` &&
 		op == "=" &&
@@ -1826,8 +1867,7 @@ func TestParseQuery(t *testing.T) {
 		value == `` &&
 		remain == ``)
 
-	path, op, value, remain, _, _, ok =
-		parseQuery(`#(a\("\"(".#(=="o\"(ne")%"ab\")").remain`)
+	path, op, value, remain, _, _, ok = parseQuery(`#(a\("\"(".#(=="o\"(ne")%"ab\")").remain`)
 	assert(t, ok &&
 		path == `a\("\"(".#(=="o\"(ne")` &&
 		op == "%" &&
@@ -1836,7 +1876,7 @@ func TestParseQuery(t *testing.T) {
 }
 
 func TestParentSubQuery(t *testing.T) {
-	var json = `{
+	json := `{
 		"topology": {
 		  "instances": [
 			{
@@ -1863,7 +1903,7 @@ func TestParentSubQuery(t *testing.T) {
 }
 
 func TestSingleModifier(t *testing.T) {
-	var data = `{"@key": "value"}`
+	data := `{"@key": "value"}`
 	assert(t, Get(data, "@key").String() == "value")
 	assert(t, Get(data, "\\@key").String() == "value")
 }
@@ -1945,7 +1985,7 @@ func TestValid(t *testing.T) {
 
 // https://github.com/tidwall/gjson/issues/152
 func TestJoin152(t *testing.T) {
-	var json = `{
+	json := `{
 		"distance": 1374.0,
 		"validFrom": "2005-11-14",
 		"historical": {
@@ -2086,7 +2126,6 @@ func TestVariousFuzz(t *testing.T) {
 	testJSON1 := `["*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,,,,,,"]`
 	testJSON2 := `#[%"*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,,,,,,""*,*"]`
 	Get(testJSON1, testJSON2)
-
 }
 
 func TestSubpathsWithMultipaths(t *testing.T) {
@@ -2227,11 +2266,10 @@ func TestModifierDoubleQuotes(t *testing.T) {
 		`{"name":"Product P4","value":"{\"productId\":\"1cc3\",\"vendorId\":\"20de\"}"},`+
 		`{"name":"Product P4","value":"{\"productId\":\"1dd3\",\"vendorId\":\"30de\"}"}`+
 		`]`)
-
 }
 
 func TestIndexes(t *testing.T) {
-	var exampleJSON = `{
+	exampleJSON := `{
 		"vals": [
 			[1,66,{test: 3}],
 			[4,5,[6]]
@@ -2276,7 +2314,7 @@ func TestIndexes(t *testing.T) {
 }
 
 func TestIndexesMatchesRaw(t *testing.T) {
-	var exampleJSON = `{
+	exampleJSON := `{
 		"objectArray":[
 			{"first": "Jason", "age": 41},
 			{"first": "Dale", "age": 44},
@@ -2312,7 +2350,7 @@ func TestIssue240(t *testing.T) {
 }
 
 func TestKeysValuesModifier(t *testing.T) {
-	var json = `{
+	json := `{
 		"1300014": {
 		  "code": "1300014",
 		  "price": 59.18,
@@ -2341,11 +2379,15 @@ func TestKeysValuesModifier(t *testing.T) {
 
 func TestNaNInf(t *testing.T) {
 	json := `[+Inf,-Inf,Inf,iNF,-iNF,+iNF,NaN,nan,nAn,-0,+0]`
-	raws := []string{"+Inf", "-Inf", "Inf", "iNF", "-iNF", "+iNF", "NaN", "nan",
-		"nAn", "-0", "+0"}
-	nums := []float64{math.Inf(+1), math.Inf(-1), math.Inf(0), math.Inf(0),
+	raws := []string{
+		"+Inf", "-Inf", "Inf", "iNF", "-iNF", "+iNF", "NaN", "nan",
+		"nAn", "-0", "+0",
+	}
+	nums := []float64{
+		math.Inf(+1), math.Inf(-1), math.Inf(0), math.Inf(0),
 		math.Inf(-1), math.Inf(+1), math.NaN(), math.NaN(), math.NaN(),
-		math.Copysign(0, -1), 0}
+		math.Copysign(0, -1), 0,
+	}
 
 	assert(t, int(Get(json, `#`).Int()) == len(raws))
 	for i := 0; i < len(raws); i++ {
@@ -2647,7 +2689,6 @@ func TestIssue301(t *testing.T) {
 	assert(t, Get(json, `fav\.movie.[0]`).String() == `["Deer Hunter"]`)
 	assert(t, Get(json, `fav\.movie.1`).String() == "")
 	assert(t, Get(json, `fav\.movie.[1]`).String() == "[]")
-
 }
 
 func TestModDig(t *testing.T) {
