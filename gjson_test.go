@@ -2727,3 +2727,29 @@ func TestEscape(t *testing.T) {
 	assert(t, user.Get(Escape("last.name")).String() == "Prichard")
 	assert(t, user.Get("first.name").String() == "")
 }
+
+func TestModKey2Obj(t *testing.T) {
+	json := `
+		{
+			"tickets": {
+				"ISSUE-10": {
+						"subject": "foo",
+						"priority": 1,
+						"id": 123
+				},
+				"ISSUE-12": {
+						"subject": "bar",
+						"priority": 3,
+						"id": 124
+				},
+				"ISSUE-17": {
+						"subject": "baz",
+						"priority": 2,
+						"id": 1128
+				}
+			}
+		}
+	`
+	assert(t, Get(json, "tickets.@key2obj.@values.#._key").String() == `["ISSUE-10","ISSUE-12","ISSUE-17"]`)
+	assert(t, Get(json, "tickets.@key2obj.@values.0").String() == `{"subject":"foo","priority":1,"id":123,"_key":"ISSUE-10"}`)
+}
