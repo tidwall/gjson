@@ -340,13 +340,14 @@ println(name.String())  // prints "Elliotte"
 
 The `ForEach` function allows for quickly iterating through an object or array. 
 The key and value are passed to the iterator function for objects.
-Only the value is passed for arrays.
+With an array the key is an index and the value is passed.
 Returning `false` from an iterator will stop iteration.
 
 ```go
 result := gjson.Get(json, "programmers")
 result.ForEach(func(key, value gjson.Result) bool {
-	println(value.String()) 
+	println(key.Int()) // index of the array
+	println(value.String())
 	return true // keep iterating
 })
 ```
