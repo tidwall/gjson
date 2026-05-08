@@ -2727,3 +2727,34 @@ func TestEscape(t *testing.T) {
 	assert(t, user.Get(Escape("last.name")).String() == "Prichard")
 	assert(t, user.Get("first.name").String() == "")
 }
+
+func TestIter(t *testing.T) {
+
+	json := `{
+		"a":1,
+		"b":2,
+		"c":3,
+		"d":4
+	}`
+	c := 'a'
+	i := 1
+	for key, value := range Parse(json).All() {
+		assert(t, key.String() == fmt.Sprintf("%c", c))
+		assert(t, int(value.Int()) == i)
+		c++
+		i++
+	}
+
+	c = 'a'
+	for key := range Parse(json).Keys() {
+		assert(t, key.String() == fmt.Sprintf("%c", c))
+		c++
+	}
+
+	i = 1
+	for value := range Parse(json).Values() {
+		assert(t, int(value.Int()) == i)
+		i++
+	}
+
+}
