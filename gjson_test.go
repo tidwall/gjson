@@ -367,6 +367,13 @@ func TestTypes(t *testing.T) {
 	assert(t, (Result{Type: True}).Type.String() == "True")
 	assert(t, (Result{Type: JSON}).Type.String() == "JSON")
 	assert(t, (Result{Type: 100}).Type.String() == "")
+
+	// bytes
+	assert(t, string((Result{Type: True, Raw: "true"}).Bytes()) == "true")
+	assert(t, string((Result{Type: String, Str: "value"}).Bytes()) == "value")
+	assert(t, string((Result{Type: Number, Raw: "1"}).Bytes()) == "1")
+	assert(t, (Result{Type: 100}).Bytes() == nil)
+
 	// bool
 	assert(t, (Result{Type: True}).Bool() == true)
 	assert(t, (Result{Type: False}).Bool() == false)
@@ -393,11 +400,13 @@ func TestTypes(t *testing.T) {
 	assert(t, (Result{Type: True}).Int() == 1)
 	assert(t, (Result{Type: False}).Int() == 0)
 	assert(t, (Result{Type: Number, Num: 1}).Int() == 1)
+
 	// uint
 	assert(t, (Result{Type: String, Str: "1"}).Uint() == 1)
 	assert(t, (Result{Type: True}).Uint() == 1)
 	assert(t, (Result{Type: False}).Uint() == 0)
 	assert(t, (Result{Type: Number, Num: 1}).Uint() == 1)
+
 	// float
 	assert(t, (Result{Type: String, Str: "1"}).Float() == 1)
 	assert(t, (Result{Type: True}).Float() == 1)

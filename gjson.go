@@ -106,6 +106,16 @@ func (t Result) String() string {
 	}
 }
 
+// Bytes returns the value as a byte slice (no copy).
+func (t Result) Bytes() []byte {
+	switch t.Type {
+	default:
+		return stringBytes(t.Raw)
+	case String:
+		return stringBytes(t.Str)
+	}
+}
+
 // Bool returns an boolean representation.
 func (t Result) Bool() bool {
 	switch t.Type {
@@ -516,9 +526,9 @@ func Parse(json string) Result {
 }
 
 // ParseBytes parses the json and returns a result.
-// If working with bytes, this method preferred over Parse(string(data))
+// If working with bytes, this method is preferred over Parse(string(data))
 func ParseBytes(json []byte) Result {
-	return Parse(string(json))
+	return Parse(bytesString(json))
 }
 
 func squash(json string) string {
