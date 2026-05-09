@@ -468,7 +468,18 @@ end:
 // Invalid json will not panic, but it may return back unexpected results.
 // If you are consuming JSON from an unpredictable source then you may want to
 // use the Valid function first.
+// trimBOM removes a leading UTF-8 byte-order mark (BOM) from s, if present.
+// Some JSON sources (Windows editors, CSV-to-JSON converters) prepend a BOM
+// (\xEF\xBB\xBF) that is not part of the JSON value itself.
+func trimBOM(s string) string {
+	if len(s) >= 3 && s[0] == '\xEF' && s[1] == '\xBB' && s[2] == '\xBF' {
+		return s[3:]
+	}
+	return s
+}
+
 func Parse(json string) Result {
+	json = trimBOM(json)
 	var value Result
 	i := 0
 	for ; i < len(json); i++ {
@@ -2128,6 +2139,7 @@ type parseContext struct {
 // If you are consuming JSON from an unpredictable source then you may want to
 // use the Valid function first.
 func Get(json, path string) Result {
+	json = trimBOM(json)
 	if len(path) > 1 {
 		if (path[0] == '@' && !DisableModifiers) || path[0] == '!' {
 			// possible modifier
