@@ -225,6 +225,16 @@ func (t Result) IsBool() bool {
 	return t.Type == True || t.Type == False
 }
 
+// IsNumber returns true if the result value is a JSON number.
+func (t Result) IsNumber() bool {
+	return t.Type == Number
+}
+
+// IsString returns true if the result value is a JSON string.
+func (t Result) IsString() bool {
+	return t.Type == String
+}
+
 // ForEach iterates through values.
 // If the result represents a non-existent value, then no values will be
 // iterated. If the result is an Object, the iterator will pass the key and
