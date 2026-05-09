@@ -2728,6 +2728,39 @@ func TestEscape(t *testing.T) {
 	assert(t, user.Get("first.name").String() == "")
 }
 
+// TestBOM verifies that a leading UTF-8 byte-order mark is stripped before
+// parsing so that JSON produced by Windows editors and some CSV converters is
+// handled correctly.  See https://github.com/tidwall/gjson/issues/370.
+func TestBOM(t *testing.T) {
+	const bom = "\xEF\xBB\xBF"
+
+	// Parse: object with BOM
+	r := Parse(bom + `{"name":"gjson","version":1}`)
+	assert(t, r.Get("name").String() == "gjson")
+	assert(t, r.Get("version").Int() == 1)
+
+	// Parse: array with BOM
+	r = Parse(bom + `[1,2,3]`)
+	assert(t, r.IsArray())
+	assert(t, r.Raw == `[1,2,3]`)
+
+	// Parse: string with BOM
+	r = Parse(bom + `"hello"`)
+	assert(t, r.String() == "hello")
+
+	// Parse: no BOM — must be identical to baseline
+	r = Parse(`{"x":42}`)
+	rBOM := Parse(bom + `{"x":42}`)
+	assert(t, r.Get("x").Int() == rBOM.Get("x").Int())
+
+	// Get: BOM in the JSON argument
+	assert(t, Get(bom+`{"a":"b"}`, "a").String() == "b")
+
+	// ParseBytes: BOM in byte slice
+	r = ParseBytes([]byte(bom + `{"k":"v"}`))
+	assert(t, r.Get("k").String() == "v")
+}
+
 func TestIter(t *testing.T) {
 
 	json := `{
