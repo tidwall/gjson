@@ -1,3 +1,5 @@
+**Due to recent spikes in bot activity, the Issues and Pull Requests tabs have been disabled. For priority support, contact me directly.**
+
 <p align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="/.github/images/logo-dark.png">
