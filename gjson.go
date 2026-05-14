@@ -2,7 +2,7 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 //
-// https://github.com/tidwall/gjson
+// https://codeberg.com/tidwall/gjson
 
 // Package gjson provides searching for json strings.
 package gjson
