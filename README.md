@@ -1,5 +1,3 @@
-<p align="right">https://codeberg.org/tidwall/gjson</p>
-
 <p align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset=".github/images/logo-dark.png">
