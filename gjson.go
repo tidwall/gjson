@@ -2771,7 +2771,11 @@ func parseUint(s string) (n uint64, ok bool) {
 	}
 	for ; i < len(s); i++ {
 		if s[i] >= '0' && s[i] <= '9' {
-			n = n*10 + uint64(s[i]-'0')
+			digit := uint64(s[i] - '0')
+			if n > (^uint64(0)-digit)/10 {
+				return 0, false
+			}
+			n = n*10 + digit
 		} else {
 			return 0, false
 		}
@@ -2789,17 +2793,29 @@ func parseInt(s string) (n int64, ok bool) {
 	if i == len(s) {
 		return 0, false
 	}
+	limit := uint64(1<<63 - 1)
+	if sign {
+		limit++
+	}
+	var magnitude uint64
 	for ; i < len(s); i++ {
 		if s[i] >= '0' && s[i] <= '9' {
-			n = n*10 + int64(s[i]-'0')
+			digit := uint64(s[i] - '0')
+			if magnitude > (limit-digit)/10 {
+				return 0, false
+			}
+			magnitude = magnitude*10 + digit
 		} else {
 			return 0, false
 		}
 	}
 	if sign {
-		return n * -1, true
+		if magnitude == 1<<63 {
+			return -1 << 63, true
+		}
+		return -int64(magnitude), true
 	}
-	return n, true
+	return int64(magnitude), true
 }
 
 // safeInt validates a given JSON number
