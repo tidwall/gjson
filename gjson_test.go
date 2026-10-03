@@ -2829,3 +2829,10 @@ func TestIntOverflow(t *testing.T) {
 	assert(t, Parse(`"-9223372036854775809.1"`).Int() == -9223372036854775808)
 	assert(t, Parse(`"-9223372036854775809.1"`).Int() == -9223372036854775808)
 }
+
+func TestPathRev(t *testing.T) {
+	// See issue https://github.com/tidwall/gjson/issues/400
+	doc := `{"b:"2}`
+	// Does not matter the result. Must not panic.
+	Get(doc, "b:").Path(doc)
+}

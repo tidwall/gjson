@@ -3417,6 +3417,11 @@ func revSquash(json string) string {
 	// reverse squash
 	// expects that the tail character is a ']' or '}' or ')' or '"'
 	// squash the value, ignoring all nested arrays and objects.
+	if len(json) == 0 {
+		// Nothing to squash. Path can walk past the start of the document on
+		// malformed JSON (#400); guard against json[len(json)-1] panicking.
+		return json
+	}
 	i := len(json) - 1
 	var depth int
 	if json[i] != '"' {
