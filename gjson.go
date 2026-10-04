@@ -2,7 +2,7 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 //
-// https://codeberg.com/tidwall/gjson
+// https://github.com/tidwall/gjson
 
 // Package gjson provides searching for json strings.
 package gjson
@@ -10,6 +10,7 @@ package gjson
 import (
 	"iter"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -367,9 +368,9 @@ func (t Result) Get(path string) Result {
 
 type arrayOrMapResult struct {
 	a  []Result
-	ai []interface{}
+	ai []any
 	o  map[string]Result
-	oi map[string]interface{}
+	oi map[string]any
 	vc byte
 }
 
@@ -404,13 +405,13 @@ func (t Result) arrayOrMap(vc byte, valueize bool) (r arrayOrMapResult) {
 	}
 	if r.vc == '{' {
 		if valueize {
-			r.oi = make(map[string]interface{})
+			r.oi = make(map[string]any)
 		} else {
 			r.o = make(map[string]Result)
 		}
 	} else {
 		if valueize {
-			r.ai = make([]interface{}, 0)
+			r.ai = make([]any, 0)
 		} else {
 			r.a = make([]Result, 0)
 		}
@@ -701,7 +702,7 @@ func (t Result) Exists() bool {
 //	nil, for JSON null
 //	map[string]interface{}, for JSON objects
 //	[]interface{}, for JSON arrays
-func (t Result) Value() interface{} {
+func (t Result) Value() any {
 	if t.Type == String {
 		return t.Str
 	}
@@ -714,9 +715,10 @@ func (t Result) Value() interface{} {
 		return t.Num
 	case JSON:
 		r := t.arrayOrMap(0, true)
-		if r.vc == '{' {
+		switch r.vc {
+		case '{':
 			return r.oi
-		} else if r.vc == '[' {
+		case '[':
 			return r.ai
 		}
 		return nil
@@ -2170,7 +2172,7 @@ func Get(json, path string) Result {
 			if path[0] == '@' && !DisableModifiers {
 				npath, rjson, ok = execModifier(json, path)
 			} else if path[0] == '!' {
-				npath, rjson, ok = execStatic(json, path)
+				npath, rjson, ok = execStatic(path)
 			}
 			if ok {
 				path = npath
@@ -2644,6 +2646,12 @@ func validarray(data []byte, i int) (outi int, ok bool) {
 	}
 	return i, false
 }
+
+func ishex(c byte) bool {
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
+		(c >= 'A' && c <= 'F')
+}
+
 func validstring(data []byte, i int) (outi int, ok bool) {
 	for ; i < len(data); i++ {
 		if data[i] < ' ' {
@@ -2658,14 +2666,9 @@ func validstring(data []byte, i int) (outi int, ok bool) {
 				return i, false
 			case '"', '\\', '/', 'b', 'f', 'n', 'r', 't':
 			case 'u':
-				for j := 0; j < 4; j++ {
+				for range 4 {
 					i++
-					if i >= len(data) {
-						return i, false
-					}
-					if !((data[i] >= '0' && data[i] <= '9') ||
-						(data[i] >= 'a' && data[i] <= 'f') ||
-						(data[i] >= 'A' && data[i] <= 'F')) {
+					if i >= len(data) || !ishex(data[i]) {
 						return i, false
 					}
 				}
@@ -2859,7 +2862,7 @@ func safeInt(f float64) (n int64, ok bool) {
 
 // execStatic parses the path to find a static value.
 // The input expects that the path already starts with a '!'
-func execStatic(json, path string) (pathOut, res string, ok bool) {
+func execStatic(path string) (pathOut, res string, ok bool) {
 	name := path[1:]
 	if len(name) > 0 {
 		switch name[0] {
@@ -3574,8 +3577,8 @@ func (t Result) Path(json string) string {
 		}
 		return "@this"
 	}
-	for i := len(comps) - 1; i >= 0; i-- {
-		rcomp := Parse(comps[i])
+	for _, comp := range slices.Backward(comps) {
+		rcomp := Parse(comp)
 		if !rcomp.Exists() {
 			goto fail
 		}
