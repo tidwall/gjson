@@ -1981,7 +1981,8 @@ func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 		case '\\':
 			i++
 		case '@':
-			if modifier == 0 && i > 0 && (path[i-1] == '.' || path[i-1] == '|') {
+			if modifier == 0 && i > 0 && (path[i-1] == '.' ||
+				path[i-1] == '|') {
 				modifier = i
 			}
 		case ':':
