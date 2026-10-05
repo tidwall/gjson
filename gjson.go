@@ -13,6 +13,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -987,7 +989,7 @@ right:
 
 // peek at the next byte and see if it's a '@', '[', or '{'.
 func isDotPiperChar(s string) bool {
-	if DisableModifiers {
+	if modifiersAreDisabled {
 		return false
 	}
 	c := s[0]
@@ -999,8 +1001,7 @@ func isDotPiperChar(s string) bool {
 				break
 			}
 		}
-		_, ok := modifiers[s[1:i]]
-		return ok
+		return getModifier(s[1:i]) != nil
 	}
 	return c == '[' || c == '{'
 }
@@ -2058,15 +2059,22 @@ func appendHex16(dst []byte, x uint16) []byte {
 	)
 }
 
-// DisableEscapeHTML will disable the automatic escaping of certain
+// Deprecated: This flag does nothing. Use SetEscapeHTML() instead.
+var DisableEscapeHTML = false
+
+var disableEscapeHTML atomic.Bool
+
+// SetEscapeHTML to enable/disable the automatic escaping of certain
 // "problamatic" HTML characters when encoding to JSON.
 // These character include '>', '<' and '&', which get escaped to \u003e,
 // \u0026, and \u003c respectively.
-//
-// This is a global flag and will affect all further gjson operations.
-// Ideally, if used, it should be set one time before other gjson functions
-// are called.
-var DisableEscapeHTML = false
+func SetEscapeHTML(escapeHTML bool) {
+	disableEscapeHTML.Store(!escapeHTML)
+}
+
+func escapeHTML() bool {
+	return !disableEscapeHTML.Load()
+}
 
 // AppendJSONString is a convenience function that converts the provided string
 // to a valid JSON string and appends it to dst.
@@ -2091,10 +2099,13 @@ func AppendJSONString(dst []byte, s string) []byte {
 				dst = append(dst, 'u')
 				dst = appendHex16(dst, uint16(s[i]))
 			}
-		} else if !DisableEscapeHTML &&
-			(s[i] == '>' || s[i] == '<' || s[i] == '&') {
-			dst = append(dst, '\\', 'u')
-			dst = appendHex16(dst, uint16(s[i]))
+		} else if s[i] == '>' || s[i] == '<' || s[i] == '&' {
+			if escapeHTML() {
+				dst = append(dst, '\\', 'u')
+				dst = appendHex16(dst, uint16(s[i]))
+			} else {
+				dst = append(dst, s[i])
+			}
 		} else if s[i] == '\\' {
 			dst = append(dst, '\\', '\\')
 		} else if s[i] == '"' {
@@ -2165,12 +2176,12 @@ type parseContext struct {
 // use the Valid function first.
 func Get(json, path string) Result {
 	if len(path) > 1 {
-		if (path[0] == '@' && !DisableModifiers) || path[0] == '!' {
+		if (path[0] == '@' && !modifiersAreDisabled) || path[0] == '!' {
 			// possible modifier
 			var ok bool
 			var npath string
 			var rjson string
-			if path[0] == '@' && !DisableModifiers {
+			if path[0] == '@' && !modifiersAreDisabled {
 				npath, rjson, ok = execModifier(json, path)
 			} else if path[0] == '!' {
 				npath, rjson, ok = execStatic(path)
@@ -2916,7 +2927,7 @@ func execModifier(json, path string) (pathOut, res string, ok bool) {
 			break
 		}
 	}
-	if fn, ok := modifiers[name]; ok {
+	if fn := getModifier(name); fn != nil {
 		var args string
 		if hasArgs {
 			var parsedArgs bool
@@ -2961,13 +2972,20 @@ func unwrap(json string) string {
 	return json
 }
 
-// DisableModifiers will disable the modifier syntax
+// Deprecated: Modifiers can no longer be disabled at runtime. To disable
+// modifiers use the build flag:
+//
+//	-ldflags="-X 'github.com/tidwall/gjson.disableModifiers=true'"
 var DisableModifiers = false
+var disableModifiers = "false"                        // ldflag ("true")
+var modifiersAreDisabled = disableModifiers == "true" // usable feature bool
 
-var modifiers map[string]func(json, arg string) string
+var stockModifiers map[string]func(json, arg string) string
+var userModifiers map[string]func(json, arg string) string
+var userModifiersLock sync.RWMutex
 
 func init() {
-	modifiers = map[string]func(json, arg string) string{
+	stockModifiers = map[string]func(json, arg string) string{
 		"pretty":  modPretty,
 		"ugly":    modUgly,
 		"reverse": modReverse,
@@ -2982,19 +3000,45 @@ func init() {
 		"group":   modGroup,
 		"dig":     modDig,
 	}
+	userModifiers = map[string]func(json, arg string) string{}
 }
 
 // AddModifier binds a custom modifier command to the GJSON syntax.
-// This operation is not thread safe and should be executed prior to
-// using all other gjson function.
+// Provide the name of the modifier without the '@' prefix.
+// The default modifiers, such as 'pretty/this/valid', cannot be
+// overwritten; attempts will simply be ignored.
 func AddModifier(name string, fn func(json, arg string) string) {
-	modifiers[name] = fn
+	if stockModifiers[name] != nil {
+		// User wants to overwrite stock modifier. Ignore request
+	} else {
+		userModifiersLock.Lock()
+		userModifiers[name] = fn
+		userModifiersLock.Unlock()
+	}
+}
+
+// getUserModifier return a user-defined modifier.
+// It's noinline to ensure that the caller 'getModifier' remains inline.
+//
+//go:noinline
+func getUserModifier(name string) func(json, arg string) string {
+	userModifiersLock.RLock()
+	fn := userModifiers[name]
+	userModifiersLock.RUnlock()
+	return fn
+}
+
+func getModifier(name string) func(json, arg string) string {
+	fn := stockModifiers[name]
+	if fn == nil {
+		fn = getUserModifier(name)
+	}
+	return fn
 }
 
 // ModifierExists returns true when the specified modifier exists.
 func ModifierExists(name string, fn func(json, arg string) string) bool {
-	_, ok := modifiers[name]
-	return ok
+	return getModifier(name) != nil
 }
 
 // cleanWS remove any non-whitespace from string
@@ -3573,7 +3617,7 @@ func (t Result) Path(json string) string {
 		}
 	}
 	if len(comps) == 0 {
-		if DisableModifiers {
+		if modifiersAreDisabled {
 			goto fail
 		}
 		return "@this"
