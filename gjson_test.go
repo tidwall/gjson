@@ -2833,3 +2833,14 @@ func TestPathRev(t *testing.T) {
 	// Does not matter the result. Must not panic.
 	Get(doc, "b:").Path(doc)
 }
+
+func TestIssue403(t *testing.T) {
+	// addresses high surrogates
+	inputs := []string{`"a\ud83d\u2026b"`, `"\ud83d\ud83d\ude00"`}
+	for i := range inputs {
+		var s1 string
+		json.Unmarshal([]byte(inputs[i]), &s1)
+		s2 := Parse(inputs[i]).String()
+		assert(t, s1 == s2)
+	}
+}
