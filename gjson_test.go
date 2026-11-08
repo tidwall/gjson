@@ -2633,11 +2633,7 @@ func TestDeepModifierWithOptions(t *testing.T) {
 	results := GetManyBytes([]byte(rawJson), jsonPathExpr)
 	assert(t, len(results) == 1)
 	actual := results[0].Raw
-	expected := `[[{
-  "a": 3,
-  "b": 1,
-  "c": 2
-}
+	expected := `[[{ "a": 3, "b": 1, "c": 2 }
 ]]`
 	if expected != actual {
 		t.Fatal(strconv.Quote(rawJson) + "\n\t" +
