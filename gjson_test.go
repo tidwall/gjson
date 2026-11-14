@@ -2840,3 +2840,28 @@ func TestIssue403(t *testing.T) {
 		assert(t, s1 == s2)
 	}
 }
+
+func TestIssue404(t *testing.T) {
+	assert(t, Parse("18446744073709551616").Uint() == 18446744073709551615)
+	assert(t, Parse("92233720368547758070").Uint() == 18446744073709551615)
+	assert(t, Parse("25000000000000000000").Uint() == 18446744073709551615)
+	assert(t, Parse("24134132286002593217").Int() == 9223372036854775807)
+	assert(t, Parse("-24134132286002593217").Int() == -9223372036854775808)
+	// test random numbers between 19-22 digits
+	for range 1000 {
+		n := (rand.Int() % 4) + 19
+		var s string
+		for len(s) < n {
+			s += fmt.Sprintf("%d", rand.Uint())
+		}
+		s = s[:n]
+		s2 := fmt.Sprintf("%022s", s)
+		x := Parse(s).Uint()
+		s3 := fmt.Sprintf("%022s", fmt.Sprintf("%d", x))
+		if s2 > "0018446744073709551615" {
+			assert(t, s3 == "0018446744073709551615")
+		} else {
+			assert(t, s2 == s3)
+		}
+	}
+}

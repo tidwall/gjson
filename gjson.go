@@ -2816,8 +2816,14 @@ func ValidBytes(json []byte) bool {
 
 func parseUint(s string) (uint64, bool) {
 	var i int
-	if i == len(s) {
-		return 0, false
+	if len(s) == 0 || len(s) >= 20 {
+		if len(s) == 20 {
+			if s > "18446744073709551615" {
+				return 18446744073709551615, true
+			}
+		} else {
+			return 0, false
+		}
 	}
 	var n uint64
 	for ; i < len(s); i++ {
