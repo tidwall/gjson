@@ -2818,6 +2818,11 @@ func parseUint(s string) (uint64, bool) {
 	var i int
 	if len(s) == 0 || len(s) >= 20 {
 		if len(s) == 20 {
+			for j := range len(s) {
+				if s[j] < '0' || s[j] > '9' {
+					return 0, false
+				}
+			}
 			if s > "18446744073709551615" {
 				return 18446744073709551615, true
 			}

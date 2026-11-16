@@ -2865,3 +2865,12 @@ func TestIssue404(t *testing.T) {
 		}
 	}
 }
+
+func TestIssue405(t *testing.T) {
+	assert(t, Parse("2026-09-17T18:04:00Z").Int() == 0)
+	assert(t, Parse("2026-09-17T18:04:00Z").Uint() == 0)
+	assert(t, Parse("9.99999999999999e+17").Int() == 999999999999998976)
+	assert(t, Parse("99999999999999999.99").Uint() == 100000000000000000)
+	assert(t, Parse("abcdefghijklmnopqrst").Uint() == 0)
+	assert(t, Parse("abcdefghijklmnopqrst").Int() == 0)
+}
