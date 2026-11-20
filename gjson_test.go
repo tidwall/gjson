@@ -2874,3 +2874,8 @@ func TestIssue405(t *testing.T) {
 	assert(t, Parse("abcdefghijklmnopqrst").Uint() == 0)
 	assert(t, Parse("abcdefghijklmnopqrst").Int() == 0)
 }
+
+func TestIssue406(t *testing.T) {
+	assert(t, Parse(`"0000009007199254740993"`).Int() == 9007199254740993)
+	assert(t, Parse(`"0000009007199254740993"`).Uint() == 9007199254740993)
+}
