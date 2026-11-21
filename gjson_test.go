@@ -2879,3 +2879,9 @@ func TestIssue406(t *testing.T) {
 	assert(t, Parse(`"0000009007199254740993"`).Int() == 9007199254740993)
 	assert(t, Parse(`"0000009007199254740993"`).Uint() == 9007199254740993)
 }
+
+func TestIssue407(t *testing.T) {
+	assert(t, Get(`[{}, {"a":1}]`, `@join:{"preserve":true}`).Raw == `{"a":1}`)
+	assert(t, Get(`[{"a":1}, {}]`, `@join:{"preserve":true}`).Raw == `{"a":1}`)
+	assert(t, Get(`[{}, {}]`, `@join:{"preserve":true}`).Raw == `{}`)
+}

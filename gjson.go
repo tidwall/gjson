@@ -3285,11 +3285,13 @@ func modJoin(json, arg string) string {
 			if !value.IsObject() {
 				return true
 			}
-			if idx > 0 {
-				out = append(out, ',')
+			if uw := unwrap(value.Raw); len(uw) > 0 {
+				if idx > 0 {
+					out = append(out, ',')
+				}
+				out = append(out, uw...)
+				idx++
 			}
-			out = append(out, unwrap(value.Raw)...)
-			idx++
 			return true
 		})
 	} else {
