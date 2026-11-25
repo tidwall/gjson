@@ -2884,4 +2884,7 @@ func TestIssue407(t *testing.T) {
 	assert(t, Get(`[{}, {"a":1}]`, `@join:{"preserve":true}`).Raw == `{"a":1}`)
 	assert(t, Get(`[{"a":1}, {}]`, `@join:{"preserve":true}`).Raw == `{"a":1}`)
 	assert(t, Get(`[{}, {}]`, `@join:{"preserve":true}`).Raw == `{}`)
+	assert(t, Get(`[{ }, {"a":1}]`, `@join:{"preserve":true}`).Raw == `{"a":1}`)
+	assert(t, Get(`[{"a":1},{ }]`, `@join:{"preserve":true}`).Raw == `{"a":1}`)
+	assert(t, Get(`[  { }  ,  {"a":1}]`, `@join:{"preserve":true}`).Raw == `{"a":1}`)
 }

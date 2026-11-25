@@ -2976,7 +2976,7 @@ func execModifier(json, path string) (pathOut, res string, ok bool) {
 func unwrap(json string) string {
 	json = trim(json)
 	if len(json) >= 2 && (json[0] == '[' || json[0] == '{') {
-		json = json[1 : len(json)-1]
+		json = trim(json[1 : len(json)-1])
 	}
 	return json
 }
